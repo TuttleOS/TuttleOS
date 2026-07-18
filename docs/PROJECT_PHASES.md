@@ -125,7 +125,7 @@ flowchart TD
 | **6** | Cross-workspace switcher + companions + notifications | **Done (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
 | **7** | Demand / Liens / Review | **Skeleton — awaiting owner** | Read-only queues + `docs/PHASE7_SCREEN_PROPOSALS.md` — **STOP** before detailing |
 | **8** | Documents + AI | **Deferred — no AI yet** | Owner: do **not** adopt OCR/Claude/AI until explicitly reopened; Storage docs still optional |
-| **9** | Calendar ↔ deadlines | **Later** | |
+| **9** | Calendar ↔ deadlines | **Scaffold only — no live calendar** | Dry-run adapters + `/owner/calendar`; owner: do **not** connect Graph/Google until reopened |
 | **10** | CasePeer CSV load | **Owner-run** | CSVs stay out of git |
 
 “MVP” here means **schema-backed vertical slices** that match AppShell nav and mockup *jobs*, not pixel-perfect full mockups.
@@ -181,7 +181,11 @@ flowchart TD
 - **Owner decision (2026-07-18):** firm is **not using AI in the project yet** — skip AI/OCR work; do not apply `07` or enable summarize/extract. Document storage (`06`) may still open later without AI.
 
 ### Phase 9 — Calendar sync
-- Microsoft Graph **and** Google adapters; every `workflow.deadline` add/move/vacatur pushes.
+- Adapter interface: Microsoft Graph **and** Google Calendar; org-configurable.
+- Every `workflow.deadline` add/move/vacatur pushes; failures visible (`/owner/calendar`).
+- PHI-minimized titles (label + matter number — no medical narrative).
+- **MVP shipped:** `sql/08_upgrade_v2.7_calendar_sync.sql`, dry-run adapter, Graph/Google stubs, owner settings UI.
+- **Owner decision (2026-07-18):** do **not** connect a live calendar yet — leave mode `dry_run`, no OAuth/DPA wiring until explicitly reopened. Live push still requires gate 9.1 when that happens.
 
 ### Phase 10 — CasePeer migration
 - `sql/migration/migrate_v2.5.sql`; CSVs in firm Dropbox only; owner-controlled run; Dropbox remains frozen archive.

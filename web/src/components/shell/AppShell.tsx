@@ -56,6 +56,7 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/owner", label: "Dashboard" },
     { href: "/owner/approvals", label: "Approvals" },
     { href: "/owner/sol", label: "SOL Watch" },
+    { href: "/owner/calendar", label: "Calendar sync" },
     { href: "/demands", label: "Demand queue" },
     { href: "/liens", label: "Lien worklist" },
     { href: "/review", label: "Viability reviews" },
