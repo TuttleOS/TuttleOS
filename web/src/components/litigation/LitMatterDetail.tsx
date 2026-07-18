@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
+import { CopyEmail } from "@/components/ui/CopyEmail";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember } from "@/lib/cases/types";
 import type { CourtCaseRow } from "@/lib/litigation/types";
@@ -182,13 +183,7 @@ export function LitMatterDetail({
           </div>
           <div>
             <span className="text-muted">Email — </span>
-            {email ? (
-              <a href={`mailto:${email}`} className="text-accent-dk">
-                {email}
-              </a>
-            ) : (
-              "—"
-            )}
+            {email ? <CopyEmail email={email} /> : "—"}
           </div>
           <div>
             <span className="text-muted">Language — </span>

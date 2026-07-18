@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
+import { CopyEmail } from "@/components/ui/CopyEmail";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import {
   addNoteAction,
@@ -252,9 +253,7 @@ export function MatterDetailView({
           <div>
             <span className="text-muted">Email — </span>
             {email ? (
-              <a href={`mailto:${email}`} className="text-accent-dk">
-                {email}
-              </a>
+              <CopyEmail email={email} />
             ) : matter.in_person_signing ? (
               "waived (in-person)"
             ) : (
