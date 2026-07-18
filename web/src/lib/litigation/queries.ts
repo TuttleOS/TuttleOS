@@ -69,7 +69,7 @@ export async function listLitigationCaseload(opts?: {
         .schema("litigation")
         .from("court_case")
         .select(
-          "client_matter_id, cause_number, filed_date, discovery_level, court:court_id(name)",
+          "client_matter_id, cause_number, filed_date, discovery_level, court_id",
         )
         .in("client_matter_id", ids)
         .is("deleted_at", null),
@@ -92,16 +92,33 @@ export async function listLitigationCaseload(opts?: {
         .order("effective_date", { ascending: true }),
     ]);
 
-  type CourtJoin = {
+  type CourtRow = {
     client_matter_id: string;
     cause_number: string | null;
     filed_date: string | null;
     discovery_level: number | null;
-    court: { name: string } | { name: string }[] | null;
+    court_id: string | null;
   };
-  const courtByMatter = new Map<string, CourtJoin>();
-  for (const c of (courts ?? []) as CourtJoin[]) {
+  const courtRows = (courts ?? []) as CourtRow[];
+  const courtByMatter = new Map<string, CourtRow>();
+  for (const c of courtRows) {
     courtByMatter.set(c.client_matter_id, c);
+  }
+
+  // Cross-schema embed litigation.court_case → ref.court is unreliable in PostgREST
+  const courtIds = Array.from(
+    new Set(courtRows.map((c) => c.court_id).filter(Boolean)),
+  ) as string[];
+  const courtNameById = new Map<string, string>();
+  if (courtIds.length) {
+    const { data: refCourts } = await supabase
+      .schema("ref")
+      .from("court")
+      .select("court_id, name")
+      .in("court_id", courtIds);
+    for (const rc of refCourts ?? []) {
+      courtNameById.set(rc.court_id, rc.name);
+    }
   }
 
   const teamByMatter = new Map<string, { cm?: string; pl?: string }>();
@@ -140,10 +157,9 @@ export async function listLitigationCaseload(opts?: {
     } | null;
     const incident = m.incident as unknown as { case_type_code: string } | null;
     const court = courtByMatter.get(m.client_matter_id);
-    const courtRel = court?.court;
-    const courtName = Array.isArray(courtRel)
-      ? courtRel[0]?.name
-      : courtRel?.name;
+    const courtName = court?.court_id
+      ? courtNameById.get(court.court_id)
+      : undefined;
     const team = teamByMatter.get(m.client_matter_id);
     const next = nextByMatter.get(m.client_matter_id);
 
@@ -249,7 +265,7 @@ export async function getCourtCase(
     .schema("litigation")
     .from("court_case")
     .select(
-      "court_case_id, cause_number, filed_date, discovery_level, dco_signed_date, jury_demanded, hb19_applies, status, court:court_id(name)",
+      "court_case_id, cause_number, filed_date, discovery_level, dco_signed_date, jury_demanded, hb19_applies, status, court_id",
     )
     .eq("client_matter_id", matterId)
     .is("deleted_at", null)
@@ -258,7 +274,18 @@ export async function getCourtCase(
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const court = data.court as unknown as { name: string } | null;
+
+  let courtName: string | null = null;
+  if (data.court_id) {
+    const { data: court } = await supabase
+      .schema("ref")
+      .from("court")
+      .select("name")
+      .eq("court_id", data.court_id)
+      .maybeSingle();
+    courtName = court?.name ?? null;
+  }
+
   return {
     court_case_id: data.court_case_id,
     cause_number: data.cause_number,
@@ -268,7 +295,7 @@ export async function getCourtCase(
     jury_demanded: data.jury_demanded,
     hb19_applies: data.hb19_applies,
     status: data.status,
-    court_name: court?.name ?? null,
+    court_name: courtName,
   };
 }
 
