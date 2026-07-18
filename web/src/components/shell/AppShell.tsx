@@ -17,6 +17,8 @@ type NavItem = {
   label: string;
   locked?: boolean;
   lockReason?: string;
+  /** Call-out styling (e.g. Michael’s walkthrough) */
+  featured?: boolean;
 };
 
 const NAV_BY_PREFIX: Record<string, NavItem[]> = {
@@ -59,10 +61,10 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/owner/sol", label: "SOL Watch" },
     { href: "/owner/calendar", label: "Calendar sync" },
     { href: "/owner/migration", label: "Migration" },
-    { href: "/test", label: "Walkthrough" },
     { href: "/demands", label: "Demand queue" },
     { href: "/liens", label: "Lien worklist" },
     { href: "/review", label: "Viability reviews" },
+    { href: "/test", label: "Walkthrough", featured: true },
   ],
   "/demands": [{ href: "/demands", label: "Demand queue" }],
   "/liens": [{ href: "/liens", label: "Lien worklist" }],
@@ -174,6 +176,22 @@ export function AppShell({
                   <span>{item.label}</span>
                   <span aria-hidden>🔒</span>
                 </span>
+              );
+            }
+            if (item.featured) {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title="Guided tour for Michael — start here"
+                  className={`mt-3 rounded-lg border-2 px-3 py-2.5 font-bold no-underline ${
+                    active
+                      ? "border-warning bg-warning text-white"
+                      : "border-warning bg-warning-bg text-warning hover:bg-warning hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </Link>
               );
             }
             return (

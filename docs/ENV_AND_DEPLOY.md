@@ -95,3 +95,38 @@ Use these when scaffolding the Next.js app (Phase 1):
 - [ ] Preview protection on  
 - [ ] Headers live on production URL  
 - [ ] Staging cannot reach production DB  
+
+---
+
+## 8. Vercel ↔ GitHub must use the **TuttleOS** account
+
+Repo: https://github.com/TuttleOS/TuttleOS  
+
+The live site must be connected through the **TuttleOS** GitHub user (not a personal Brett/dev account as the integration owner).
+
+### One-time reconnect (do this in the browser)
+
+1. Sign out of Vercel (or use a private window).
+2. Go to https://vercel.com/login → **Continue with GitHub**.
+3. Approve as the **TuttleOS** GitHub user (not `brettearl18`).
+4. Open (or create) the **tuttle-os** team/project.
+5. **Project → Settings → Git**
+   - Connected repository = `TuttleOS/TuttleOS`
+   - If it shows another account’s install, **Disconnect**, then **Connect Git Repository** again while logged in as TuttleOS.
+6. **Settings → General → Root Directory** = `web` (required — Next app lives in `/web`).
+7. **Settings → Deployment Protection**
+   - Production: **Disabled** (or “Only Preview”) so Michael can open the app without a Vercel team login. Supabase auth still protects the app.
+8. **Settings → Environment Variables** — copy from `.env.example` / local `.env.local` (never commit secrets).
+9. **Deployments → Redeploy** the latest `main` production deployment.
+
+### Confirm it worked
+
+| Check | Expect |
+|---|---|
+| GitHub repo About → website | Production URL loads **Tuttle login**, not Vercel `404 NOT_FOUND` |
+| Vercel → Settings → Git | Repo `TuttleOS/TuttleOS`, installed for **TuttleOS** |
+| Push to `main` | New production deploy from this repo |
+
+### Note on commit authors
+
+Local `git config` may still show a developer name on commits; that is separate from **who owns the repo and the Vercel GitHub App**. Repo ownership and the Vercel connection must stay under **TuttleOS**.
