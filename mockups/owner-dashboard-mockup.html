@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuttle OS — Owner Dashboard (Mockup)</title>
+<style>
+  :root{
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --blue-dk:#1c5cab; --blue-lt:#cde2fb;
+    --good:#0ca30c; --good-text:#006300; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --r:10px;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);font-size:14px;line-height:1.45}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:16px;padding:10px 20px;position:sticky;top:0;z-index:5}
+  .brand{font-weight:700;font-size:15px} .brand span{color:var(--blue)}
+  .ws-chip{font-size:12px;color:var(--ink2);background:var(--page);border:1px solid var(--grid);border-radius:999px;padding:3px 10px}
+  .spacer{flex:1}
+  .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--critical);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .wrap{max-width:1280px;margin:0 auto;padding:20px}
+  nav.side{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  nav.side button{border:1px solid var(--grid);background:var(--surface);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--ink2);cursor:pointer;position:relative}
+  nav.side button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  .navbadge{position:absolute;top:-6px;right:-6px;background:var(--critical);color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+  .tile:hover{border-color:var(--baseline)}
+  .tile .k{font-size:12px;color:var(--ink2);margin-bottom:4px}
+  .tile .v{font-size:26px;font-weight:700}
+  .tile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .tile.crit{border-left:4px solid var(--critical)} .tile.warn{border-left:4px solid var(--warning)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+  .panel h2{font-size:14px;margin:0;padding:12px 16px;border-bottom:1px solid var(--grid)}
+  .filters{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--grid);flex-wrap:wrap}
+  .chip{border:1px solid var(--grid);background:var(--page);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--ink2);cursor:pointer}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--grid);font-size:12px;white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+  .name{font-weight:600} .sub2{color:var(--muted);font-size:12px}
+  .caselink{font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none} .caselink:hover{text-decoration:underline}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .b-ok{background:#e2f4e2;color:var(--good-text)} .b-warn{background:#fdf3d7;color:#7a5600}
+  .b-ser{background:#fde8df;color:#9a4218} .b-crit{background:#fbe3e3;color:#8f1f1f}
+  .b-na{background:#f0efec;color:var(--muted)} .b-info{background:var(--blue-lt);color:var(--blue-dk)}
+  .stage{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;background:var(--blue-lt);color:var(--blue-dk)}
+  .flags{display:flex;gap:4px;flex-wrap:wrap}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .card h3{margin:0 0 8px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .kv{display:grid;grid-template-columns:160px 1fr;gap:5px 12px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  button.primary{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button.approve{background:var(--good-text)}
+  button.ghost{background:var(--surface);border:1px solid var(--grid);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  button.danger{background:var(--surface);border:1px solid var(--critical);color:var(--critical);border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer}
+  .btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .note-callout{background:#fdf3d7;border:1px solid #f2d891;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#7a5600;margin-top:10px}
+  .lockfoot{color:var(--muted);font-size:12px;text-align:center;padding:14px 0 30px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+  .mockbar{background:#eef4fc;border-bottom:1px solid #cfe0f5;color:#1c5cab;font-size:12px;text-align:center;padding:5px}
+  .mono{font-variant-numeric:tabular-nums}
+  .gsearch{position:relative}
+  .gsearch input{width:250px;border:1px solid var(--grid);border-radius:999px;padding:7px 14px 7px 32px;font-size:13px;background:var(--page);color:var(--ink);outline:none}
+  .gsearch input:focus{border-color:var(--blue);background:var(--surface);width:310px}
+  .gsearch .gs-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .gs-drop{position:absolute;top:110%;left:0;right:0;background:var(--surface);border:1px solid var(--grid);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:30;display:none}
+  .gs-drop.open{display:block}
+  .gs-item{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .gs-item:hover,.gs-item.sel{background:var(--blue-lt)}
+  .gs-item .gs-sub{color:var(--muted);font-size:11.5px}
+  .gs-none{padding:10px 12px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="mockbar">CLICKABLE MOCKUP — fictional data, nothing is saved. Built for design feedback only.</div>
+<div class="topbar">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="ws-chip">Owner Dashboard — everything, every red flag</div>
+    <div class="gsearch">
+    <span class="gs-icon">🔎</span>
+    <input id="gs-input" type="text" placeholder="Search files — name, cause #, phone…" autocomplete="off"
+      oninput="gsFilter(this.value)" onkeydown="gsKey(event)" onfocus="gsFilter(this.value)" onblur="setTimeout(()=>gsClose(),150)">
+    <div class="gs-drop" id="gs-drop"></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="user"><div class="avatar">MT</div> Michael Tuttle · Attorney / Workflow Owner</div>
+</div>
+
+<div class="wrap">
+  <nav class="side">
+    <button class="on" id="nav-dash" onclick="go('dash')">Stalled Cases</button>
+    <button id="nav-appr" onclick="go('appr')">Approvals<span class="navbadge">5</span></button>
+    <button id="nav-sol" onclick="go('sol')">SOL Watch<span class="navbadge">3</span></button>
+    <button id="nav-viab" onclick="go('viab')">7-Day Reviews<span class="navbadge">2</span></button>
+    <button id="nav-conf" onclick="go('conf')">Conflicts<span class="navbadge">1</span></button>
+    <button id="nav-ovr" onclick="go('ovr')">Overrides & Audit</button>
+    <button id="nav-act" onclick="go('act')">My Activity</button>
+  </nav>
+  <div id="view"></div>
+  <div class="lockfoot">Attorney role: nothing is locked — financials, discovery content, audit log, all visible. Level approvals and conflict clearances are physically restricted to you and Daniel by the database.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function openCase(n){toast(n+' — opens the full case page (same page your staff sees, plus the financial and audit panels only you can access)')}
+let flagFilter='all';
+
+/* one firm-wide fictional dataset — the same clients from the staff mockups */
+const rows=[
+ {c:'Whitfield, Dana', pl:'P. Ortega', phone:'(726) 555-0284', doi:'Jul 02, 2024', stage:'Litigation · Service', age:17, inStage:17, level:'2', tbi:false, sol:'satisfied by filing',
+  flags:['service diligence critical (post-SOL filing)'], note:'2 failed attempts on Chen; #3 set Jul 15, 2026', cm:'—', atty:'MT'},
+ {c:'Nguyen, Bao', pl:'— UNASSIGNED', phone:'(210) 555-0138', doi:'May 30, 2026', stage:'Treating', age:39, inStage:39, level:null, tbi:false, sol:'687d',
+  flags:['missing Level past day 7','treatment gap 24d','auth problem'], note:'Client missed 2 PT appts; rebooked Jul 15, 2026', cm:'Christina'},
+ {c:'Delgado, Rosa', pl:'P. Ortega', phone:'(210) 555-0119', doi:'Jul 08, 2026', stage:'Viability', age:0, inStage:0, level:null, tbi:false, sol:'725d',
+  flags:['7-day review due Jul 20, 2026','conflict check pending (sister-passenger)'], note:'Signed today; checklist 0/9', cm:'Christina'},
+ {c:'Boudreaux, Amos', pl:'P. Ortega', phone:'(830) 555-0126', doi:'Sep 14, 2025', stage:'Demand', age:298, inStage:11, level:'3', tbi:true, sol:'428d',
+  flags:['PD unresolved at demand','Level 3 demand awaiting your approval'], note:'Kate approved draft Jul 12, 2026; total-loss dispute open', cm:'Mark'},
+ {c:'Vasquez, Elena', pl:'D. Ayala', phone:'(210) 555-0192', doi:'Jun 30, 2025', stage:'Negotiation', age:372, inStage:19, level:'2', tbi:false, sol:'352d',
+  flags:['demand response overdue 5d','file-suit decision needed'], note:'Counter $71k out Jul 01, 2026; adjuster silent since', cm:'Mark'},
+ {c:'Ibarra, Ramon', pl:'P. Ortega', phone:'(210) 555-0221', doi:'Apr 18, 2025', stage:'Litigation · Discovery', age:262, inStage:118, level:'3', tbi:true, sol:'satisfied by filing',
+  flags:['MTC needs your signature','unserved defendant (Voss)'], note:'Kestrel objections-only on driver file + ELD', cm:'—', atty:'MT'},
+ {c:'Trevino, Marisol', pl:'D. Ayala', phone:'(210) 555-0147', doi:'Nov 21, 2025', stage:'Records', age:223, inStage:34, level:'1', tbi:false, sol:'496d',
+  flags:['records request aging 21d'], note:'Dr. Reyes records — 3rd follow-up', cm:'Christina'},
+ {c:'Salinas, Grace', pl:'D. Ayala', phone:'(210) 555-0166', doi:'May 03, 2025', stage:'Settlement', age:401, inStage:44, level:'2', tbi:false, sol:'—',
+  flags:['disbursement aging 44d'], note:'Waiting on Medicare final demand — Emily chasing', cm:'Emily'},
+ {c:'Okafor, Chidi', pl:'P. Ortega', phone:'(210) 555-0184', doi:'Apr 02, 2026', stage:'Treating', age:94, inStage:62, level:'2', tbi:true, sol:'628d',
+  flags:[], note:'ESI recommended; client deciding', cm:'Christina'},
+ {c:'Mercado, Felix', pl:'P. Ortega', phone:'(830) 555-0246', doi:'Jan 30, 2025', stage:'Litigation · Trial prep', age:427, inStage:64, level:'3', tbi:false, sol:'satisfied by filing',
+  flags:['mediation Aug 06, 2026','trial Nov 16, 2026 — 126d'], note:'Kwan depo Jul 29, 2026; expert designations Aug 18, 2026', cm:'—', atty:'MT'},
+];
+const FLAGS=['all','missing Level','SOL/service','PD unresolved','demand response overdue','records aging','disbursement aging','needs my action'];
+
+const approvals=[
+ {id:1,kind:'LEVEL',title:'Level approval — Delgado, Rosa',who:'recommended by Christina (pending Case Profile)',due:'with 7-day review · Jul 20, 2026',
+  body:{'Recommended':'— not yet (profile in progress)','DINSCO':'Allstate 30/60 confirmed','PINSCO':'declined to open claim — refusal documented','Liability':'rear-end, favorable','Note':'sister-passenger conflict pending — no Level inheritance across linked matters'}},
+ {id:2,kind:'LEVEL',title:'Level approval — Nguyen, Bao',who:'recommended Level 1 by Christina',due:'OVERDUE — day 39 of 7',
+  body:{'Recommended':'Level 1','DINSCO':'Travelers premises — limits unknown, request sent','PINSCO':'n/a (premises)','Liability':'disputed — store denies notice','Concern':'treatment gap 24d weakens value'}},
+ {id:3,kind:'L3 DEMAND',title:'Level 3 demand — Boudreaux, Amos',who:'drafted by Mark · approved by Kate Jul 12, 2026',due:'your approval required (Level 3 rule)',
+  body:{'Demand':'$950,000 policy demand — Great West $1M CSL','Specials':'$48,212 medical · TBI indicated','Stowers':'predicates tracked — deadline language included','Blocker':'PD total-loss dispute still open — flagged, not blocking'}},
+ {id:4,kind:'LOP',title:'LOP approval — Delgado, Rosa → Mission Trail Pain Institute',who:'requested by Christina at provider selection',due:'client treating start pending',
+  body:{'Provider':'Mission Trail Pain Institute (accepts LOP)','Terms':'standard letter — no cap set','Note':'consider cap + expiration (v2 LOP terms structure)'}},
+ {id:5,kind:'FILE SUIT',title:'File-suit decision — Vasquez, Elena',who:'memo from Mark',due:'adjuster silent 5d past promise',
+  body:{'Posture':'demand $85k → offer $22.5k → counter $71k (authority documented)','SOL':'352 days','Recommendation':'file in Bexar County; Progressive history: moves ~30d after filing','Cost':'filing + service ≈ $650'}},
+];
+
+const solRows=[
+ {c:'Reyes, Tomás', stored:'Oct 07, 2025', computed:'Apr 07, 2027', delta:'-547d', verdict:'stored EARLIER — data-entry error? (UIM case: contract deadline, not 2-yr)', cls:'b-ser'},
+ {c:'Fuentes, Alma', stored:'Jun 29, 2028', computed:'Jun 29, 2028', delta:'0', verdict:'match', cls:'b-ok'},
+ {c:'Kopecky, Gerald', stored:'May 18, 2046', computed:'May 18, 2028', delta:'+18 yr', verdict:'stored LATER — minor client? tolling flag not set', cls:'b-crit'},
+ {c:'Barrera, Lucia', stored:'Jun 14, 2028', computed:'Jun 14, 2028', delta:'0', verdict:'match', cls:'b-ok'},
+ {c:'Munoz, Daniel', stored:'Jul 06, 2026', computed:'Jul 06, 2026', delta:'-7d TO SOL', verdict:'⚠ 7 DAYS OUT — status Settlement Negotiations, no suit filed', cls:'b-crit'},
+];
+
+const viab=[
+ {c:'Delgado, Rosa', due:'Jul 20, 2026', status:'CM preparing', rec:'—', level:'—',
+  summary:'Rear-end, clear liability. Allstate 30/60. PINSCO refused (documented). ER + chiro started. Sister was passenger — conflict check queued.'},
+ {c:'Kestrel walk-in (Lead #4471)', due:'Jul 16, 2026 — OVERDUE prep', status:'not started', rec:'—', level:'—',
+  summary:'Signed Jul 09, 2026. Case Profile empty. This is the red flag the dashboard exists for.'},
+];
+
+const conflicts=[
+ {pair:'Delgado, Rosa ↔ Delgado, Carmen (sister, passenger)', incident:'07/08/2026 rear-end', issue:'driver/passenger alignment — no crossclaim indicators; limits 30/60 vs 2 claimants = LIMITS SHORT',
+  status:'pending your review', note:'Copy controls locked between matters until cleared. Joint rep waiver draft ready.'},
+];
+
+const overrides=[
+ {staff:'Mark Garza', task:'Send DINSCO LOR', n:4, last:'Jul 09, 2026', reasons:['carrier confirmed claim by phone; LOR mailed hardcopy','fax rejected, re-sent by mail','adjuster requested email only','system template pending']},
+ {staff:'Christina Calderon', task:'Obtain PINSCO Dec Sheet', n:1, last:'Jun 30, 2026', reasons:['client emailed dec page photo; saved to Dropbox manually']},
+];
+const audit=[
+ {when:'Jul 13, 2026, 2:41 PM', who:'Emily Shuler', what:'UPDATE finance.disbursement_statement — Salinas (draft v3)'},
+ {when:'Jul 13, 2026, 1:12 PM', who:'Christina Calderon', what:'INSERT medical.treatment_episode — Delgado → Mission Trail (LOP pending your approval)'},
+ {when:'Jul 13, 2026, 11:05 AM', who:'Mark Garza', what:'UPDATE resolution.demand — Boudreaux (sent to Kate → approved)'},
+ {when:'Jul 12, 2026, 4:58 PM', who:'Daniel Becerra', what:'UPDATE core.client_matter — Nguyen (Level rec 1 — awaiting approver)'},
+];
+
+function go(v){
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  $('#nav-'+({dash:'dash',appr:'appr',sol:'sol',viab:'viab',conf:'conf',ovr:'ovr',act:'act'})[v]).classList.add('on');
+  ({dash:renderDash,appr:renderAppr,sol:renderSol,viab:renderViab,conf:renderConf,ovr:renderOvr,act:renderMyAct})[v]();
+}
+
+function renderMyAct(){
+  const A=[
+   {when:'Jul 13, 2026, 8:50 AM',client:'Ibarra, Ramon',what:'Reviewed MTC draft — sent notes back to Priscilla'},
+   {when:'Jul 12, 2026, 5:10 PM',client:'Boudreaux, Amos',what:'Read Kate-approved L3 demand — holding for PD dispute check'},
+   {when:'Jul 12, 2026, 11:20 AM',client:'Vasquez, Elena',what:'Reviewed file-suit memo from Mark'},
+   {when:'Jul 11, 2026, 4:35 PM',client:'Delgado, Rosa',what:'Flagged sister-passenger conflict for clearance review'},
+  ];
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>My Activity — everything I've touched, newest first</h2>
+    <table><thead><tr><th>When</th><th>Case</th><th>What I did</th><th></th></tr></thead><tbody>
+    ${A.map((a,i)=>`<tr style="${i===0?'background:#eef4fc':''}">
+      <td class="sub2" style="white-space:nowrap">${a.when}${i===0?'<div><span class="badge b-info">⟵ left off here</span></div>':''}</td>
+      <td><a class="caselink" onclick="openCase('${a.client}')">${a.client}</a></td>
+      <td style="font-size:12.5px">${a.what}</td>
+      <td>${i===0?`<button class="primary" onclick="openCase('${a.client}')">Resume →</button>`:''}</td></tr>`).join('')}
+    </tbody></table>
+  </div>
+  <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">Every user gets this tab — their own slice of the audit stream. The Overrides & Audit tab remains your firm-wide view of everyone.</div>`;
+}
+/* ---------- STALLED CASES (workflow doc §10, row for row) ---------- */
+function matches(r){
+  if(flagFilter==='all')return true;
+  if(flagFilter==='needs my action')return r.flags.some(f=>/your|my|file-suit|signature/i.test(f));
+  if(flagFilter==='missing Level')return r.flags.some(f=>f.includes('missing Level'));
+  if(flagFilter==='SOL/service')return r.flags.some(f=>/SOL|service|diligence/i.test(f));
+  if(flagFilter==='PD unresolved')return r.flags.some(f=>f.includes('PD'));
+  if(flagFilter==='demand response overdue')return r.flags.some(f=>f.includes('demand response'));
+  if(flagFilter==='records aging')return r.flags.some(f=>f.includes('records'));
+  if(flagFilter==='disbursement aging')return r.flags.some(f=>f.includes('disbursement'));
+  return true;
+}
+function renderDash(){
+  const flagged=rows.filter(r=>r.flags.length).length;
+  $('#view').innerHTML=`
+  <div class="tiles">
+    <div class="tile"><div class="k">Active matters</div><div class="v">214</div><div class="sub">mockup shows 10</div></div>
+    <div class="tile crit" onclick="go('sol')"><div class="k">🛑 SOL within 120d</div><div class="v">3</div><div class="sub">1 within 7 days</div></div>
+    <div class="tile crit" onclick="go('appr')"><div class="k">🛑 Waiting on ME</div><div class="v">5</div><div class="sub">2 Levels · L3 demand · LOP · file-suit</div></div>
+    <div class="tile warn" onclick="go('viab')"><div class="k">⚠ Viability overdue</div><div class="v">1</div><div class="sub">+1 due this week</div></div>
+    <div class="tile warn" onclick="flagFilter='missing Level';renderDash()"><div class="k">⚠ Missing Levels</div><div class="v">1</div><div class="sub">Nguyen — day 39</div></div>
+    <div class="tile" onclick="go('ovr')"><div class="k">Override patterns</div><div class="v">5</div><div class="sub">90d — 1 worth a look</div></div>
+  </div>
+  <div class="panel">
+    <h2>Stalled Case Dashboard — one row per matter, every red flag (case age runs from sign-up, not incident)</h2>
+    <div class="filters">${FLAGS.map(f=>`<span class="chip ${flagFilter===f?'on':''}" onclick="flagFilter='${f}';renderDash()">${f}</span>`).join('')}</div>
+    <table>
+      <thead><tr><th>Client</th><th>Stage</th><th>Age / in stage</th><th>Level</th><th>SOL</th><th>Latest critical note</th><th>Red flags</th></tr></thead>
+      <tbody>
+      ${rows.filter(matches).map(r=>`<tr>
+        <td><a class="caselink" onclick="openCase('${r.c}')">${r.c}</a> ${r.tbi?'<span class="badge b-ser">🧠 TBI</span>':''}<div class="sub2">${r.cm!=='—'?'CM '+r.cm:'CM —'} · PL ${r.pl||'—'}</div></td>
+        <td><span class="stage">${r.stage}</span></td>
+        <td class="mono">${r.age}d · <b>${r.inStage}d</b></td>
+        <td>${r.level?`<span class="badge b-info">L${r.level}</span>`:'<span class="badge b-crit">🛑 missing</span>'}</td>
+        <td class="mono">${r.sol}</td>
+        <td style="font-size:12.5px">${r.note}</td>
+        <td><div class="flags">${r.flags.map(f=>`<span class="badge ${/your|my|file-suit|signature|SOL|7 DAYS/i.test(f)?'b-crit':'b-warn'}">${f}</span>`).join('')||'<span class="sub2">—</span>'}</div></td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* ---------- APPROVALS — the things only you (or Daniel) can do ---------- */
+function renderAppr(){
+  $('#view').innerHTML = approvals.map(a=>`
+  <div class="card">
+    <h3><span class="badge ${a.kind==='L3 DEMAND'?'b-crit':a.kind==='FILE SUIT'?'b-ser':'b-info'}">${a.kind}</span> ${a.title}
+      <span class="sub2" style="margin-left:auto">${a.due}</span></h3>
+    <div class="sub2" style="margin-bottom:8px">${a.who}</div>
+    <div class="kv">${Object.entries(a.body).map(([k,v])=>`<div class="k">${k}</div><div>${v}</div>`).join('')}</div>
+    <div class="btnrow">
+      <button class="primary approve" onclick="toast('${a.kind} approved — stamped with your identity + timestamp; the database rejects this action from anyone but you or Daniel')">Approve</button>
+      ${a.kind==='LEVEL'?`<button class="ghost" onclick="toast('Level changed — your change and rationale are session-attributed in the decision log')">Change level…</button>`:''}
+      ${a.kind==='FILE SUIT'?`<button class="ghost" onclick="toast('Held — tickler set to revisit in 7 days')">Hold 7 days</button>`:''}
+      <button class="danger" onclick="toast('Sent back with your note — task reopened for the owner')">Send back…</button>
+      <a class="caselink" style="align-self:center" onclick="openCase('${a.title.split('— ')[1]||a.title}')">open case →</a>
+    </div>
+  </div>`).join('') + `
+  <div class="note-callout">Everything on this tab is DB-enforced authority: <b>enforce_level_approval</b> rejects Level changes by anyone but you or Daniel, Level 3 demands require attorney approval before sending, LOPs and preservation/non-engagement letters are flagged for attorney review in the template registry.</div>`;
+}
+
+/* ---------- SOL WATCH — reconciliation + countdown ---------- */
+function renderSol(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>SOL Watch — human date vs. engine date (core.v_sol_reconciliation). The engine NEVER overwrites; it argues.</h2>
+    <table>
+      <thead><tr><th>Client</th><th>Stored SOL</th><th>Computed SOL</th><th>Δ</th><th>Verdict</th></tr></thead>
+      <tbody>
+      ${solRows.map(r=>`<tr>
+        <td><a class="caselink" onclick="openCase('${r.c}')">${r.c}</a></td>
+        <td class="mono">${r.stored}</td><td class="mono">${r.computed}</td>
+        <td class="mono"><b>${r.delta}</b></td>
+        <td><span class="badge ${r.cls}">${r.verdict}</span></td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">From your real data: 691 of 770 migrated cases match the 2-year computation exactly; 72 stored-later (minors → set the tolling flag and the engine agrees); 7 stored-earlier. The engine's legal branches are tagged ATTORNEY-VERIFY — your homework items (minor tolling, wrongful death, 18.001 anchor) are what make these verdicts trustworthy.</div>`;
+}
+
+/* ---------- 7-DAY REVIEWS ---------- */
+function renderViab(){
+  $('#view').innerHTML = viab.map(v=>`
+  <div class="card">
+    <h3>${v.c} <span class="badge ${v.due.includes('OVERDUE')?'b-crit':'b-warn'}">${v.due}</span> <span class="sub2">${v.status}</span></h3>
+    <div style="font-size:13px;margin-bottom:8px">${v.summary}</div>
+    <div class="btnrow">
+      <button class="primary approve" onclick="toast('Accepted — stage advances, Level approval prompt follows')">Accept</button>
+      <button class="ghost" onclick="toast('Accepted with conditions — conditions logged to decision log')">Accept w/ conditions</button>
+      <button class="ghost" onclick="toast('Needs more info — task created for the CM with your questions')">Needs info</button>
+      <button class="danger" onclick="toast('Rejected — non-engagement letter generated for your review + rejected-case log entry')">Reject</button>
+      <a class="caselink" style="align-self:center" onclick="openCase('${v.c}')">open case →</a>
+    </div>
+  </div>`).join('') + `
+  <div class="note-callout">Rejection is not complete until the non-engagement letter goes out — same malpractice control as intake.</div>`;
+}
+
+/* ---------- CONFLICTS ---------- */
+function renderConf(){
+  $('#view').innerHTML = conflicts.map(x=>`
+  <div class="card">
+    <h3>⚖ ${x.pair}</h3>
+    <div class="kv">
+      <div class="k">Incident</div><div>${x.incident}</div>
+      <div class="k">Issue</div><div><b>${x.issue}</b></div>
+      <div class="k">Status</div><div><span class="badge b-warn">${x.status}</span></div>
+      <div class="k">Controls</div><div>${x.note}</div>
+    </div>
+    <div class="btnrow">
+      <button class="primary approve" onclick="toast('Cleared — clearance recorded + audit-logged; note/document copying unlocks between the linked matters')">Clear conflict</button>
+      <button class="ghost" onclick="toast('Waiver route — joint-rep waiver generates for both clients; clearance records the waiver document')">Require written waiver…</button>
+      <button class="danger" onclick="toast('Blocked — matters stay isolated; consider referring one client out')">Block / refer out</button>
+    </div>
+  </div>`).join('') + `
+  <div class="note-callout">Only you and Daniel can clear conflicts — the database physically blocks note/document copying across linked matters until a clearance (or waiver) exists.</div>`;
+}
+
+/* ---------- OVERRIDES & AUDIT ---------- */
+function renderOvr(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Task Override Patterns — 90 days (workflow.v_task_override_patterns). Patterns, not gotchas.</h2>
+    <table>
+      <thead><tr><th>Staff</th><th>Task</th><th>Overrides</th><th>Most recent</th><th>Recent reasons</th></tr></thead>
+      <tbody>
+      ${overrides.map(o=>`<tr>
+        <td class="name">${o.staff}</td><td>${o.task}</td>
+        <td><span class="badge ${o.n>=3?'b-ser':'b-na'}">${o.n}×${o.n>=3?' — look into it':''}</span></td>
+        <td class="sub2">${o.last}</td>
+        <td style="font-size:12px">${o.reasons.slice(0,3).map(r=>'· '+r).join('<br>')}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h2>Audit stream — every consequential change, who and when (audit.change_log; forge-proof)</h2>
+    <table><tbody>
+    ${audit.map(a=>`<tr><td class="sub2" style="white-space:nowrap">${a.when}</td><td class="name">${a.who}</td><td style="font-size:12.5px">${a.what}</td></tr>`).join('')}
+    </tbody></table>
+  </div>
+  <div class="note-callout">Mark's 4 LOR overrides in 90 days is the pattern you asked to be able to see — his reasons look legitimate (carrier quirks), but if the template is fighting him, that's a template fix, not a Mark fix.</div>`;
+}
+
+go('dash');
+
+/* ---------- global file search (every screen, always) ---------- */
+function gsSource(){ return rows.map(r=>({id:r.c,label:r.c,sub:'DOI '+r.doi+' · '+r.stage,meta:r.phone||''})).concat([
+    {id:'Garza, Randy',label:'Garza, Randy',sub:'DOI Mar 25, 2024 · Pending Drop'},
+    {id:'Garza, Randy',label:'Garza, Randy',sub:'DOI Nov 08, 2025 · Treating'}]); }
+let gsSel=0;
+function gsDigits(s){return (s||'').replace(/\D/g,'')}
+function gsHit(q,qd,f){
+  if(!f)return false;
+  if(String(f).toLowerCase().includes(q))return true;           // partial text, anywhere
+  if(qd.length>=3&&gsDigits(f).includes(qd))return true;        // partial phone, any formatting
+  return false;
+}
+function gsFilter(q){
+  const d=document.getElementById('gs-drop');
+  const qq=(q||'').trim();
+  if(!qq){d.classList.remove('open');return}
+  const ql=qq.toLowerCase();
+  const qd=gsDigits(ql);
+  const hits=gsSource().filter(it=>gsHit(ql,qd,it.label)||gsHit(ql,qd,it.sub)||gsHit(ql,qd,it.meta)).slice(0,6);
+  gsSel=-1;
+  d.innerHTML=hits.map(it=>`<div class="gs-item" data-id="${it.id}" data-label="${it.label}"><span><b>${it.label}</b></span><span class="gs-sub">${it.sub||''}</span></div>`).join('')
+    +`<div class="gs-item gs-all" data-q="${qq}"><span>🔎 See all results for “${qq}”</span><span class="gs-sub">grouped by category — or just press Enter</span></div>`;
+  d.classList.add('open');
+  d.querySelectorAll('.gs-item').forEach(el=>el.addEventListener('mousedown',()=>{
+    if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q); else gsOpen(el.dataset.id,el.dataset.label);}));
+}
+function gsKey(e){
+  const d=document.getElementById('gs-drop');
+  const items=[...d.querySelectorAll('.gs-item')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!items.length)return;
+    gsSel=e.key==='ArrowDown'?(gsSel+1)%items.length:(gsSel<=0?items.length-1:gsSel-1);
+    items.forEach((x,i)=>x.classList.toggle('sel',i===gsSel));
+  }else if(e.key==='Enter'){
+    const q=e.target.value.trim();
+    if(gsSel>=0&&items[gsSel]){
+      const el=items[gsSel];
+      if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q||q); else gsOpen(el.dataset.id,el.dataset.label);
+    }else if(q){gsShowAll(q)}
+    e.target.blur();
+  }else if(e.key==='Escape'){gsClose();e.target.blur()}
+}
+function gsShowAll(q){
+  gsClose(); document.getElementById('gs-input').value='';
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  const cats=gsCategories(q.toLowerCase());
+  const total=cats.reduce((n,c)=>n+c.items.length,0);
+  document.getElementById('view').innerHTML=
+   `<div class="panel"><h2>🔎 Search results for “${q}” — ${total} match${total===1?'':'es'} in ${cats.filter(c=>c.items.length).length} categories</h2></div>`+
+   cats.map(c=>c.items.length?`
+   <div class="panel"><h2>${c.title} · ${c.items.length}</h2><table><tbody>
+   ${c.items.map(it=>`<tr><td style="width:38%"><a class="caselink" onclick="${it.act}">${it.label}</a></td><td class="sub2" style="font-size:12.5px">${it.sub||''}</td></tr>`).join('')}
+   </tbody></table></div>`:'').join('')+
+   (total?'':'<div class="panel"><h2>No matches</h2><div class="sub2" style="padding:14px">The real build also searches phone numbers, claim #s, cause #s, notes, and documents — database permissions applied.</div></div>');
+}
+function gsClose(){document.getElementById('gs-drop').classList.remove('open')}
+function gsOpen(id,label){
+  gsClose(); document.getElementById('gs-input').value='';
+  openCase(label);
+}
+
+function gsCategories(q){
+  const qd=gsDigits(q); const m=s=>gsHit(q,qd,s);
+  return [
+   {title:'Cases & Clients', items:rows.filter(r=>m(r.c)||m(r.stage)||m(r.phone)).map(r=>({label:r.c,sub:'DOI '+r.doi+' · '+(r.phone||'')+' · '+r.stage,act:`openCase('${r.c}')`})).concat(m('garza')?[{label:'Garza, Randy',sub:'DOI Mar 25, 2024 · Pending Drop',act:`openCase('Garza, Randy')`},{label:'Garza, Randy',sub:'DOI Nov 08, 2025 · Treating',act:`openCase('Garza, Randy')`}]:[])},
+   {title:'Waiting on your approval', items:approvals.filter(a=>m(a.title)||m(a.kind)).map(a=>({label:a.title,sub:a.due,act:`go('appr')`}))},
+   {title:'SOL Watch', items:solRows.filter(r=>m(r.c)||m(r.verdict)).map(r=>({label:r.c,sub:r.verdict,act:`go('sol')`}))},
+   {title:'Staff activity', items:[...new Set(overrides.map(o=>o.staff).concat(audit.map(a=>a.who)))].filter(n=>m(n)).map(n=>({label:n,sub:'overrides & audit stream',act:`go('ovr')`}))},
+  ];
+}
+
+</script>
+</body>
+</html>

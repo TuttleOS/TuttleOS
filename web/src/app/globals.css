@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — Parchment (default) + Midnight. No hard-coded colors in components. */
+:root,
+[data-theme="parchment"] {
+  --page: #f4f3f0;
+  --surface: #ffffff;
+  --surface-2: #faf9f6;
+  --ink: #1f2328;
+  --muted: #6d7178;
+  --grid: #e3e1dc;
+  --accent: #3b82c4;
+  --accent-dk: #1c5cab;
+  --accent-lt: #e3eefa;
+  --sidebar: #ffffff;
+  --sidebar-ink: #1f2328;
+  --top: #ffffff;
+  --top-ink: #1f2328;
+  --danger: #c93a3a;
+  --danger-bg: #fff0ef;
+  --warning: #b66a08;
+  --warning-bg: #fff7e8;
+  --success: #278a61;
+  --success-bg: #edf9f3;
+  --info: #2f70bf;
+  --info-bg: #edf5ff;
+  --shadow: 0 10px 30px rgba(31, 35, 40, 0.06);
+}
+
+[data-theme="midnight"] {
+  --page: #14171c;
+  --surface: #1d2128;
+  --surface-2: #181c22;
+  --ink: #e6e8ec;
+  --muted: #9aa0aa;
+  --grid: #2c313a;
+  --accent: #5b9bd9;
+  --accent-dk: #8bbcec;
+  --accent-lt: #24344a;
+  --sidebar: #1a1e25;
+  --sidebar-ink: #dfe3e9;
+  --top: #1a1e25;
+  --top-ink: #eceef2;
+  --danger: #ff7373;
+  --danger-bg: #3a2527;
+  --warning: #f4b55e;
+  --warning-bg: #3a3021;
+  --success: #6fd4a5;
+  --success-bg: #1f342b;
+  --info: #78b7ff;
+  --info-bg: #213149;
+  --shadow: none;
+}
+
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
+  }
+  body {
+    @apply min-h-full bg-page text-ink font-sans text-[14px] antialiased;
+  }
+  a {
+    @apply text-accent-dk underline-offset-2 hover:underline;
+  }
+}

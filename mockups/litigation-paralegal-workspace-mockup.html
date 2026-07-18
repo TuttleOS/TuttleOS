@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuttle OS — Litigation Paralegal Workspace (Mockup)</title>
+<style>
+  :root{
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --blue-dk:#1c5cab; --blue-lt:#cde2fb;
+    --good:#0ca30c; --good-text:#006300; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --r:10px;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);font-size:14px;line-height:1.45}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:16px;padding:10px 20px;position:sticky;top:0;z-index:5}
+  .brand{font-weight:700;font-size:15px} .brand span{color:var(--blue)}
+  .ws-chip{font-size:12px;color:var(--ink2);background:var(--page);border:1px solid var(--grid);border-radius:999px;padding:3px 10px}
+  .spacer{flex:1}
+  .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px}
+  nav.side{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  nav.side button{border:1px solid var(--grid);background:var(--surface);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--ink2);cursor:pointer}
+  nav.side button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  nav.side .locked{opacity:.45;cursor:not-allowed}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+  .tile .k{font-size:12px;color:var(--ink2);margin-bottom:4px}
+  .tile .v{font-size:26px;font-weight:700}
+  .tile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .tile.crit{border-left:4px solid var(--critical)} .tile.warn{border-left:4px solid var(--warning)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+  .panel h2{font-size:14px;margin:0;padding:12px 16px;border-bottom:1px solid var(--grid)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--grid);font-size:12px;white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+  tr.row{cursor:pointer} tr.row:hover td{background:var(--page)}
+  .name{font-weight:600} .sub2{color:var(--muted);font-size:12px}
+  .caselink{font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none} .caselink:hover{text-decoration:underline}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .b-ok{background:#e2f4e2;color:var(--good-text)} .b-warn{background:#fdf3d7;color:#7a5600}
+  .b-ser{background:#fde8df;color:#9a4218} .b-crit{background:#fbe3e3;color:#8f1f1f}
+  .b-na{background:#f0efec;color:var(--muted)} .b-info{background:var(--blue-lt);color:var(--blue-dk)}
+  .cols{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+  .card h3{margin:0 0 10px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  .back{color:var(--blue);cursor:pointer;font-size:13px;margin-bottom:12px;display:inline-block}
+  .contactstrip{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px 12px;background:var(--page);border:1px solid var(--grid);border-radius:8px;font-size:13.5px}
+  .contactstrip a{color:var(--blue);font-weight:600;text-decoration:none}
+  .contactstrip a:hover{text-decoration:underline}
+  .copybtn{border:1px solid var(--grid);background:var(--surface);border-radius:6px;padding:2px 8px;font-size:11.5px;color:var(--ink2);cursor:pointer}
+  .copybtn:hover{border-color:var(--blue);color:var(--blue)}
+  .log{margin:0;padding:0}
+  .log li{list-style:none;border-left:2px solid var(--grid);margin-left:6px;padding:2px 0 10px 14px;position:relative;font-size:12.5px}
+  .log li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--baseline);position:absolute;left:-5px;top:5px}
+  .log li.hit::before{background:var(--good)}
+  .log li.miss::before{background:var(--critical)}
+  .log .when{color:var(--muted);font-size:11.5px}
+  .tick{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none}
+  .tick.y{background:#e2f4e2;color:var(--good-text)}
+  .note-callout{background:#fdf3d7;border:1px solid #f2d891;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#7a5600;margin-top:10px}
+  .dform{background:var(--page);border:1px solid var(--grid);border-radius:10px;padding:12px 14px;margin-top:10px}
+  .dform h4{margin:0 0 8px;font-size:13.5px}
+  .dform input[type=date],.dform input[type=text]{border:1px solid var(--grid);border-radius:6px;padding:5px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)}
+  .dform input[type=text]{width:100%;box-sizing:border-box}
+  .dfrow{display:grid;grid-template-columns:230px 150px 90px;gap:8px;align-items:center;padding:3px 0;font-size:12.5px}
+  .dfrow.wide{grid-template-columns:230px 1fr}
+  .dfcustom{display:grid;grid-template-columns:1fr 150px 90px 40px;gap:8px;align-items:center;padding:3px 0}
+  .tl-wrap{display:flex;flex-wrap:wrap;gap:0;align-items:stretch}
+  .tl-node{position:relative;flex:1 1 110px;min-width:110px;max-width:170px;padding:8px 14px 8px 8px;font-size:11.5px;line-height:1.3}
+  .tl-node::after{content:'›';position:absolute;right:2px;top:8px;color:var(--muted);font-size:15px}
+  .tl-node:last-child::after{content:''}
+  .tl-dot{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;margin-bottom:3px;font-weight:700}
+  .tl-done .tl-dot{background:#e2f4e2;color:var(--good-text)} .tl-done{color:var(--muted)}
+  .tl-now .tl-dot{background:var(--blue-lt);color:var(--blue-dk);box-shadow:0 0 0 3px var(--blue-lt)} .tl-now{background:#f4f8fd;border-radius:8px}
+  .tl-warn .tl-dot{background:#fdf3d7;color:#7a5600}
+  .tl-crit .tl-dot{background:#fbe3e3;color:#8f1f1f} .tl-crit{background:#fef6f6;border-radius:8px}
+  .tl-future .tl-dot{background:var(--page);color:var(--muted);border:1.5px dashed var(--grid)} .tl-future{color:var(--muted)}
+  .tl-lab{font-weight:700;font-size:11.5px} .tl-sub{color:var(--muted);font-size:10.5px;margin-top:1px}
+  .tl-here{position:absolute;top:-7px;left:8px;background:var(--blue-dk);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;letter-spacing:.4px}
+  .tl-node:hover{background:var(--blue-lt);border-radius:8px}
+  .jump-flash{outline:3px solid var(--blue);outline-offset:2px;transition:outline .3s}
+  .cite{font-size:11px;color:var(--muted);font-style:italic}
+  .jx{font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:var(--critical);color:#fff;letter-spacing:.3px}
+  .co{font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:var(--blue-dk);color:#fff;letter-spacing:.3px}
+  .defbox{border:1px solid var(--grid);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+  .lockfoot{color:var(--muted);font-size:12px;text-align:center;padding:14px 0 30px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+  .mockbar{background:#eef4fc;border-bottom:1px solid #cfe0f5;color:#1c5cab;font-size:12px;text-align:center;padding:5px}
+  button.ghost{background:var(--surface);border:1px solid var(--grid);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  .gsearch{position:relative}
+  .gsearch input{width:250px;border:1px solid var(--grid);border-radius:999px;padding:7px 14px 7px 32px;font-size:13px;background:var(--page);color:var(--ink);outline:none}
+  .gsearch input:focus{border-color:var(--blue);background:var(--surface);width:310px}
+  .gsearch .gs-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .gs-drop{position:absolute;top:110%;left:0;right:0;background:var(--surface);border:1px solid var(--grid);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:30;display:none}
+  .gs-drop.open{display:block}
+  .gs-item{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .gs-item:hover,.gs-item.sel{background:var(--blue-lt)}
+  .gs-item .gs-sub{color:var(--muted);font-size:11.5px}
+  .gs-none{padding:10px 12px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="mockbar">CLICKABLE MOCKUP — fictional data, nothing is saved. Built for design feedback only.</div>
+<div class="topbar">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="ws-chip">Litigation Paralegal Workspace</div>
+    <div class="gsearch">
+    <span class="gs-icon">🔎</span>
+    <input id="gs-input" type="text" placeholder="Search files — name, cause #, phone…" autocomplete="off"
+      oninput="gsFilter(this.value)" onkeydown="gsKey(event)" onfocus="gsFilter(this.value)" onblur="setTimeout(()=>gsClose(),150)">
+    <div class="gs-drop" id="gs-drop"></div>
+  </div>
+  <div class="spacer"></div>
+  <a href="case-manager-workspace-mockup.html?as=paralegal" style="text-decoration:none;border:1px solid var(--blue);color:var(--blue-dk);background:var(--blue-lt);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;white-space:nowrap" title="Full CM workspace — every tab and function, over your cases; actions audit as you">🔁 Case Manager view</a>
+  <div class="user"><div class="avatar">PO</div> Priscilla Ortega · Litigation Paralegal</div>
+</div>
+
+<div class="wrap">
+  <nav class="side">
+    <button class="on" id="nav-dash" onclick="go('dash')">My Cases</button>
+    <button id="nav-file" onclick="go('tofile')">To Be Filed</button>
+    <button id="nav-sol" onclick="go('sol')">SOL Watchlist</button>
+    <button id="nav-svc" onclick="go('svc')">Service Incomplete</button>
+    <button id="nav-depo" onclick="go('depo')">Depositions</button>
+    <button id="nav-disc" onclick="go('disc')">Written Discovery</button>
+    <button id="nav-med" onclick="go('med')">Mediations</button>
+    <button id="nav-trial" onclick="go('trials')">Trials</button>
+    <button id="nav-hz" onclick="go('hz')">Deadline Horizon</button>
+    <button id="nav-tasks" onclick="go('tasks')">My Tasks</button>
+    <button id="nav-act" onclick="go('act')">My Activity</button>
+    <button class="locked" title="Attorney + lien/disbursement roles only — enforced by the database">Financials 🔒</button>
+  </nav>
+  <div id="view"></div>
+  <div class="lockfoot">Litigation paralegal role: full case visibility INCLUDING discovery work product (your tier) · financial detail restricted — enforced by the database.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY=new Date('2026-07-13');
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function copyText(t,label){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(label+' copied'),()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(label+' copied')})}
+function rcCall(n,ctx){toast('RingCentral call to '+n+' — logged to '+ctx+' automatically')}
+
+/* ---------------- fictional litigation caseload ---------------- */
+const MEDIATOR_INTEL={
+ 'Rebecca Salazar':{carriers:[{c:'Great West Casualty',n:3,s:2},{c:'Progressive',n:2,s:2}],firms:[{f:'Boone & Whitaker',a:4},{f:'Hargrove Adams LLP',a:2}]},
+ 'Hon. Wm. Pruitt (ret.)':{carriers:[{c:'Great West Casualty',n:4,s:1}],firms:[{f:'Boone & Whitaker',a:5}]},
+ 'Elena Marsh':{carriers:[],firms:[]},
+};
+const cases=[
+ {id:1, client:'Ibarra, Ramon', plaintiffs:[
+   {name:'Ibarra, Ramon', note:'driver — THIS file', this_:true},
+   {name:'Ibarra, Graciela', note:'wife, front passenger — companion matter (own medicals, own damages); conflict waiver cleared Nov 2025; one cause number, both plaintiffs'}],
+  dob:'1982-08-14', phone:'(210) 555-0221', email:'r.ibarra@example.com', lang:'EN',
+  doi:'Apr 18, 2025', cause:'2025-CI-18234', cmName:'Christina', court:'224th District Court, Bexar County', filed:'Nov 03, 2025',
+  level:'TRCP 190.3 (Level 2)', jury:'demanded · fee paid', hb19:'bifurcation elected by Def — phase tags on',
+  sol:'2027-04-18', posture:'Discovery',
+  dco:{signed:'Feb 10, 2026', discoveryClose:'Sep 30, 2026', note:'DCO supersedes Level 2 default period (vacated automatically)'},
+  trial:{setting:'Jan 25, 2027', settingLabel:'Jan 25, 2027 (jury) — #4 on the docket', mediation:'must complete by Sep 15, 2026', witnesses:'due Dec 26, 2026', exhibits:'due Dec 26, 2026',
+    prep:[['Witness list drafted',false],['Exhibit list w/ objections chart',false],['Depo designations',false],['Expert files complete',false]]},
+  mediation:{deadline:'Sep 15, 2026 (DCO ¶9 — court-ordered)', scheduled:null, candidates:[
+    {name:'Rebecca Salazar', by:'joint', agreed:true, requested:'Jul 08, 2026', response:'offered Aug 24, 2026, Aug 26, 2026, Sep 2, 2026'},
+    {name:'Hon. Wm. Pruitt (ret.)', by:'defense', agreed:false, requested:null, response:null},
+    {name:'Elena Marsh', by:'plaintiff', agreed:false, requested:null, response:null}]},
+  defendants:[
+   {name:'Kestrel Logistics LLC', type:'commercial carrier', served:'Dec 09, 2025 — personal (CT Corp, registered agent)', answer:'Answered Jan 05, 2026',
+    counsel:'Boone & Whitaker (D. Boone)', counselPhone:'(210) 555-0733', done:true},
+   {name:'Voss Freightways LLC (owner/employer)', type:'commercial', served:'Jun 10, 2026 — certified mail (CT Corp, registered agent)', answerDue:'Jul 6, 2026', answer:null, counsel:null,
+    returnFiled:'Return of service on file with the clerk since Jun 15, 2026 (TRCP 107(h): on file ≥10 days — default window OPEN)'},
+   {name:'Terrence Voss (driver)', type:'individual', served:null, answer:null, counsel:null,
+    diligence:[
+     {when:'Jul 10, 2026, 9:40 AM', what:'4th attempt — 8812 Culebra Rd: neighbor says he moved ~May. Skip trace ordered.', ok:false},
+     {when:'Jun 28, 2026, 7:15 PM', what:'3rd attempt — evening attempt, no answer, truck not present', ok:false},
+     {when:'Jun 19, 2026, 2:30 PM', what:'2nd attempt — no answer, notice left', ok:false},
+     {when:'Jun 12, 2026, 10:00 AM', what:'1st attempt — Bexar Constable Pct 1, no answer', ok:false}],
+    next:'Rule 106 motion for substituted service — draft due Jul 22, 2026 (diligence log attaches as exhibit)', reason:'Evading — moved ~May; skip trace ordered'}
+  ],
+  discovery:[
+   {set:'Def Kestrel → P: ROGs (Set 1)', served:'May 04, 2026', due:'Jun 03, 2026 (+3 mail = Jun 06, 2026)', status:'answered', note:'served Jun 05, 2026'},
+   {set:'Def Kestrel → P: RFPs (Set 1)', served:'Jun 30, 2026', due:'Jul 30, 2026 (+3 mail = Aug 03, 2026)', status:'due', note:'drafting — client docs gathered 60%'},
+   {set:'P → Def Kestrel: RFPs (Set 1)', served:'Mar 12, 2026', due:'Apr 11, 2026', status:'deficient',
+    pipeline:'deficiency letter Jun 20, 2026 → conferral Jul 01, 2026 (no agreement) → MOTION TO COMPEL draft due Jul 17, 2026',
+    note:'RFP 9 (driver file), RFP 12 (ELD data): objections only, no production. "Will supplement" on RFP 14 — 92 days stale'},
+   {set:'P → Def Kestrel: ROGs (Set 1)', served:'Mar 12, 2026', due:'Apr 11, 2026', status:'answered', note:'complete'},
+  ],
+  depos:[
+   {who:'Terrence Voss (Def driver)', when:'Jul 20, 2026, 10:00 AM', where:'Boone & Whitaker', status:'confirmed', note:'exhibits binder due Jul 17, 2026',
+    checklist:[['Notice served (TRCP 199)',true],['Court reporter booked',true],['Videographer booked',true],['Exhibits binder assembled',false],['Outline from Michael',true],['Witness availability confirmed w/ counsel',true]]},
+   {who:'Kestrel corporate rep (TRCP 199.2(b)(1))', when:'not yet set', where:'—', status:'scheduling', note:'12 topics served Jun 25, 2026; awaiting rep designation; proposed Aug 11, 2026 / Aug 13, 2026',
+    checklist:[['Topics served',true],['Rep designated by Kestrel',false],['Date agreed',false],['Court reporter booked',false],['Outline from Michael',false],['Exhibits assembled',false]]},
+  ],
+  deadlines:[
+   {date:'Jul 6, 2026', what:'Answer due — Voss Freightways LLC (owner/employer) — NO ANSWER ON FILE', src:'rule', cite:'TRCP 99 — Monday next after 20 days from service', jx:false},
+   {date:'Jul 17, 2026', what:'Motion to compel — draft to Michael', src:'internal', cite:'TRCP 215', jx:false},
+   {date:'Jul 17, 2026', what:'Voss depo exhibit binder complete', src:'internal', cite:'', jx:false},
+   {date:'Jul 20, 2026', what:'Deposition — Terrence Voss', src:'notice', cite:'TRCP 199', jx:false},
+   {date:'Jul 22, 2026', what:'Rule 106 motion for substituted service', src:'internal', cite:'TRCP 106(b)', jx:true},
+   {date:'Aug 03, 2026', what:'P responses to Kestrel RFPs (Set 1)', src:'rule', cite:'TRCP 196.2 + 21a mail', jx:true},
+   {date:'Sep 15, 2026', what:'Mediation deadline — must be completed', src:'court order', cite:'DCO ¶9', jx:true},
+   {date:'Sep 30, 2026', what:'Discovery period closes', src:'court order', cite:'DCO ¶4', jx:true},
+  ]},
+ {id:2, client:'Whitfield, Dana', dob:'1990-02-27', phone:'(726) 555-0284', email:'dwhitfield@example.com', lang:'EN',
+  doi:'Jul 02, 2024', cause:'2026-CI-04411', cmName:'Mark', court:'225th District Court, Bexar County', filed:'Jun 26, 2026',
+  level:'TRCP 190.3 (Level 2)', jury:'demanded · fee paid', hb19:'n/a', sol:'2026-07-02', posture:'Service',
+  dco:null,
+  solNote:'FILED 6 DAYS BEFORE LIMITATIONS — service diligence is the tolling record. Every attempt gets logged same-day.',
+  defendants:[
+   {name:'Marisa Chen', type:'individual', served:null, answer:null, counsel:null,
+    diligence:[
+     {when:'Jul 11, 2026, 6:50 PM', what:'2nd attempt — evening, lights on, no answer. Photo logged.', ok:false},
+     {when:'Jul 06, 2026, 11:20 AM', what:'1st attempt — Apex Process Servers, wrong apartment number on petition (corrected)', ok:false}],
+    next:'3rd attempt scheduled Jul 15, 2026 (weekend AM). If no service by Jul 25, 2026: motion for alternative service.', reason:'2 failed attempts; wrong apt # on petition (corrected)'}
+  ],
+  discovery:[], depos:[],
+  deadlines:[
+   {date:'Jul 15, 2026', what:'Service attempt #3 — Chen (diligence critical: post-SOL filing)', src:'internal', cite:'tolling: due diligence doctrine', jx:true},
+   {date:'Jul 25, 2026', what:'Decision point: Rule 106 motion if unserved', src:'internal', cite:'TRCP 106(b)', jx:true},
+   {date:'Aug 10, 2026', what:'Docket control order must be FILED — 225th Jud. Dist. 45-day local rule (petition filed Jun 26, 2026; 225th ONLY)', src:'rule', cite:'Bexar Cty. Loc. R., 225th Jud. Dist. (2026 am.) — ATTORNEY-VERIFY', jx:false, countyDco:true},
+  ]},
+ {id:3, client:'Mercado, Felix', dob:'1975-12-03', phone:'(830) 555-0246', email:'felix.m@example.com', lang:'ES',
+  doi:'Jan 30, 2025', cause:'2025-CI-09902', cmName:'Christina', court:'73rd District Court, Bexar County', filed:'May 12, 2025',
+  level:'TRCP 190.4 (Level 3 — by order)', jury:'demanded · fee paid', hb19:'n/a', sol:'2027-01-30', posture:'Trial prep',
+  dco:{signed:'Sep 02, 2025 (amended Apr 14, 2026)', discoveryClose:'Aug 28, 2026', note:'Amended DCO superseded the original — prior dates vacated automatically'},
+  mediation:{deadline:'Aug 15, 2026 (Am. DCO ¶9)', scheduled:{who:'Rebecca Salazar', when:'Aug 06, 2026, 9:00 AM', where:'Salazar ADR — remote option', fee:'$2,400 (split)', prep:'client prep session Jul 30, 2026', position:'position statement due Jul 30, 2026 (template)'}, candidates:[]},
+  trial:{setting:'Nov 16, 2026', settingLabel:'Nov 16, 2026 (jury) — #2 on the docket', mediation:'Aug 06, 2026 — R. Salazar (ordered)', witnesses:'due Sep 17, 2026', exhibits:'due Sep 17, 2026',
+    prep:[['Witness list drafted',true],['Exhibit list w/ objections chart',false],['Depo designations',false],['Expert files complete',true]]},
+  defendants:[
+   {name:'Bluebonnet Paving Co.', type:'commercial', served:'Jun 02, 2025 — certified mail (registered agent)', answer:'Answered Jun 29, 2025',
+    counsel:'Hargrove Adams LLP (S. Adams)', counselPhone:'(210) 555-0850', done:true}
+  ],
+  discovery:[
+   {set:'All written discovery', served:'—', due:'—', status:'answered', note:'complete both sides; supplementation duty continues (TRCP 193.5)'}
+  ],
+  depos:[
+   {who:'P treating physician (Dr. Kwan)', when:'Jul 29, 2026, 9:00 AM', where:'Zoom', status:'confirmed', note:'defense-noticed',
+    checklist:[['Defense notice received',true],['Prep session w/ Michael scheduled (Jul 24, 2026)',true],['Records set pulled for witness review',false],['Zoom logistics confirmed',true]]},
+  ],
+  deadlines:[
+   {date:'Jul 24, 2026', what:'Dr. Kwan depo prep session', src:'internal', cite:'', jx:false},
+   {date:'Jul 29, 2026', what:'Deposition — Dr. Kwan (defense notice)', src:'notice', cite:'TRCP 199', jx:false},
+   {date:'Aug 06, 2026', what:'Mediation — R. Salazar (court-ordered)', src:'court order', cite:'DCO ¶9', jx:true},
+   {date:'Aug 18, 2026', what:'P expert designations (90 days pre-trial — rolls EARLIER, never later)', src:'court order', cite:'TRCP 195.2 / DCO ¶6', jx:true},
+   {date:'Aug 28, 2026', what:'Discovery period closes', src:'court order', cite:'Am. DCO ¶4', jx:true},
+  ]},
+];
+let current=null;
+
+/* pre-suit matters assigned to THIS paralegal where suit needs to be filed */
+const TOFILE=[
+ {client:'Barrera, Luz', doi:'Aug 9, 2024', sol:'2026-08-09', county:'Bexar County', venue:'District Court',
+  defs:['Herrera Trucking LLC','Jorge Herrera (driver)'],
+  reason:'SOL forcing — DINSCO stalling on liability; negotiations dead', petition:'ready for review',
+  next:'To Michael for signature — file NO LATER THAN Jul 27, 2026 (leaves a service buffer before limitations)'},
+ {client:'Okafor, Chidi', doi:'Sep 3, 2024', sol:'2026-09-03', county:'Bexar County', venue:'District Court',
+  reason:'Negotiations failed — final offer rejected Jul 2, 2026; Michael directed suit Jul 8, 2026', petition:'drafting',
+  next:'Petition draft to Michael by Jul 18, 2026'},
+ {client:'Trevino, Marisol (minor)', doi:'May 11, 2025', sol:null, solNote:'ATTORNEY-VERIFY — minor tolling analysis', county:'Bexar County', venue:'District Court',
+  reason:'UM claim — PINSCO breach; treatment complete, demand exhausted', petition:'not started',
+  next:'Attorney conference Jul 16, 2026 — confirm SOL analysis + venue before drafting'},
+];
+
+/* court-scoped local-rule deadline templates — armed the day suit is filed, keyed to the SPECIFIC court assigned */
+const COUNTY_RULES={
+ 'Bexar County':{rules:[{courts:['225th'], days:45, from:'filed', label:'225th 45-day DCO rule', what:'Docket control order must be FILED — 225th Judicial District local rule: 45 days after the petition (225th ONLY, not county-wide)', cite:'Bexar Cty. Loc. R., 225th Jud. Dist. (2026 am.) — ATTORNEY-VERIFY', satisfiedBy:'dco'}]},
+ 'Webb County':{pending:'Calendar-call deadline template NOT LOADED — rule text being verified from the Local Rules of the Courts of Webb County before anything auto-dockets. Until then: calendar Webb deadlines by hand.'},
+};
+function countyOf(c){const m=(c.court||'').match(/,\s*([A-Za-z ]+County)/);return m?m[1]:null}
+function countyRuleLine(c){
+  const co=countyOf(c), cr=co&&COUNTY_RULES[co];
+  if(!cr)return '';
+  if(cr.pending)return `<div class="k">County rules</div><div><span class="badge b-warn">⚠ ${co}</span> <span class="sub2">${cr.pending}</span></div>`;
+  const applicable=cr.rules.filter(r=>!r.courts||r.courts.some(ct=>(c.court||'').includes(ct)));
+  if(!applicable.length)return `<div class="k">County rules</div><div><span class="sub2">no court-specific template for this court (Bexar 45-day DCO rule = 225th only)</span></div>`;
+  const line=applicable.map(r=>{
+    if(r.satisfiedBy==='dco'&&c.dco)return `<span class="badge b-ok">✓ ${r.label} satisfied</span> <span class="sub2">(order signed ${c.dco.signed})</span>`;
+    const due=c.deadlines.find(d=>d.countyDco);
+    return `<span class="badge ${due&&new Date(due.date)<TODAY?'b-crit':'b-warn'}">${r.label}: DCO due ${due?due.date:'— compute from filing'}</span>`;
+  }).join(' ');
+  return `<div class="k">County rules</div><div>${line}</div>`;
+}
+
+function fmt(d){return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function age(dob){const d=new Date(dob);let a=TODAY.getFullYear()-d.getFullYear();if(TODAY<new Date(TODAY.getFullYear(),d.getMonth(),d.getDate()))a--;return a}
+function solDays(iso){return Math.round((new Date(iso)-TODAY)/86400000)}
+function srcTag(s){return s==='court order'?'<span class="co">COURT ORDER</span>':s==='rule'?'<span class="sub2">rule</span>':s==='notice'?'<span class="sub2">notice</span>':'<span class="sub2">internal</span>'}
+function go(v,id){
+  current=id!=null?cases.find(c=>c.id===id):null;
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  const m={dash:'#nav-dash',hz:'#nav-hz',disc:'#nav-disc',svc:'#nav-svc',depo:'#nav-depo',med:'#nav-med',trials:'#nav-trial',act:'#nav-act',tofile:'#nav-file',sol:'#nav-sol',tasks:'#nav-tasks'};
+  const navEl=m[v]&&$(m[v]); if(navEl)navEl.classList.add('on');
+  if(v==='dash')renderDash(); else if(v==='hz')renderHz(); else if(v==='disc')renderDisc();
+  else if(v==='svc')renderService(); else if(v==='depo')renderDepos(); else if(v==='med')renderMed(); else if(v==='trials')renderTrials(); else if(v==='cmv')renderCmView(); else if(v==='act')renderMyActivity();
+  else if(v==='tofile')renderToFile(); else if(v==='sol')renderSolWatch(); else if(v==='tasks')renderMyTasks();
+  else renderDetail();
+}
+function openCase(name){const c=cases.find(x=>x.client===name);if(c)go('detail',c.id);else toast('Not in this mockup’s sample set')}
+function fuQuick(client,cm){
+  toast('Follow-up composer opens (same form as the CM workspace) — routes to CM '+cm+' or to you as primary, the other as backup; call logs to '+client+"'s case");
+}
+
+/* ---------------- dashboard ---------------- */
+function renderDash(){
+  const allDl=cases.flatMap(c=>c.deadlines.map(d=>({...d,client:c.client})));
+  const jx=allDl.filter(d=>d.jx).length;
+  $('#view').innerHTML=`
+  <div class="tiles">
+    <div class="tile"><div class="k">My litigation cases</div><div class="v">${cases.length}</div><div class="sub">of 14 assigned (mockup shows 3)</div></div>
+    <div class="tile crit" style="cursor:pointer" onclick="go('hz')"><div class="k">🛑 Jurisdictional deadlines 45d</div><div class="v">${jx}</div><div class="sub">missable = malpractice</div></div>
+    <div class="tile crit" style="cursor:pointer" onclick="go('tofile')"><div class="k">📁 To be filed</div><div class="v">${TOFILE.length}</div><div class="sub">tightest: Barrera — ${solDays('2026-08-09')}d to SOL</div></div>
+    <div class="tile warn" style="cursor:pointer" onclick="go('svc')"><div class="k">⚠ Unserved defendants</div><div class="v">2</div><div class="sub">1 post-SOL filing — Whitfield</div></div>
+    ${(()=>{const od=cases.flatMap(c=>c.defendants.filter(d=>d.served&&!d.answer&&d.answerDue&&new Date(d.answerDue)<TODAY).map(d=>({c,d})));
+      return od.length?`<div class="tile crit" style="cursor:pointer" onclick="go('detail',${od[0].c.id})"><div class="k">🔔 ANSWERS OVERDUE</div><div class="v">${od.length}</div><div class="sub">${od[0].d.name.split(' (')[0]} — due ${od[0].d.answerDue} · default window</div></div>`:''})()}
+    <div class="tile warn" style="cursor:pointer" onclick="go('disc')"><div class="k">⚠ Deficiency chases</div><div class="v">1</div><div class="sub">MTC draft due Jul 17, 2026</div></div>
+    <div class="tile" style="cursor:pointer" onclick="go('depo')"><div class="k">Depositions 30d</div><div class="v">3</div><div class="sub">next: Voss — Jul 20, 2026</div></div>
+  </div>
+  <div class="panel">
+    <h2>My Litigation Cases</h2>
+    <table>
+      <thead><tr><th>Client</th><th>Cause / court</th><th>Posture</th><th>Service</th><th>Discovery</th><th>Next deadline</th><th>SOL</th></tr></thead>
+      <tbody>
+      ${cases.map(c=>{
+        const unserved=c.defendants.filter(d=>!d.served).length;
+        const defic=c.discovery.filter(d=>d.status==='deficient').length;
+        const next=c.deadlines[0];
+        const sd=solDays(c.sol);
+        return `<tr class="row" onclick="go('detail',${c.id})">
+        <td><div class="name">${c.client} ${c.plaintiffs&&c.plaintiffs.length>1?`<span class="badge b-info" title="${c.plaintiffs.map(p=>p.name).join(' + ')} — one cause number, per-plaintiff damages">👪 ${c.plaintiffs.length} plaintiffs</span>`:''}</div><div class="sub2">${c.lang==='ES'?'Spanish':'English'} · CM ${c.cmName} · PL you</div></td>
+        <td><div>${c.cause}</div><div class="sub2">${c.court}</div></td>
+        <td><span class="badge b-info">${c.posture}</span></td>
+        <td>${unserved?`<span class="badge b-crit">⚠ ${unserved} unserved</span>`:'<span class="badge b-ok">✔ all served</span>'}</td>
+        <td>${defic?`<span class="badge b-ser">${defic} deficient</span>`:c.discovery.length?'<span class="badge b-ok">current</span>':'<span class="badge b-na">—</span>'}</td>
+        <td>${next?`<b>${next.date}</b> ${next.jx?'<span class="jx">JX</span>':''} <span class="sub2">${next.what.slice(0,38)}${next.what.length>38?'…':''}</span>`:'—'}</td>
+        <td>${sd<0?'<span class="badge b-na" title="Suit filed — limitations satisfied by filing">filed pre-SOL</span>':sd<120?`<span class="badge b-crit">${sd}d</span>`:`<span class="badge b-na">${sd}d</span>`}</td>
+      </tr>`}).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* ---------------- deadline horizon ---------------- */
+function renderHz(){
+  const rows=cases.flatMap(c=>c.deadlines.map(d=>({...d,client:c.client,cause:c.cause})))
+    .sort((a,b)=>new Date(a.date)-new Date(b.date));
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Deadline Horizon — next 45 days, all my cases · <span class="jx">JX</span> = jurisdictional / missable · <span class="co">COURT ORDER</span> supersedes rule defaults</h2>
+    <div class="sub2" style="margin:-4px 0 8px">📅 Mirrored to the firm calendar (Outlook / Google) automatically. Overdue items stay pinned red at the top until resolved — they never age off silently.</div>
+    <table>
+      <thead><tr><th>Date</th><th>Deadline</th><th>Case</th><th>Source</th><th>Citation</th></tr></thead>
+      <tbody>
+      ${rows.map(d=>`<tr${new Date(d.date)<TODAY?' style="background:#fbe3e3"':''}>
+        <td><b>${d.date}</b>${new Date(d.date)<TODAY?'<div><span class="badge b-crit">OVERDUE</span></div>':''}</td>
+        <td>${d.jx?'<span class="jx">JX</span> ':''}${d.what}</td>
+        <td><a class="caselink" onclick="openCase('${d.client}')">${d.client}</a> <span class="sub2">${d.cause}</span></td>
+        <td>${srcTag(d.src)}</td>
+        <td class="cite">${d.cite}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Every seeded rule is <b>attorney-verify-before-reliance</b> (18.001 anchor under HB 4595 flagged for Michael). Backward-counted deadlines (expert designations, MSJ responses) roll EARLIER, never later. County holiday calendars must be loaded before trusting any rolled date.</div>`;
+}
+
+/* ---------------- TO BE FILED queue ---------------- */
+function petBadge(p){return p==='ready for review'?'<span class="badge b-warn">ready — awaiting Michael</span>':p==='drafting'?'<span class="badge b-info">drafting</span>':p==='approved'?'<span class="badge b-ok">approved — FILE IT</span>':'<span class="badge b-na">not started</span>'}
+function renderToFile(){
+  const rows=TOFILE.map(t=>({...t,days:t.sol?solDays(t.sol):null}))
+    .sort((a,b)=>(a.days??9999)-(b.days??9999));
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>To Be Filed — suit needed, tightest limitations first <span class="sub2">(pre-suit matters assigned to you where filing is the next move)</span></h2>
+    <table>
+      <thead><tr><th>Client / DOI</th><th>SOL</th><th>Why we're filing</th><th>Petition</th><th>Next action</th><th></th></tr></thead>
+      <tbody>
+      ${rows.map((t,i)=>`<tr${t.days!==null&&t.days<45?' style="background:#fbe3e3"':''}>
+        <td><div class="name"><a class="caselink" onclick="openCase('${t.client}')">${t.client}</a></div><div class="sub2">DOI ${t.doi} · ${t.county}</div></td>
+        <td>${t.days!==null?`<span class="badge ${t.days<45?'b-crit':t.days<90?'b-ser':'b-na'}">${t.days}d</span><div class="sub2">${fmt(t.sol)}</div>`:`<span class="badge b-warn">⚠ verify</span><div class="sub2">${t.solNote}</div>`}</td>
+        <td style="font-size:12.5px">${t.reason}</td>
+        <td>${petBadge(t.petition)}</td>
+        <td style="font-size:12.5px"><b>${t.next}</b></td>
+        <td>${t.filedDone?'<span class="badge b-ok">✓ filed — chain running</span>':`<button class="ghost" onclick="tofileFiled('${t.client.replace(/'/g,"\\'")}')">✓ FILED — enter it</button>`}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Petition workflow: <b>not started → drafting → ready for review → approved by Michael → FILED</b>. Red rows are inside 45 days of limitations — filing date must leave a SERVICE buffer (a petition filed at the wire makes the diligence log the whole case, like Whitfield). A filed case leaves this queue automatically and appears in My Cases / Service Incomplete.</div>`;
+}
+
+/* filing starts ONE SERVICE CHAIN PER DEFENDANT — the coverage board below guarantees none is missed */
+let CHAINCASES=[];   // {client, defs[]} — the roster the coverage board audits against
+function tofileFiled(client){
+  const t=TOFILE.find(x=>x.client===client);
+  if(!t)return;
+  t.filedDone=true;
+  const defs=t.defs||[t.def||'defendant (per petition)'];
+  CHAINCASES.push({client:t.client, defs:[...defs]});
+  defs.forEach(def=>PTASKS.unshift(chainTask(1,def,t.client,'Jul 14, 2026')));
+  PACT.unshift({when:'Jul 13, 2026, now',client:t.client,what:'Case FILED — '+defs.length+' service chain(s) started, one per defendant: '+defs.join(' · ')});
+  renderToFile();
+  toast('Filed ✓ — '+defs.length+' SERVICE CHAINS running, one per defendant ('+defs.join(', ')+'). Each defendant advances independently; the coverage board in My Tasks flags any defendant whose chain stalls or was never started.');
+}
+/* per-case defendant coverage board — the multi-defendant thoroughness guarantee */
+const CHAIN_STEPS={1:'request citation',2:'confirm citation received',3:'forward to process server',4:'process-server follow-up',6:'awaiting answer (served ✓)'};
+function chainBoard(){
+  if(!CHAINCASES.length)return '';
+  return CHAINCASES.map(cc=>{
+    const rows=cc.defs.map(def=>{
+      const open=PTASKS.find(t=>t.chain==='service'&&t.def===def&&!t.done);
+      const doneSteps=PTASKS.filter(t=>t.chain==='service'&&t.def===def&&t.done).map(t=>t.step);
+      let badge,note;
+      if(open){badge=`<span class="badge ${open.step===4?'b-warn':'b-info'}">step ${open.step===6?5:open.step} of 5 — ${CHAIN_STEPS[open.step]}${open.attempt?` #${open.attempt}`:''}</span>`;note='due '+open.due;}
+      else if(doneSteps.includes(6)){badge='<span class="badge b-ok">✓ served & answered — chain complete</span>';note='';}
+      else if(doneSteps.length){badge='<span class="badge b-crit">⚠ CHAIN STALLED — last completed step '+Math.max(...doneSteps)+', nothing pending</span>';note='restart the next link';}
+      else{badge='<span class="badge b-crit">🛑 NO CHAIN — citation never requested</span>';note='';}
+      return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;font-size:12.5px"><span style="min-width:220px">${def}</span>${badge}<span class="sub2">${note}</span>
+        ${(!open&&!doneSteps.includes(6))?`<button class="ghost" style="padding:2px 8px;font-size:11.5px" onclick="PTASKS.unshift(chainTask(${doneSteps.length?Math.min(Math.max(...doneSteps)+1,4):1},'${def.replace(/'/g,"\\'")}','${cc.client.replace(/'/g,"\\'")}','Jul 14, 2026'));renderMyTasks();toast('Chain link generated for ${def.replace(/'/g,"\\'")}')">▶ start next link</button>`:''}
+      </div>`;
+    }).join('');
+    const covered=cc.defs.every(def=>PTASKS.some(t=>t.chain==='service'&&t.def===def));
+    return `<div style="background:var(--page);border:1px solid ${covered?'var(--grid)':'#e8b8b8'};border-radius:10px;padding:10px 12px;margin:8px 0">
+      <b style="font-size:12.5px">Service coverage — <a class="caselink" onclick="openCase('${cc.client.replace(/'/g,"\\'")}')">${cc.client}</a></b>
+      <span class="sub2">· ${cc.defs.length} defendant(s), one chain each — every defendant must reach ✓</span>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- SOL WATCHLIST (assigned cases) ---------------- */
+function renderSolWatch(){
+  const pre=TOFILE.map(t=>({client:t.client,doi:t.doi,sol:t.sol,solNote:t.solNote,days:t.sol?solDays(t.sol):null,filed:null,risk:t.reason,link:false}));
+  // a filed case STAYS on the watchlist as long as ANY defendant remains unserved — it clears only when the last one is served
+  const lit=cases.filter(c=>c.defendants.some(d=>!d.served)).map(c=>({client:c.client,doi:c.doi,sol:c.sol,days:solDays(c.sol),filed:c.filed,id:c.id,link:true,
+    risk:'FILED — but '+c.defendants.filter(d=>!d.served).length+' of '+c.defendants.length+' defendant(s) UNSERVED: limitations only tolls with due diligence; the attempt log is the record'}));
+  const cleared=cases.filter(c=>c.defendants.length&&c.defendants.every(d=>d.served));
+  const rows=[...pre,...lit].sort((a,b)=>{const av=a.filed?(a.days??9999)+100000:(a.days??-1),bv=b.filed?(b.days??9999)+100000:(b.days??-1);return av-bv});
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>SOL Watchlist — every case assigned to you, riskiest first <span class="sub2">(unfiled matters float to the top; filed-but-unserved stays hot)</span></h2>
+    <table>
+      <thead><tr><th>Client / DOI</th><th>Limitations</th><th>Filed?</th><th>Risk posture</th></tr></thead>
+      <tbody>
+      ${rows.map(r=>{
+        const crit=!r.filed&&(r.days===null||r.days<60);
+        return `<tr${crit?' style="background:#fbe3e3"':''}>
+        <td><div class="name"><a class="caselink" onclick="${r.link?`go('detail',${r.id})`:`openCase('${r.client}')`}">${r.client}</a></div><div class="sub2">DOI ${r.doi}</div></td>
+        <td>${r.days===null?`<span class="badge b-warn">⚠ ATTORNEY-VERIFY</span><div class="sub2">${r.solNote||''}</div>`:`<span class="badge ${r.days<0?'b-na':r.days<60?'b-crit':r.days<120?'b-ser':'b-na'}">${r.days<0?'passed '+fmt(r.sol):r.days+'d — '+fmt(r.sol)}</span>`}</td>
+        <td>${r.filed?`<span class="badge b-ok">✓ filed ${r.filed}</span>`:'<span class="badge b-crit">NOT FILED</span>'}</td>
+        <td style="font-size:12.5px">${r.risk}</td>
+      </tr>`}).join('')}
+      ${rows.length?'':'<tr><td colspan="4" class="sub2" style="padding:16px">Nothing on watch — everything assigned to you is filed and fully served 🎉</td></tr>'}
+      </tbody>
+    </table>
+    ${cleared.length?`<div style="margin-top:10px;padding:8px 12px;background:var(--page);border:1px solid var(--grid);border-radius:8px;font-size:12.5px">
+      <b>✓ Cleared — off watch (${cleared.length})</b> <span class="sub2">filed AND every defendant served; a case returns to the watchlist automatically if a new defendant is added unserved</span><br>
+      ${cleared.map(c=>`<a class="caselink" onclick="go('detail',${c.id})">${c.client}</a> <span class="sub2">— filed ${c.filed}, ${c.defendants.length}/${c.defendants.length} served</span>`).join(' · ')}
+    </div>`:''}
+  </div>
+  <div class="note-callout">SOL dates come from <b>core.compute_pi_sol</b> — every seeded rule is attorney-verify-before-reliance; minors, wrongful death, and claims against governmental units (notice deadlines!) NEVER trust the 2-year default. <b>A case stays on this watchlist until the LAST defendant is served</b> — filing alone satisfies limitations only if service follows with due diligence, so filed-but-unserved never drops off.</div>`;
+}
+
+/* ---------------- SERVICE INCOMPLETE queue ---------------- */
+function renderService(){
+  const rows=cases.flatMap(c=>c.defendants.filter(d=>!d.served).map(d=>({c,d})));
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Service Incomplete — every unserved defendant, why, and what happens next</h2>
+    <table>
+      <thead><tr><th>Case</th><th>Defendant</th><th>Filed</th><th>Attempts</th><th>Why incomplete</th><th>Next step</th></tr></thead>
+      <tbody>
+      ${rows.map(({c,d})=>`<tr>
+        <td><a class="caselink" onclick="openCase('${c.client}')">${c.client}</a><div class="sub2">${c.cause}</div>
+          ${c.solNote?'<span class="badge b-crit">⚠ filed near SOL — diligence critical</span>':''}</td>
+        <td class="name">${d.name}<div class="sub2">${d.type}</div></td>
+        <td class="sub2">${c.filed}</td>
+        <td><b>${d.diligence.length}</b><div class="sub2">last: ${d.diligence[0].when.split(',').slice(0,2).join(',')}</div></td>
+        <td style="font-size:12.5px">${d.reason}</td>
+        <td style="font-size:12.5px"><b>${d.next}</b>
+          <div style="margin-top:4px"><button class="ghost" onclick="go('detail',${c.id});setTimeout(()=>attOpen(${c.defendants.indexOf(d)}),0)">+ log attempt</button></div></td>
+      </tr>`).join('')}
+      ${rows.length?'':'<tr><td colspan="6" class="sub2" style="padding:16px">All defendants served 🎉</td></tr>'}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">The attempt-by-attempt diligence log on each case IS the tolling record — log every attempt same-day. Rows filed near limitations sort to the top in the real build.</div>`;
+}
+
+/* ---------------- DEPOSITIONS queue ---------------- */
+let depoOpen=null;
+function renderDepos(){
+  const rows=cases.flatMap(c=>c.depos.map((d,i)=>({c,d,key:c.id+'-'+i})));
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Depositions — scheduling first, then readiness. A depo is READY only when its checklist is complete.</h2>
+    <table>
+      <thead><tr><th>Witness</th><th>Case</th><th>When / where</th><th>Stage</th><th>Readiness</th></tr></thead>
+      <tbody>
+      ${rows.map(({c,d,key})=>{
+        const done=(d.checklist||[]).filter(x=>x[1]).length, total=(d.checklist||[]).length;
+        const ready=total&&done===total;
+        return `<tr>
+        <td class="name">${d.who}</td>
+        <td><a class="caselink" onclick="openCase('${c.client}')">${c.client}</a><div class="sub2">${c.cause}</div></td>
+        <td>${d.when}<div class="sub2">${d.where!=='—'?d.where:''} ${d.note}</div></td>
+        <td>${d.status==='scheduling'?'<span class="badge b-warn">scheduling</span>':ready?'<span class="badge b-ok">READY</span>':'<span class="badge b-ser">confirmed — NOT ready</span>'}</td>
+        <td><a class="caselink" style="font-size:12.5px" onclick="depoOpen=depoOpen==='${key}'?null:'${key}';renderDepos()">${done}/${total} ${depoOpen===key?'▾':'▸'}</a></td>
+      </tr>${depoOpen===key?`<tr><td colspan="5" style="background:var(--page)">
+        ${(d.checklist||[]).map(([t,dn],ci)=>`<div class="evt" style="font-size:12.5px"><span class="tick ${dn?'y':''}" style="${dn?'':'background:#fbe3e3;color:#8f1f1f'};width:16px;height:16px;cursor:pointer" onclick="toggleDepoItem('${key}',${ci})">${dn?'✓':'✕'}</span> ${t}</div>`).join('')}
+      </td></tr>`:''}`}).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Lifecycle: contemplated → scheduling → confirmed → READY (checklist complete) → taken → errata (20 days). The errata clock starts automatically when the transcript arrives.</div>`;
+}
+function toggleDepoItem(key,ci){
+  const [cid,di]=key.split('-').map(Number);
+  const d=cases.find(x=>x.id===cid).depos[di];
+  d.checklist[ci][1]=!d.checklist[ci][1];
+  renderDepos();
+  toast('Checklist updated — READY badge flips only when every item is done');
+}
+
+/* ---------------- WRITTEN DISCOVERY queue ---------------- */
+function renderDisc(){
+  const ours=cases.flatMap(c=>c.discovery.filter(d=>d.status==='due').map(d=>({c,d})));
+  const theirs=cases.flatMap(c=>c.discovery.filter(d=>d.status==='deficient').map(d=>({c,d})));
+  const section=(title,rows,cls)=>`
+  <div class="panel">
+    <h2>${title}</h2>
+    <table><thead><tr><th>Set</th><th>Case</th><th>Served</th><th>Due</th><th>Status / pipeline</th></tr></thead><tbody>
+    ${rows.map(({c,d})=>`<tr>
+      <td class="name">${d.set}<div class="sub2">${d.note}</div></td>
+      <td><a class="caselink" onclick="openCase('${c.client}')">${c.client}</a></td>
+      <td class="sub2">${d.served}</td><td><b>${d.due}</b></td>
+      <td style="font-size:12.5px">${d.pipeline?`<span class="badge b-ser">deficient</span><div style="color:#9a4218;margin-top:2px"><b>${d.pipeline}</b></div>`:`<span class="badge ${cls}">response due</span>`}</td>
+    </tr>`).join('')||'<tr><td colspan="5" class="sub2" style="padding:14px">Nothing pending 🎉</td></tr>'}
+    </tbody></table>
+  </div>`;
+  $('#view').innerHTML =
+    section('OUR responses due — what we owe them', ours, 'b-warn') +
+    section('THEIR responses deficient — the chase pipeline', theirs, 'b-ser') +
+    `<div class="note-callout">Pipeline: deficient → deficiency letter → conferral → motion to compel → ruling. "Will supplement" promises carry a staleness clock (92 days on Kestrel RFP 14).</div>`;
+}
+
+/* ---------------- MEDIATIONS queue ---------------- */
+function renderMed(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Mediations Pending — one row per case, stage at a glance</h2>
+    <table>
+      <thead><tr><th>Case</th><th>Deadline</th><th>Stage</th><th>Mediator / candidates</th><th>Next action</th></tr></thead>
+      <tbody>
+      ${cases.map(c=>{
+        const M=c.mediation;
+        let stage,who,next;
+        if(!M){stage='<span class="badge b-na">no DCO yet</span>';who='—';next=`<button class="ghost" onclick="event.stopPropagation();go('detail',${c.id});setTimeout(()=>startEarlyMediation(),0)">⚡ Start early mediation</button> <span class="sub2">if the parties want to mediate pre-DCO</span>`;}
+        else if(M.scheduled){stage='<span class="badge b-ok">scheduled</span>';who='<b>'+M.scheduled.who+'</b> · '+M.scheduled.when;next=M.scheduled.prep;}
+        else{const agreed=M.candidates.filter(k=>k.agreed).length;
+          const resp=M.candidates.filter(k=>k.response).length;
+          stage=resp?'<span class="badge b-info">dates received</span>':agreed?'<span class="badge b-warn">availability out</span>':'<span class="badge b-warn">selecting candidates</span>';
+          who=M.candidates.map(k=>k.name+(k.agreed?' ✔':' (pending)')).join('<br>');
+          next=resp?'pick a date & confirm — availability on file':'chase agreement / send availability emails';}
+        return `<tr>
+        <td><a class="caselink" onclick="openCase('${c.client}')">${c.client}</a><div class="sub2">${c.cause}</div></td>
+        <td>${M?(M.early?'<span class="badge b-info">⚡ voluntary (early)</span>':`<b>${M.deadline.split(' (')[0]}</b><div class="sub2">${M.deadline.includes('DCO')?'court-ordered':''}</div>`):'—'}</td>
+        <td>${stage}</td>
+        <td style="font-size:12.5px">${who}</td>
+        <td style="font-size:12.5px">${next}</td>
+      </tr>`}).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Mediator intelligence (which mediators each carrier uses, and which defense firms agree to whom) shows on the case page's candidate cards — and feeds from every case firm-wide.</div>`;
+}
+
+/* ---------------- mediation ---------------- */
+function intelLine(name){
+  const I=MEDIATOR_INTEL[name];
+  if(!I||( !I.carriers.length&&!I.firms.length))return '<span class="sub2">no firm history with this mediator yet</span>';
+  const carr=I.carriers.map(x=>{
+    const low=x.n>=3&&x.s/x.n<0.4;
+    return `🏢 ${x.c}: ${x.n} mediations, ${x.s} settled${low?' <span class="badge b-ser">low settle rate w/ this carrier</span>':''}`;}).join(' · ');
+  const firms=I.firms.map(x=>`🤝 ${x.f} agreed ${x.a}×`).join(' · ');
+  return `<span class="sub2">${[carr,firms].filter(Boolean).join('<br>')}</span>`;
+}
+function renderMediation(c){
+  if(!c.mediation)return `<div class="card" style="padding:10px 16px"><h3 style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mediation <span class="sub2">— normally commences at the DCO mediation deadline; none yet</span>
+    <button class="ghost" style="margin-left:auto" onclick="startEarlyMediation()">⚡ Start early mediation</button></h3>
+    <div class="sub2" style="margin-top:4px">Override for when the attorneys/adjuster want to mediate before a scheduling order exists — pre-suit or early in litigation. Creates a voluntary (non-court-ordered) mediation with the full candidate → availability → schedule flow.</div></div>`;
+  const M=c.mediation;
+  if(M.scheduled)return `<div class="card"><h3>Mediation <span class="badge b-ok">scheduled</span> ${M.early?'<span class="badge b-info">⚡ EARLY — voluntary</span>':''} <span class="sub2">${M.early?'voluntary — no court deadline':'deadline '+M.deadline}</span></h3>
+    <div class="kv">
+      <div class="k">Mediator</div><div><b>${M.scheduled.who}</b><br>${intelLine(M.scheduled.who)}</div>
+      <div class="k">When / where</div><div>${M.scheduled.when} · ${M.scheduled.where}</div>
+      <div class="k">Fee</div><div>${M.scheduled.fee}</div>
+      <div class="k">Prep</div><div>${M.scheduled.prep} · ${M.scheduled.position}</div>
+    </div></div>`;
+  return `<div class="card"><h3>Mediation <span class="badge b-warn">selecting mediator</span> ${M.early?'<span class="badge b-info">⚡ EARLY — voluntary, pre-DCO</span>':''} <span class="sub2">${M.early?'no court deadline — parties agreed to mediate early':'deadline '+M.deadline}</span></h3>
+    ${M.candidates.map((k,i)=>`<div class="defbox">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <b>${k.name}</b> <span class="sub2">proposed by ${k.by}</span>
+        ${k.agreed?'<span class="badge b-ok">✔ agreed by both sides</span>':'<span class="badge b-warn">agreement pending</span>'}
+        ${k.requested?`<span class="badge b-info">availability requested ${k.requested}</span>`:''}
+      </div>
+      <div style="margin:4px 0">${intelLine(k.name)}</div>
+      ${k.response?`<div style="font-size:12.5px">📅 <b>${k.response}</b></div>`:''}
+      <div style="display:flex;gap:6px;margin-top:6px">
+        ${k.agreed&&!k.requested?`<button class="ghost" onclick="requestAvail(${i})">📧 Request availability</button>`:''}
+        ${k.response?`<button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="selectMediator(${i})">Select & schedule</button>`:''}
+        ${!k.agreed?`<button class="ghost" onclick="current.mediation.candidates[${i}].agreed=true;renderDetail();toast('Marked agreed — availability request now available')">Mark agreed</button>`:''}
+      </div>
+    </div>`).join('')}
+    <div class="sub2"><a class="caselink" style="font-weight:400;font-size:12px" onclick="toast('Mockup: adds a candidate — mediator picked from contacts or entered new')">+ add candidate</a></div>
+  </div>`;
+}
+function startEarlyMediation(){
+  current.mediation={deadline:'voluntary (early)', early:true, scheduled:null, candidates:[
+    {name:'Rebecca Salazar', by:'joint', agreed:false, requested:null, response:null}]};
+  renderDetail();
+  toast('Early mediation opened — voluntary (court_ordered = false). Candidate flow, availability emails, and prep tasks all work exactly the same.');
+}
+function requestAvail(i){
+  const k=current.mediation.candidates[i];
+  k.requested='Jul 13, 2026';
+  renderDetail();
+  toast('Availability email generated from template (email_mediator_availability) — merge fields filled, logged to the generation log + communication log');
+}
+function selectMediator(i){
+  const k=current.mediation.candidates[i];
+  current.mediation.scheduled={who:k.name, when:'(pick from '+k.response.replace('offered ','')+')', where:'TBD', fee:'TBD (split)', prep:'schedule client prep', position:'position statement due 7 days prior'};
+  renderDetail();
+  toast(k.name+' selected — litigation.mediation updated; calendar + prep tasks generate from the mediation date');
+}
+/* ---------------- case timeline — pizza-tracker for litigation ---------------- */
+function tlNodes(c){
+  const N=[];
+  const dn=n=>n.split(' (')[0];
+  const allServed=c.defendants.length&&c.defendants.every(d=>d.served);
+  const allAns=c.defendants.length&&c.defendants.every(d=>d.answer);
+  const anyOverdue=c.defendants.some(d=>d.served&&!d.answer&&d.answerDue&&new Date(d.answerDue)<TODAY);
+  N.push({l:'Suit filed',s:'done',d:c.filed+' · jury demand + fee'});
+  N.push({l:'Citation issued',s:'done',d:'requested & issued at filing'});
+  N.push({l:'Service',s:allServed?'done':'warn',d:c.defendants.map(d=>d.served?'✓ '+dn(d.name):'⚠ '+dn(d.name)+(d.diligence?' — '+d.diligence.length+' attempts':'')).join(' · ')});
+  N.push({l:'Returns on file',s:allServed?'done':'future',d:'TRCP 107(h): on file 10 days before any default'});
+  N.push({l:'Answers',s:allAns?'done':anyOverdue?'crit':(c.defendants.some(d=>d.answer)?'warn':'future'),
+    d:c.defendants.map(d=>d.answer?'✓ '+dn(d.name):d.served?(d.answerDue&&new Date(d.answerDue)<TODAY?'🔔 '+dn(d.name)+' OVERDUE — default?':dn(d.name)+' due '+(d.answerDue||'TRCP 99')):dn(d.name)+' — awaiting service').join(' · ')});
+  N.push({l:'Scheduling order',s:c.dco?'done':'warn',d:c.dco?'signed '+c.dco.signed:(c.court||'').includes('225th')?'225th rule: due 45d after petition':'none yet — rule deadlines control'});
+  const discRow=c.deadlines.find(d=>/Initial disclosures/.test(d.what));
+  N.push({l:'Initial disclosures',s:discRow?(new Date(discRow.date)<TODAY?'crit':'now'):allAns?'done':'future',d:discRow?'due '+discRow.date+' (194.2(a))':allAns?'✓ exchanged':'30d after first answer'});
+  const disc=c.discovery||[], defic=disc.filter(x=>x.status==='deficient').length;
+  N.push({l:'Discovery served',s:disc.length?'done':'future',d:disc.length?disc.length+' sets in play':'ROGs · RFPs · RFAs after disclosures'});
+  N.push({l:'Responses in',s:disc.length?(disc.every(x=>x.status==='answered')?'done':defic?'warn':'now'):'future',d:defic?defic+' set(s) DEFICIENT':disc.length?'tracking due dates':'—'});
+  N.push({l:'10-day letter / MTC',s:defic?'warn':'future',d:defic?'letter → conferral → MOTION TO COMPEL':'only if responses deficient'});
+  const e18=c.deadlines.find(d=>d.e18);
+  N.push({l:'§ 18.001 affidavits',s:e18?(new Date(e18.date)<TODAY?'crit':'now'):'done',d:e18?'serve by '+e18.date:'no open affidavit clock'});
+  const exp=c.deadlines.find(d=>/expert/i.test(d.what));
+  N.push({l:'Experts',s:exp?'now':'future',d:exp?'designations '+exp.date:'needed? P/D designations + challenges'});
+  const taken=(c.depos||[]).length;
+  N.push({l:'Depositions',s:taken?'now':'future',d:taken?taken+' in play (client · Def · corp rep · treaters)':'client · Def driver · corp rep · treaters'});
+  const msj=c.deadlines.find(d=>/MSJ|Dispositive/i.test(d.what));
+  N.push({l:'Dispositive motions',s:msj?'now':'future',d:msj?'deadline '+msj.date:'window set by DCO'});
+  const M=c.mediation;
+  N.push({l:'Mediation',s:M?(M.scheduled?'done':'now'):'future',d:M?(M.scheduled?'✓ '+M.scheduled.who+' — '+M.scheduled.when:(M.early?'⚡ voluntary — selecting':'selecting · deadline '+M.deadline.split(' (')[0])):'commences at DCO deadline (or ⚡ early)'});
+  const pt=c.deadlines.find(d=>/witness|exhibit|limine/i.test(d.what));
+  N.push({l:'Pretrial',s:pt?'now':'future',d:pt?pt.what.slice(0,34)+' — '+pt.date:'lists · limine · docket call'});
+  N.push({l:'Trial',s:'future',d:c.trial?c.trial.settingLabel||c.trial.setting:'not set'});
+  // first non-done node = YOU ARE HERE
+  const cur=N.findIndex(n=>n.s!=='done');
+  if(cur>-1)N[cur].here=true;
+  return N;
+}
+/* timeline node → jump to the section it describes (universal rule: no dead-end status) */
+const PL_JUMP={
+ 'Suit filed':'Court case','Citation issued':'Defendants','Service':'Defendants','Returns on file':'Defendants',
+ 'Answers':'Defendants','Scheduling order':'Court case','Initial disclosures':'Deadlines',
+ 'Discovery served':'Written discovery','Responses in':'Written discovery','10-day letter / MTC':'Written discovery',
+ '§ 18.001 affidavits':'Deadlines','Experts':'Deadlines','Depositions':'Depositions',
+ 'Dispositive motions':'Deadlines','Mediation':'Mediation','Pretrial':'Deadlines','Trial':'Court case'};
+function plJump(label){
+  const key=PL_JUMP[label]||label;
+  const cards=[...document.querySelectorAll('#view .cols .card')];
+  const t=cards.find(cd=>{const h=cd.querySelector('h3');return h&&h.innerText.toUpperCase().startsWith(key.toUpperCase())});
+  if(!t){toast('No '+key+' section on this case yet — the timeline shows why');return}
+  t.scrollIntoView({behavior:'smooth',block:'start'});
+  t.classList.add('jump-flash');
+  setTimeout(()=>t.classList.remove('jump-flash'),1600);
+}
+function renderTimeline(c){
+  const icon={done:'✓',now:'●',warn:'!',crit:'🔔',future:'○'};
+  return `<div class="card" style="padding:12px 14px">
+    <h3 style="margin:0 0 6px">Case timeline <span class="sub2">— where this case is, pizza-tracker style; every node is driven by the real record, nothing is hand-set</span></h3>
+    <div class="tl-wrap">
+      ${tlNodes(c).map(n=>`<div class="tl-node tl-${n.s}" style="cursor:pointer" title="Click to jump to the ${n.l} section" onclick="plJump('${n.l.replace(/'/g,"\\'")}')">${n.here?'<span class="tl-here">YOU ARE HERE</span>':''}<span class="tl-dot">${icon[n.s]||'○'}</span><div class="tl-lab">${n.l}</div><div class="tl-sub">${n.d}</div></div>`).join('')}
+    </div>
+    <div class="sub2" style="margin-top:6px">💰 Settlement is an exit ramp at EVERY node → release → dismissal → liens & disbursement. A blown answer deadline branches to the default-judgment track. Supplementation duty (TRCP 193.5) runs the whole way.</div>
+  </div>`;
+}
+
+/* ---------------- service & answer entry (auto-calendaring) ---------------- */
+const fmtI=iso=>new Date(iso+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+function tr99(iso){ // Monday next after expiration of 20 days from service — TRCP 99
+  const d=new Date(iso+'T12:00'); d.setDate(d.getDate()+20);
+  const add=(8-d.getDay())%7||7; d.setDate(d.getDate()+add); return d;
+}
+function ord(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
+function fmtT(t){if(!t)return null;const[h,m]=t.split(':').map(Number);const ap=h>=12?'PM':'AM';return ((h%12)||12)+':'+String(m).padStart(2,'0')+' '+ap}
+function attOpen(i){current.defendants[i].attOpen=true;renderDetail();}
+function attFormHtml(i){
+  const d=current.defendants[i];
+  return `<div class="dform">
+    <h4>Log service attempt #${d.diligence.length+1} — ${d.name} <span class="sub2">(litigation.service_attempt — this row goes straight into the tolling record)</span></h4>
+    <div class="dfrow wide"><span>Date* / time*</span><span style="display:flex;gap:8px"><input type="date" id="at-date"><input type="time" id="at-time" style="border:1px solid var(--grid);border-radius:6px;padding:5px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)"></span></div>
+    <div class="dfrow wide"><span>Address attempted*</span><input type="text" id="at-addr" placeholder="street address where service was attempted"></div>
+    <div class="dfrow wide"><span>Attempted by*</span><input type="text" id="at-by" placeholder="e.g. Bexar Constable Pct 1 / Apex Process Servers (name)"></div>
+    <div class="dfrow wide"><span>Outcome*</span><select id="at-out" style="border:1px solid var(--grid);border-radius:6px;padding:5px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)">
+      <option>no answer</option><option>not at address — may have moved</option><option>bad address</option><option>evading — refused / avoided</option><option>spoke to occupant — defendant not present</option><option>gated / no access</option><option value="served">✓ SERVED — successful</option></select></div>
+    <div class="dfrow wide"><span>What happened*</span><input type="text" id="at-what" placeholder="detail — 'lights on, truck in driveway, no answer; notice left' (a reviewing judge reads THIS)"></div>
+    <div class="dfrow wide"><span></span><label class="sub2" style="font-size:12px"><input type="checkbox" id="at-photo"> Photo / evidence saved to the file <span class="sub2">(photos, GPS stamp, server's field notes — makes the affidavit bulletproof)</span></label></div>
+    <div class="dfrow wide"><span>Next step planned</span><input type="text" id="at-next" placeholder="e.g. 5th attempt Sat AM; if unserved by Jul 25, 2026 → Rule 106 motion (updates the case's next-step line)"></div>
+    <div class="note-callout" style="margin-top:6px">Log attempts <b>same-day, every time</b> — on a near-SOL filing this log IS the due-diligence tolling record, and it doubles as the exhibit to a Rule 106 motion for substituted service. If the outcome was SERVED, this form hands off to the return-of-service entry so the answer deadline gets computed and calendared.</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="attSave(${i})">Log attempt</button>
+      <button class="ghost" onclick="current.defendants[${i}].attOpen=false;renderDetail()">Cancel</button>
+    </div>
+  </div>`;
+}
+function attSave(i){
+  const c=current, d=c.defendants[i];
+  const dt=document.getElementById('at-date').value, tm=document.getElementById('at-time').value;
+  const addr=document.getElementById('at-addr').value.trim(), by=document.getElementById('at-by').value.trim();
+  const what=document.getElementById('at-what').value.trim(), out=document.getElementById('at-out').value;
+  if(!dt||!tm){toast('Date and time of the attempt are required — the tolling record needs both');return}
+  if(!addr||!by||!what){toast('Address, who attempted, and what happened are all required — this row is the tolling record');return}
+  if(out==='served'){
+    d.attOpen=false; d.svcOpen=true; renderDetail();
+    toast('Success — now enter the return of service so the TRCP 99 answer deadline computes and calendars');
+    return;
+  }
+  const n=d.diligence.length+1;
+  const photo=document.getElementById('at-photo').checked;
+  d.diligence.unshift({when:fmtI(dt)+', '+fmtT(tm), what:ord(n)+' attempt — '+addr+' ('+by+'): '+out+'. '+what+(photo?' Photo/evidence logged.':''), ok:false});
+  const nx=document.getElementById('at-next').value.trim();
+  if(nx)d.next=nx;
+  d.attOpen=false;
+  PACT.unshift({when:'Jul 13, 2026, now',client:c.client,what:'Service attempt #'+n+' logged — '+d.name+' ('+out+')'+(photo?' · evidence saved':'')});
+  renderDetail();
+  toast('Attempt #'+n+' logged to the diligence record — Service Incomplete queue updated'+(nx?'; next step revised':''));
+}
+function svcOpen(i){current.defendants[i].svcOpen=true;current.defendants[i].attOpen=false;renderDetail();}
+function svcFormHtml(i){
+  return `<div class="dform">
+    <h4>Return of service — enter the facts <span class="sub2">(litigation.service_event)</span></h4>
+    <div class="dfrow wide"><span>Date served*</span><input type="date" id="sv-date"></div>
+    <div class="dfrow wide"><span>Method*</span><select id="sv-method" style="border:1px solid var(--grid);border-radius:6px;padding:5px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)">
+      <option>personal — constable/sheriff</option><option>personal — private process server</option><option>certified mail (registered agent)</option><option>substituted — Rule 106 order</option><option>secretary of state (long-arm)</option></select></div>
+    <div class="dfrow wide"><span>Served by / on whom</span><input type="text" id="sv-by" placeholder="e.g. Bexar Constable Pct 1 → CT Corp, registered agent"></div>
+    <div class="dfrow wide"><span></span><label class="sub2" style="font-size:12px"><input type="checkbox" id="sv-doc"> Return of service saved to the file* <span class="sub2">(and note the date it's FILED with the clerk — the 10-day TRCP 107(h) default clock runs from filing)</span></label></div>
+    <div class="note-callout" style="margin-top:6px">Saving computes the <b>answer deadline automatically</b> — TRCP 99: 10:00 AM on the Monday next after the expiration of 20 days after service — docketing it on this case AND pushing it to the firm calendar. If no answer is on file when that Monday passes, the case flags 🔔 ANSWER OVERDUE to you and Michael (default judgment window).</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="svcSave(${i})">Save — docket answer deadline</button>
+      <button class="ghost" onclick="current.defendants[${i}].svcOpen=false;renderDetail()">Cancel</button>
+    </div>
+  </div>`;
+}
+function svcSave(i){
+  const c=current, d=c.defendants[i];
+  const v=document.getElementById('sv-date').value;
+  if(!v){toast('Date served is required');return}
+  if(!document.getElementById('sv-doc').checked){toast('Save the return of service to the file first');return}
+  const method=document.getElementById('sv-method').value, by=document.getElementById('sv-by').value.trim();
+  d.served=fmtI(v)+' — '+method+(by?' ('+by+')':'');
+  const due=tr99(v);
+  d.answerDue=due.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  c.deadlines.push({date:d.answerDue, what:'Answer due — '+d.name, src:'rule', cite:'TRCP 99 — Monday next after 20 days from service', jx:false});
+  c.deadlines.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  d.svcOpen=false;
+  const killed=chainOnServed(d.name,c.client,d.answerDue);
+  PACT.unshift({when:'Jul 13, 2026, now',client:c.client,what:'Service entered — '+d.name+' served '+fmtI(v)+'; answer deadline '+d.answerDue+' docketed + calendared'+(killed?'; '+killed+' chain task(s) auto-completed; confirm-answer task spawned':'')});
+  renderDetail();
+  toast('Served ✓ — answer deadline '+d.answerDue+' docketed + calendared.'+(killed?' The follow-up loop died with service ('+killed+' chain task(s) auto-completed, method=system).':'')+' New aging task: Confirm answer filed — due '+d.answerDue+'.');
+}
+function ansOpen(i){current.defendants[i].ansOpen=true;renderDetail();}
+function ansFormHtml(i){
+  return `<div class="dform">
+    <h4>Answer received — enter it <span class="sub2">(clears the TRCP 99 deadline, generates the post-answer deadlines)</span></h4>
+    <div class="dfrow wide"><span>Date answer filed*</span><input type="date" id="an-date"></div>
+    <div class="dfrow wide"><span>Answering counsel</span><input type="text" id="an-counsel" placeholder="firm (attorney) — creates/links the defense-counsel contact"></div>
+    <div class="dfrow wide"><span></span><label class="sub2" style="font-size:12px"><input type="checkbox" id="an-doc"> Answer document saved to the file*</label></div>
+    <div class="note-callout" style="margin-top:6px">Saving vacates the answer deadline and auto-populates the post-answer deadline set:<br>
+      <b>Every answer:</b> ① serve § 18.001 affidavits as to this defendant — EARLIER of 90 days after its answer or the P expert-designation deadline (moves earlier automatically when a DCO sets experts sooner) · ② counter-affidavit window (120 days — defense's deadline, watched).<br>
+      <b>First answer only:</b> ③ initial disclosures — 30 days, both sides (TRCP 194.2(a)) · ④ Level 2 discovery period close — PROVISIONAL (TRCP 190.3(b): 9 months after the first discovery anchor; recomputes as anchors land) · ⑤ Level 2 trial target — 18 months (Rules of Jud. Admin. 6.1 / DWOP watch).<br>
+      ④ and ⑤ vacate automatically when a scheduling order is entered. All computed rules are <b>ATTORNEY-VERIFY</b> (HB 4595 / 18.001 anchor flagged for Michael).</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="ansSave(${i})">Save answer — generate deadlines</button>
+      <button class="ghost" onclick="current.defendants[${i}].ansOpen=false;renderDetail()">Cancel</button>
+    </div>
+  </div>`;
+}
+function ansSave(i){
+  const c=current, d=c.defendants[i];
+  const v=document.getElementById('an-date').value;
+  if(!v){toast('Answer filed date is required');return}
+  if(!document.getElementById('an-doc').checked){toast('Save the answer document to the file first');return}
+  const firstAnswer=!c.defendants.some(x=>x.answer);
+  const chainHit=chainOnAnswer(d.name);
+  d.answer='Answered '+fmtI(v);
+  const counsel=document.getElementById('an-counsel').value.trim();
+  if(counsel)d.counsel=counsel;
+  d.done=true; d.ansOpen=false;
+  c.deadlines=c.deadlines.filter(x=>!x.what.startsWith('Answer due — '+d.name));
+  const D=new Date(v+'T12:00');
+  const F=x=>x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const plusD=(base,n)=>{const x=new Date(base);x.setDate(x.getDate()+n);return x};
+  const plusM=(base,n)=>{const x=new Date(base);x.setMonth(x.getMonth()+n);return x};
+  // EVERY answer starts that defendant's § 18.001 clocks
+  c.deadlines.push({date:F(plusD(D,90)), what:'⚠ Serve § 18.001 affidavits (billing + records) as to '+d.name+' — EARLIER of 90 days after its answer or P expert designation; evidence-critical (HB 4595 anchor — ATTORNEY-VERIFY)', src:'rule', cite:'CPRC § 18.001(d)', jx:false, e18:true});
+  c.deadlines.push({date:F(plusD(D,120)), what:'Counter-affidavit window closes — '+d.name+' (defense deadline — watch: silence locks in our affidavits)', src:'rule', cite:'CPRC § 18.001(e)', jx:false});
+  // FIRST answer generates the case-wide Level 2 set
+  if(firstAnswer){
+    const disc=plusD(D,30);
+    c.deadlines.push({date:F(disc), what:'Initial disclosures due — both sides (30 days after first answer)', src:'rule', cite:'TRCP 194.2(a)', jx:true});
+    c.deadlines.push({date:F(plusM(disc,9)), what:'Level 2 discovery period closes — PROVISIONAL (9 months after first discovery anchor; recomputes as anchors land; a DCO supersedes) — ATTORNEY-VERIFY', src:'rule', cite:'TRCP 190.3(b)', jx:true, supersedable:true},
+      {date:F(plusM(D,18)), what:'Trial-setting target — 18 months from APPEARANCE date (Bexar County practice + Rules of Jud. Admin. 6.1; DWOP watch; a DCO trial setting supersedes)', src:'rule', cite:'RJA 6.1 / Bexar practice', jx:false, supersedable:true});
+  }
+  c.deadlines.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  // STAGE TEMPLATE: first answer arms disclosure-prep work (task = WHO does WHAT; deadline = WHEN)
+  if(firstAnswer&&!PTASKS.some(t=>t.src.includes('first answer filed')&&t.c===c.client)){
+    PTASKS.unshift({t:'Prepare & serve initial disclosures — both sides due '+F(plusD(D,30)),c:c.client,stage:'Answers & Disclosures',
+      due:F(plusD(D,17)),pri:['norm','b-na'],src:'stage template: first answer filed',done:false});
+  }
+  PACT.unshift({when:'Jul 13, 2026, now',client:c.client,what:'Answer entered — '+d.name+' answered '+fmtI(v)+'; § 18.001 clocks docketed'+(firstAnswer?' + disclosures, L2 discovery close (provisional), trial target + disclosure-prep task generated':'')+'; calendar updated'});
+  renderDetail();
+  toast('Answer logged — TRCP 99 deadline vacated; § 18.001 affidavit clock (90d) + counter-affidavit watch (120d) docketed'+(firstAnswer?'; disclosures, PROVISIONAL Level 2 discovery close, and 18-month trial target calendared':'')+(chainHit?'. Chain: “Confirm answer filed” auto-completed (method=system) — the record proved the step.':'')+' All rule dates attorney-verify.');
+}
+
+/* ---------------- scheduling order (DCO) entry ---------------- */
+const DCO_FIELDS=[
+ {id:'trial', label:'Trial setting',                          jx:true,  cite:'¶1'},
+ {id:'pretrial', label:'Pretrial conference',                 jx:false, cite:'¶2'},
+ {id:'plead', label:'Amended pleadings deadline',             jx:true,  cite:'¶3'},
+ {id:'disc',  label:'Discovery period closes',                jx:true,  cite:'¶4'},
+ {id:'pexp',  label:'P expert designations',                  jx:true,  cite:'¶5'},
+ {id:'dexp',  label:'D expert designations',                  jx:true,  cite:'¶6'},
+ {id:'msj',   label:'Dispositive motions / MSJ',              jx:true,  cite:'¶7'},
+ {id:'chal',  label:'Challenges to experts (Robinson/Daubert)',jx:true, cite:'¶8'},
+ {id:'medi',  label:'Mediation completed by',                 jx:true,  cite:'¶9'},
+ {id:'lists', label:'Witness & exhibit lists',                jx:true,  cite:'¶10'},
+ {id:'lim',   label:'Motions in limine / pretrial motions',   jx:false, cite:'¶11'},
+];
+function dcoOpen(amend){current.dcoFormOpen=true;current.dcoAmend=amend;renderDetail();}
+function dcoCancel(){current.dcoFormOpen=false;renderDetail();}
+function dcoFormHtml(c){
+  const amend=c.dcoAmend;
+  return `<div class="dform">
+    <h4>${amend?'✎ Amended / superseding scheduling order':'📋 Scheduling order received — docket its deadlines'} <span class="sub2">(litigation.deadline, source = court_order)</span></h4>
+    ${amend?'<div class="note-callout" style="margin:0 0 8px">Saving an <b>amended order</b> VACATES every existing court-order deadline on this case and replaces them with the dates below. Rule/notice/internal deadlines are untouched.</div>':''}
+    <div class="dfrow wide"><span>Order signed date*</span><input type="date" id="df-signed"></div>
+    <div class="dfrow wide"><span></span><label class="sub2" style="font-size:12px"><input type="checkbox" id="df-doc"> Signed order is saved to the file* <span class="sub2">(every date below must trace to the document)</span></label></div>
+    <div style="border-top:1px solid var(--grid);margin:8px 0 4px;padding-top:6px" class="sub2">Enter each deadline <b>exactly as written in the order</b> — leave blank anything the order doesn't set. Edit the ¶ cite to match.</div>
+    ${DCO_FIELDS.map(f=>`<div class="dfrow"><span>${f.jx?'<span class="jx">JX</span> ':''}${f.label}</span><input type="date" id="df-${f.id}"><input type="text" id="df-${f.id}-cite" value="${f.cite}"></div>`).join('')}
+    <div class="dfrow wide"><span class="sub2" style="padding-left:14px">↳ trial detail</span><input type="text" id="df-trial-lbl" placeholder="e.g. jury — #4 on the docket"></div>
+    <div style="border-top:1px solid var(--grid);margin:8px 0 4px;padding-top:6px;font-size:12.5px"><b>§ 18.001 affidavits — how does this order set them?</b> <span class="sub2">(usually the same day as experts — but NOT always; read the order)</span></div>
+    <div class="dfrow wide"><span>18.001 in the order</span><select id="df-e18-mode" onchange="document.getElementById('df-e18-wrap').style.display=this.value==='diff'?'':'none'" style="border:1px solid var(--grid);border-radius:6px;padding:5px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)">
+      <option value="same">same day as P expert designations (typical)</option>
+      <option value="diff">DIFFERENT date — the order sets its own 18.001 deadline</option>
+      <option value="silent">order silent — statutory 90-day clocks keep running</option></select></div>
+    <div id="df-e18-wrap" style="display:none"><div class="dfrow"><span style="padding-left:14px">↳ 18.001 affidavits served by*</span><input type="date" id="df-e18"><input type="text" id="df-e18-cite" value="¶"></div></div>
+    <div id="df-custom"></div>
+    <div style="margin:6px 0"><a class="caselink" style="font-size:12px;font-weight:400" onclick="dcoAddRow()">+ add another deadline from this order</a></div>
+    <div class="note-callout" style="margin-top:6px">No computation happens here — dates go in AS ORDERED. If the order defines a deadline relative to trial (e.g. experts 90 days before), count it backward, check the county holiday calendar, and remember it rolls <b>EARLIER, never later</b>. Attorney-verify before reliance.</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="dcoSave()">Save order — docket deadlines</button>
+      <button class="ghost" onclick="dcoCancel()">Cancel</button>
+    </div>
+  </div>`;
+}
+function dcoAddRow(){
+  const w=document.getElementById('df-custom');
+  const r=document.createElement('div');r.className='dfcustom df-crow';
+  r.innerHTML=`<input type="text" class="df-cwhat" placeholder="deadline as written in the order"><input type="date" class="df-cdate"><input type="text" class="df-ccite" value="¶"><label class="sub2" style="font-size:11px"><input type="checkbox" class="df-cjx"> JX</label>`;
+  w.appendChild(r);
+}
+function dcoSave(){
+  const c=current;
+  const signed=document.getElementById('df-signed').value;
+  if(!signed){toast('Order signed date is required');return}
+  if(!document.getElementById('df-doc').checked){toast('Save the signed order to the file first — deadlines must trace to the document');return}
+  const amend=c.dcoAmend, pref=amend?'Am. DCO ':'DCO ';
+  const rows=[];
+  DCO_FIELDS.forEach(f=>{const v=document.getElementById('df-'+f.id).value;if(!v)return;
+    const cite=document.getElementById('df-'+f.id+'-cite').value.trim();
+    rows.push({id:f.id,label:f.label,jx:f.jx,date:fmtI(v),cite:pref+(cite||'¶?')});});
+  document.querySelectorAll('#df-custom .df-crow').forEach(r=>{
+    const what=r.querySelector('.df-cwhat').value.trim(),v=r.querySelector('.df-cdate').value;
+    if(!what||!v)return;
+    rows.push({id:'custom',label:what,jx:r.querySelector('.df-cjx').checked,date:fmtI(v),cite:pref+(r.querySelector('.df-ccite').value.trim()||'¶?')});});
+  if(!rows.length){toast('Enter at least one deadline from the order');return}
+  if(amend)c.deadlines=c.deadlines.filter(d=>d.src!=='court order');
+  c.deadlines=c.deadlines.filter(d=>!d.supersedable&&!d.countyDco); // DCO overrides rule baselines + satisfies the county DCO-due rule
+  const lbl=document.getElementById('df-trial-lbl').value.trim();
+  rows.forEach(r=>{
+    let what=r.label;
+    if(r.id==='trial'&&lbl)what+=' — '+lbl;
+    if(r.id==='pexp'||r.id==='dexp')what+=' (rolls EARLIER, never later)';
+    if(r.id==='medi')what='Mediation deadline — must be completed';
+    c.deadlines.push({date:r.date,what,src:'court order',cite:r.cite,jx:!!r.jx});
+  });
+  // § 18.001 — track what THIS ORDER does with affidavit deadlines (Michael: often same day as experts, NOT always)
+  const pexpRow=rows.find(x=>x.id==='pexp');
+  const e18mode=document.getElementById('df-e18-mode').value;
+  let e18New=null;
+  if(e18mode==='same'&&pexpRow)e18New={date:pexpRow.date, cite:pexpRow.cite+' / CPRC § 18.001', note:'set SAME DAY as P expert designations per the order'};
+  else if(e18mode==='diff'){
+    const ev=document.getElementById('df-e18').value;
+    if(!ev){toast('The order sets its own 18.001 date — enter it (or switch the 18.001 selector)');return}
+    const ecite=pref+(document.getElementById('df-e18-cite').value.trim()||'¶?');
+    e18New={date:fmtI(ev), cite:ecite+' / CPRC § 18.001', note:'order sets 18.001 on its OWN date — DIFFERENT from expert designations'+(pexpRow?' ('+pexpRow.date+')':'')};
+  }
+  if(e18New){
+    c.deadlines=c.deadlines.filter(dd=>!dd.e18); // court-ordered 18.001 date replaces the statutory 90-day clocks
+    c.deadlines.push({date:e18New.date, what:'⚠ Serve § 18.001 affidavits (billing + records) — '+e18New.note+' (evidence-critical)', src:'court order', cite:e18New.cite, jx:false, e18:'court'});
+  }else if(pexpRow){
+    // order silent on 18.001: statutory clocks stand, but earlier-of still applies — expert designation can pull them EARLIER
+    c.deadlines.forEach(dd=>{
+      if(dd.e18&&dd.e18!=='court'&&new Date(dd.date)>new Date(pexpRow.date)){
+        dd.date=pexpRow.date;
+        dd.what+=' — MOVED EARLIER: DCO expert designation controls (18.001(d) earlier-of)';
+        dd.cite='CPRC § 18.001(d) + '+pexpRow.cite;
+      }});
+  }
+  c.deadlines.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const g=id=>{const r=rows.find(x=>x.id===id);return r?r.date:null};
+  c.dco={signed: amend?((c.dco?c.dco.signed.split(' (amended')[0]:fmtI(signed))+' (amended '+fmtI(signed)+')'):fmtI(signed),
+    discoveryClose: g('disc')||(c.dco&&c.dco.discoveryClose)||'—',
+    note: amend?'Amended DCO superseded the original — prior court-order dates vacated automatically':'DCO controls — rule-based default periods superseded (vacated automatically)'};
+  const t=g('trial');
+  if(t){
+    c.trial=c.trial||{prep:[['Witness list drafted',false],['Exhibit list w/ objections chart',false],['Depo designations',false],['Expert files complete',false]]};
+    c.trial.setting=t; c.trial.settingLabel=t+(lbl?' ('+lbl+')':'');
+    if(g('medi'))c.trial.mediation='must complete by '+g('medi');
+    if(g('lists')){c.trial.witnesses='due '+g('lists');c.trial.exhibits='due '+g('lists');}
+  }
+  const m=g('medi');
+  if(m){
+    const mc=rows.find(x=>x.id==='medi').cite;
+    if(!c.mediation)c.mediation={deadline:m+' ('+mc+' — court-ordered)',scheduled:null,candidates:[]};
+    else{c.mediation.deadline=m+' ('+mc+' — court-ordered)';if(c.mediation.early)c.mediation.early=false;}
+  }
+  // STAGE TEMPLATE: a mediation deadline in the order arms mediator-selection work
+  if(m&&!PTASKS.some(t=>t.src.includes('mediation deadline set')&&t.c===c.client)){
+    PTASKS.unshift({t:'Begin mediator selection — availability emails to agreed candidates (court deadline '+m+')',c:c.client,stage:'Mediation',
+      due:fmtI(signed),pri:['norm','b-na'],src:'stage template: mediation deadline set ('+rows.find(x=>x.id==='medi').cite+')',done:false});
+  }
+  PACT.unshift({when:'Jul 13, 2026, now',client:c.client,what:(amend?'AMENDED scheduling order entered — prior court-order dates vacated; ':'Scheduling order entered — ')+rows.length+' deadlines docketed (signed '+fmtI(signed)+')'+(m?' + mediator-selection task generated':'')});
+  c.dcoFormOpen=false;
+  renderDetail();
+  toast(rows.length+' court-ordered deadlines docketed — pushed to the firm calendar (Outlook/Google); Deadline Horizon, trial queue, and mediation card updated; superseded rule-based baselines vacated');
+}
+
+/* ---------------- TRIALS queue — soonest first ---------------- */
+function renderTrials(){
+  const rows=cases.filter(c=>c.trial).map(c=>({c,t:c.trial,when:new Date(c.trial.setting)}))
+    .sort((a,b)=>a.when-b.when);
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Trials — soonest first. The clock at the top is the one that owns your calendar.</h2>
+    <table>
+      <thead><tr><th>Trial</th><th>Case</th><th>Days out</th><th>Pretrial deadlines</th><th>Prep</th></tr></thead>
+      <tbody>
+      ${rows.map(({c,t,when})=>{
+        const days=Math.round((when-TODAY)/86400000);
+        const done=t.prep.filter(x=>x[1]).length;
+        return `<tr>
+        <td><b>${t.settingLabel}</b></td>
+        <td><a class="caselink" onclick="openCase('${c.client}')">${c.client}</a><div class="sub2">${c.cause} · ${c.court}</div></td>
+        <td><span class="badge ${days<90?'b-crit':days<180?'b-warn':'b-na'}">${days}d</span></td>
+        <td style="font-size:12.5px">mediation: ${t.mediation}<br>witness/exhibit lists: ${t.witnesses}</td>
+        <td style="font-size:12.5px">${t.prep.map(([x,dn])=>`<div>${dn?'✓':'○'} ${x}</div>`).join('')}<div class="sub2">${done}/${t.prep.length}</div></td>
+      </tr>`}).join('')}
+      ${rows.length?'':'<tr><td colspan="5" class="sub2" style="padding:16px">No trial settings.</td></tr>'}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Backward-counted pretrial deadlines (expert designations, MSJ responses, disclosures) roll EARLIER, never later — they all key off the setting above and recompute if the setting moves.</div>`;
+}
+
+/* ---------------- case detail ---------------- */
+function renderDetail(){
+  const c=current;
+  $('#view').innerHTML=`
+  <span class="back" onclick="go('dash')">← Back to my cases</span>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:18px;font-weight:700">${c.client}</span>
+      <span class="badge b-info">${c.posture}</span>
+      <span class="sub2">${c.cause} · ${c.court} · filed ${c.filed}</span>
+      <span class="sub2" style="width:100%">Team: <b>CM ${c.cmName}</b> · Paralegal <b>you (P. Ortega)</b> · Attorney <b>M. Tuttle</b></span>
+    </div>
+    <div class="contactstrip">
+      <span>📞 <a href="tel:${c.phone.replace(/[^0-9]/g,'')}" onclick="rcCall('${c.phone}','${c.client}')">${c.phone}</a></span>
+      <span>✉️ <a href="mailto:${c.email}">${c.email}</a> <button class="copybtn" onclick="copyText('${c.email}','Email')">copy</button></span>
+      <span>🎂 ${fmt(c.dob)} <span class="sub2">(age ${age(c.dob)})</span></span>
+      ${c.lang==='ES'?'<span class="sub2">Client prefers Spanish</span>':''}
+    </div>
+    <div style="margin-top:8px">
+      <button class="primary" style="background:var(--serious)" onclick="fuQuick('${c.client}','${c.cmName}')">📞 Client called — create follow-up</button>
+      <button class="ghost" onclick="asgPreset='${c.client}';asgOpen=true;go('tasks')">➕ Task for a co-worker</button>
+      <span class="sub2" style="margin-left:8px">routes to whoever owns it; the teammate sees it too</span>
+    </div>
+    ${c.solNote?`<div class="note-callout">🛑 ${c.solNote}</div>`:''}
+  </div>
+  ${renderTimeline(c)}
+  <div class="cols">
+    <div>
+      <div class="card"><h3>Court case</h3>
+        <div class="kv">
+          <div class="k">Discovery level</div><div>${c.level}</div>
+          <div class="k">Jury</div><div>${c.jury}</div>
+          <div class="k">HB 19</div><div>${c.hb19}</div>
+          ${c.plaintiffs?`<div class="k">Plaintiffs (${c.plaintiffs.length})</div><div>${c.plaintiffs.map(p=>`${p.this_?'<b>'+p.name+'</b>':`<a class="caselink" onclick="openCase('${p.name}')">${p.name}</a>`} <span class="sub2">— ${p.note}</span>`).join('<br>')}
+            <div class="sub2" style="margin-top:2px">One lawsuit, ${c.plaintiffs.length} plaintiff-side lit_party rows. Court deadlines (DCO, discovery close, trial) are SHARED; § 18.001 affidavits, damages, and settlement are PER PLAINTIFF. Both files must be worked for every shared deadline.</div></div>`:''}
+          <div class="k">Scheduling order</div><div>${c.dco?`Signed ${c.dco.signed} — discovery closes <b>${c.dco.discoveryClose}</b><div class="sub2">${c.dco.note}</div><a class="caselink" style="font-size:12px;font-weight:400" onclick="dcoOpen(true)">✎ amended / new order received — enter it</a>`:`none — rule-based deadlines control<div style="margin-top:5px"><button class="ghost" onclick="dcoOpen(false)">📋 Enter scheduling order</button></div>`}</div>
+          ${countyRuleLine(c)}
+          ${c.trial?`<div class="k">Trial</div><div><b>${c.trial.settingLabel||c.trial.setting}</b></div>
+          <div class="k">Mediation</div><div>${c.trial.mediation}</div>
+          <div class="k">Witness/exhibit lists</div><div>${c.trial.witnesses}</div>`:''}
+        </div>
+        ${c.dcoFormOpen?dcoFormHtml(c):''}
+      </div>
+      <div class="card"><h3>Defendants — per-defendant service & deadlines</h3>
+        ${c.defendants.map((d,i)=>{
+          if(d.done&&!c['defOpen'+i])return `<div class="defbox" style="padding:8px 12px;cursor:pointer" onclick="current['defOpen${i}']=true;renderDetail()">
+            <span class="tick y">✓</span> <b>${d.name}</b> <span class="sub2">served & answered · counsel: ${d.counsel}</span>
+            <a class="caselink" style="font-weight:400;font-size:12px;float:right">▸ show</a></div>`;
+          const overdue=d.served&&!d.answer&&d.answerDue&&new Date(d.answerDue)<TODAY;
+          return `<div class="defbox">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <b>${d.name}</b> <span class="sub2">${d.type}</span>
+            ${d.served?'<span class="badge b-ok">served</span>':'<span class="badge b-crit">⚠ NOT SERVED</span>'}
+            ${d.answer?`<span class="badge b-ok">${d.answer}</span>`:d.served?(overdue?`<span class="badge b-crit">🔔 ANSWER OVERDUE — was due ${d.answerDue}</span>`:`<span class="badge b-warn">answer due ${d.answerDue||'— TRCP 99 Monday-next'}</span>`):''}
+            ${d.done?`<a class="caselink" style="font-weight:400;font-size:12px;margin-left:auto" onclick="current['defOpen${i}']=false;renderDetail()">▾ collapse</a>`:''}
+          </div>
+          ${d.served?`<div class="kv" style="grid-template-columns:120px 1fr">
+            <div class="k">Service</div><div>${d.served}</div>
+            ${d.answerDue&&!d.answer?`<div class="k">Answer due</div><div><b>${d.answerDue}</b> <span class="sub2">TRCP 99 — Monday next after 20 days · 📅 on the firm calendar</span></div>`:''}
+            ${d.counsel?`<div class="k">Def counsel</div><div>${d.counsel} · 📞 <a class="caselink" href="tel:${(d.counselPhone||'').replace(/[^0-9]/g,'')}" onclick="rcCall('${d.counselPhone}','${c.client} (opposing counsel)')">${d.counselPhone}</a></div>`:''}
+          </div>`:''}
+          ${overdue?`<div class="note-callout" style="background:#fbe3e3;border-color:#e8b8b8;color:#8f1f1f;margin-top:6px">🔔 <b>No answer filed — deadline passed ${d.answerDue}.</b> ${d.returnFiled||'Verify the return of service has been on file 10+ days (TRCP 107(h)) before moving.'}<br>→ Flagged to Michael: <b>default judgment opportunity</b> — or the answer arrived by mail and isn't logged yet. Confirm with the clerk's site before filing anything.</div>`:''}
+          ${d.served&&!d.answer?`<div style="margin-top:8px"><button class="ghost" onclick="ansOpen(${i})">📄 Answer filed — enter it</button></div>${d.ansOpen?ansFormHtml(i):''}`:''}
+          ${d.diligence?`<div class="sub2" style="margin:6px 0 4px"><b>Service diligence log</b> — attempt-by-attempt (this IS the tolling record):</div>
+          <ul class="log">${d.diligence.map(a=>`<li class="${a.ok?'hit':'miss'}">${a.what}<div class="when">${a.when}</div></li>`).join('')}</ul>
+          <div class="note-callout" style="margin-top:6px">Next: <b>${d.next}</b></div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="ghost" onclick="attOpen(${i})">+ Log service attempt</button>
+            <button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="svcOpen(${i})">✓ SERVED — enter return of service</button>
+          </div>${d.attOpen?attFormHtml(i):''}${d.svcOpen?svcFormHtml(i):''}`:''}
+        </div>`}).join('')}
+      </div>
+      ${c.discovery.length?`<div class="card"><h3>Written discovery — request-level tracking</h3>
+        <table><thead><tr><th>Set</th><th>Served</th><th>Due</th><th>Status</th></tr></thead><tbody>
+        ${c.discovery.map(d=>`<tr>
+          <td>${d.set}<div class="sub2">${d.note}</div>${d.pipeline?`<div style="font-size:12px;color:#9a4218;margin-top:2px"><b>${d.pipeline}</b></div>`:''}</td>
+          <td class="sub2">${d.served}</td><td class="sub2">${d.due}</td>
+          <td>${d.status==='deficient'?'<span class="badge b-ser">deficient</span>':d.status==='due'?'<span class="badge b-warn">due</span>':'<span class="badge b-ok">answered</span>'}</td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>`:''}
+      ${renderMediation(c)}
+    </div>
+    <div>
+      <div class="card"><h3>Deadlines — this case <span class="sub2">(court order beats agreement beats rule)</span></h3>
+        <div class="sub2" style="margin:-2px 0 6px">📅 Every row here syncs to the firm calendar (Outlook / Google) — adds, date moves, and vacaturs push automatically. Overdue = red until resolved.</div>
+        <table><thead><tr><th>Date</th><th>Deadline</th><th>Source</th></tr></thead><tbody>
+        ${c.deadlines.map(d=>{const od=new Date(d.date)<TODAY;return `<tr${od?' style="background:#fbe3e3"':''}>
+          <td><b>${d.date}</b>${od?'<div><span class="badge b-crit">OVERDUE</span></div>':''}</td>
+          <td style="font-size:12.5px">${d.jx?'<span class="jx">JX</span> ':''}${d.what}<div class="cite">${d.cite}</div></td>
+          <td>${srcTag(d.src)}</td>
+        </tr>`}).join('')}
+        </tbody></table>
+      </div>
+      ${c.depos.length?`<div class="card"><h3>Depositions</h3>
+        ${c.depos.map(d=>`<div style="padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px">
+          <b>${d.who}</b> — ${d.when} ${d.status==='confirmed'?'<span class="badge b-ok">confirmed</span>':`<span class="badge b-warn">${d.status}</span>`}
+          <div class="sub2">${d.where!=='—'?d.where+' · ':''}${d.note}</div>
+        </div>`).join('')}
+      </div>`:''}
+    </div>
+  </div>`;
+}
+
+/* ---------------- MY TASKS — personal work items, grouped by litigation stage ----------------
+   workflow.task already supports all of this: owner_staff_id, created_by, trigger_source,
+   completion provenance. STAGE TEMPLATES generate the right tasks when a stage event fires
+   (filed → service tasks; answer → disclosure prep; DCO → mediation kickoff; depo → readiness). */
+const STAGES=['Filing & Service','Answers & Disclosures','Written Discovery','Depositions','Mediation','Trial Prep','General'];
+let PTASKS=[
+ {t:'Rule 106 motion for substituted service — Voss (diligence log attaches as exhibit)',c:'Ibarra, Ramon',stage:'Filing & Service',due:'Jul 22, 2026',pri:['high','b-warn'],src:'stage template: service incomplete',done:false},
+ {t:'Prepare & serve initial disclosures — both sides due Sep 2, 2026',c:'Whitfield, Dana',stage:'Answers & Disclosures',due:'Aug 19, 2026',pri:['norm','b-na'],src:'stage template: first answer filed',done:false},
+ {t:'Draft MTC on Kestrel RFP 9 / RFP 12 — to Michael',c:'Ibarra, Ramon',stage:'Written Discovery',due:'Jul 17, 2026',pri:['urgent','b-crit'],src:'deficiency pipeline',done:false},
+ {t:'Assemble Voss depo exhibit binder',c:'Ibarra, Ramon',stage:'Depositions',due:'Jul 17, 2026',pri:['high','b-warn'],src:'depo readiness checklist',done:false},
+ {t:'Send mediator availability emails — Salazar + 2 candidates',c:'Ibarra, Ramon',stage:'Mediation',due:'Jul 18, 2026',pri:['norm','b-na'],src:'stage template: mediation deadline set (DCO ¶9)',done:false},
+ {t:'Pull certified copies of CR-3 + EMS records for trial exhibits',c:'Mercado, Felix',stage:'Trial Prep',due:'Aug 29, 2026',pri:['norm','b-na'],src:'stage template: trial setting <120d',done:false},
+ {t:'Client asked for copies of her deposition transcript — mail + upload to portal',c:'Mercado, Felix',stage:'General',due:'Jul 15, 2026',pri:['high','b-warn'],src:'assigned by Christina (CM) · Jul 13, 2026',from:'Christina (CM)',done:false},
+ {t:'📞 Client follow-up: wants status of total-loss check',c:'Whitfield, Dana',stage:'General',due:'Jul 14, 2026',pri:['high','b-warn'],src:'client call dispatcher',backup:'backup — primary: Mark (CM)',done:false},
+];
+let asgOpen=false, asgPreset='';
+const TEAM=['me (Priscilla — paralegal)','Christina (CM)','Mark (CM)','D. Ayala (paralegal)','Kate (demand writer)','Emily (liens/disbursement)','Michael (attorney)'];
+function renderMyTasks(){
+  const open=PTASKS.filter(t=>!t.done).length;
+  $('#view').innerHTML=`
+  <div class="panel" style="padding:14px 16px">
+    <h2 style="margin:0 0 8px">My Tasks — ${open} open <span class="sub2">· grouped by litigation stage · tasks complete here or on the case, same record either way</span>
+      <button class="ghost" style="margin-left:10px" onclick="asgOpen=!asgOpen;renderMyTasks()">➕ Task for a co-worker (or me)</button></h2>
+    ${asgOpen?asgFormHtml():''}
+    ${chainBoard()}
+    ${STAGES.map(s=>{
+      const rows=PTASKS.map((t,i)=>({t,i})).filter(({t})=>t.stage===s&&!t.done);
+      const done=PTASKS.filter(t=>t.stage===s&&t.done).length;
+      if(!rows.length&&!done)return '';
+      return `<div style="margin-top:10px">
+        <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${s} ${done?`<span class="sub2" style="text-transform:none">· ${done} completed ✓</span>`:''}</div>
+        ${rows.map(({t,i})=>`<div style="display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--grid);padding:7px 0;font-size:13px">
+          <input type="checkbox" onchange="ptDone(${i})" title="Complete — audit-stamped, reopenable">
+          <div style="flex:1">${t.t}
+            <div class="sub2"><a class="caselink" onclick="openCase('${t.c}')">${t.c}</a> · due <b>${t.due}</b> · ${t.src}
+            ${t.from?`<span class="badge b-info">from ${t.from}</span>`:''}${t.backup?`<span class="badge b-na">${t.backup}</span>`:''}</div></div>
+          <span class="badge ${t.pri[1]}">${t.pri[0]}</span>
+        </div>`).join('')||'<div class="sub2" style="padding:6px 0">nothing open ✓</div>'}
+      </div>`}).join('')}
+  </div>
+  <div class="note-callout">Stage templates generate these automatically — filing arms service tasks, the first answer arms disclosure prep, a DCO arms mediation kickoff, a depo arms its readiness checklist, a trial setting under 120 days arms trial prep. Anyone can hand anyone a task; it lands HERE with a "from" tag, and the sender sees completion in their My Activity. Deadlines say WHEN — this list says WHO does WHAT.</div>`;
+}
+function asgFormHtml(){
+  return `<div style="background:var(--page);border:1px solid var(--grid);border-radius:10px;padding:12px 14px;margin:8px 0">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;font-size:12.5px">
+      <div><b>What needs doing*</b><input type="text" id="asg-what" placeholder="e.g. pull the certified DPS record for Ibarra" style="width:100%;border:1px solid var(--grid);border-radius:6px;padding:6px 8px"></div>
+      <div><b>Assign to</b><select id="asg-who" style="width:100%;border:1px solid var(--grid);border-radius:6px;padding:6px 8px">${TEAM.map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><b>Case (optional)</b><select id="asg-case" style="width:100%;border:1px solid var(--grid);border-radius:6px;padding:6px 8px"><option value="">— none —</option>${cases.map(c=>`<option ${asgPreset===c.client?'selected':''}>${c.client}</option>`).join('')}</select></div>
+      <div><b>Due</b><select id="asg-due" style="width:100%;border:1px solid var(--grid);border-radius:6px;padding:6px 8px"><option>today</option><option selected>tomorrow</option><option>this week</option></select></div>
+    </div>
+    <div style="margin-top:8px"><button class="ghost" style="border-color:var(--good-text);color:var(--good-text)" onclick="asgSave()">Send task</button>
+    <span class="sub2" style="margin-left:8px">writes workflow.task (owner = assignee, created_by = you); it appears in THEIR My Tasks with a 'from you' tag; you see completion in My Activity</span></div>
+  </div>`;
+}
+function asgSave(){
+  const what=document.getElementById('asg-what').value.trim();
+  if(!what){toast('Say what needs doing — the request text IS the task');return}
+  const who=document.getElementById('asg-who').value, cs=document.getElementById('asg-case').value, due=document.getElementById('asg-due').value;
+  const dueD=due==='today'?'Jul 13, 2026':due==='tomorrow'?'Jul 14, 2026':'Jul 17, 2026';
+  asgOpen=false;
+  if(who.startsWith('me')){
+    PTASKS.unshift({t:what,c:cs||'—',stage:'General',due:dueD,pri:['norm','b-na'],src:'self-assigned',done:false});
+    PACT.unshift({when:'Jul 13, 2026, now',client:cs||'—',what:'Task self-assigned: '+what});
+    renderMyTasks();toast('Added to your My Tasks.');
+  }else{
+    PACT.unshift({when:'Jul 13, 2026, now',client:cs||'—',what:'Task sent to '+who+': '+what+' (due '+dueD+')'});
+    renderMyTasks();toast('Sent to '+who.split(' (')[0]+"'s My Tasks — tagged 'from Priscilla'. You'll see completion in your My Activity.");
+  }
+}
+function ptDone(i){
+  PTASKS[i].done=true;
+  PACT.unshift({when:'Jul 13, 2026, now',client:PTASKS[i].c,what:'Task completed: '+PTASKS[i].t.slice(0,60)+(PTASKS[i].from?' (assigned by '+PTASKS[i].from+' — they see this in their Activity)':'')});
+  if(PTASKS[i].chain==='service'){chainNext(PTASKS[i]);return}
+  renderMyTasks();
+  toast('Completed — audit-stamped (completion_method=manual). Reopen from the case page if needed.');
+}
+
+/* ---------------- THE SERVICE CHAIN — event-driven task state machine (Michael 2026-07-14) ----------------
+   Completing a task IS the event that spawns the next one. Only the currently-actionable
+   step exists on the list; future steps don't clutter. Manual checks for human steps;
+   DATA-DRIVEN completion where the record itself proves the step (return of service,
+   answer entry). The follow-up step RESPAWNS every 5 days until service kills the loop. */
+function chainTask(step,def,client,due,attempt){
+  const T={
+    1:['Request citation from the clerk — '+def,'chain: service — case filed'],
+    2:['Confirm citation RECEIVED from clerk — '+def+' (ages until in hand)','chain: service — citation requested'],
+    3:['Forward citation to private process server — '+def,'chain: service — citation received'],
+    4:['Follow up with process server — '+def+(attempt?' (follow-up #'+attempt+')':'')+' — respawns every 5 days until served','chain: service — awaiting service'],
+    6:['Confirm answer filed — '+def+' (TRCP 99 answer due '+due+')','chain: service — served; auto-completes when the answer is entered'],
+  }[step];
+  return {t:T[0],c:client,stage:'Filing & Service',due:due,pri:step===6?['high','b-warn']:['norm','b-na'],src:T[1],done:false,chain:'service',step,def,attempt:attempt||0};
+}
+function chainNext(done){
+  const plus=(d)=>{const x=new Date('2026-07-13T12:00');x.setDate(x.getDate()+d);return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})};
+  let nxt=null,msg='';
+  if(done.step===1){nxt=chainTask(2,done.def,done.c,plus(7));msg='Next task generated: confirm the citation comes back from the clerk — it AGES until you have it.'}
+  else if(done.step===2){nxt=chainTask(3,done.def,done.c,plus(1));msg='Next task generated: forward the citation to the process server.'}
+  else if(done.step===3){nxt=chainTask(4,done.def,done.c,plus(5),1);msg='Next task generated: 5-day process-server follow-up. It will RESPAWN every 5 days until the return of service is entered on the case — the loop only dies when service does.'}
+  else if(done.step===4){nxt=chainTask(4,done.def,done.c,plus(5),done.attempt+1);msg='No service yet — follow-up #'+(done.attempt+1)+' respawned, due in 5 days. Entering the return of service on the case kills this loop automatically.'}
+  if(nxt){PTASKS.unshift(nxt);PACT.unshift({when:'Jul 13, 2026, now',client:done.c,what:'Chain advanced: '+nxt.t.slice(0,70)});}
+  renderMyTasks();
+  toast('✓ Completed. '+msg);
+}
+/* data-driven links: the record completes the chain, not a checkbox */
+function chainOnServed(defName,client,answerDue){
+  let killed=0;
+  PTASKS.forEach(t=>{if(t.chain==='service'&&!t.done&&t.def===defName&&t.step<=4){t.done=true;killed++;}});
+  PTASKS.unshift(chainTask(6,defName,client,answerDue));
+  return killed;
+}
+function chainOnAnswer(defName){
+  let hit=false;
+  PTASKS.forEach(t=>{if(t.chain==='service'&&!t.done&&t.def===defName&&t.step===6){t.done=true;hit=true;}});
+  return hit;
+}
+
+const PACT=[
+   {when:'Jul 13, 2026, 9:15 AM',client:'Ibarra, Ramon',what:'MTC draft — exhibit list assembled (diligence log attached)'},
+   {when:'Jul 12, 2026, 4:20 PM',client:'Whitfield, Dana',what:'Service attempt #2 logged — Chen, evening attempt, photo saved'},
+   {when:'Jul 12, 2026, 11:30 AM',client:'Mercado, Felix',what:'Kwan depo — Zoom logistics confirmed w/ defense'},
+   {when:'Jul 11, 2026, 3:45 PM',client:'Ibarra, Ramon',what:'Voss depo — court reporter + videographer confirmed'},
+];
+function renderMyActivity(){
+  const A=PACT;
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>My Activity — everything I've touched, newest first</h2>
+    <table><thead><tr><th>When</th><th>Case</th><th>What I did</th><th></th></tr></thead><tbody>
+    ${A.map((a,i)=>`<tr style="${i===0?'background:#eef4fc':''}">
+      <td class="sub2" style="white-space:nowrap">${a.when}${i===0?'<div><span class="badge b-info">⟵ left off here</span></div>':''}</td>
+      <td><a class="caselink" onclick="openCase('${a.client}')">${a.client}</a></td>
+      <td style="font-size:12.5px">${a.what}</td>
+      <td>${i===0?`<button class="ghost" onclick="openCase('${a.client}')">Resume →</button>`:''}</td></tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+function renderCmView(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Case Manager Dashboard — full view, on demand (you see everything the CM sees)</h2>
+    <table>
+      <thead><tr><th>Client</th><th>Team</th><th>Stage</th><th>Treatment</th><th>PD</th><th>Red flags</th></tr></thead>
+      <tbody>
+        <tr><td><a class="caselink" onclick="openCase('Ibarra, Ramon')">Ibarra, Ramon</a></td><td class="sub2">CM Christina · PL you</td><td><span class="badge b-info">Litigation · Discovery</span></td><td><span class="badge b-ok">complete</span></td><td><span class="badge b-ok">resolved</span></td><td><span class="badge b-crit">MTC due Jul 17, 2026</span></td></tr>
+        <tr><td><a class="caselink" onclick="openCase('Whitfield, Dana')">Whitfield, Dana</a></td><td class="sub2">CM Mark · PL you</td><td><span class="badge b-info">Litigation · Service</span></td><td><span class="badge b-warn">still treating</span></td><td><span class="badge b-warn">in progress</span></td><td><span class="badge b-crit">service diligence</span></td></tr>
+        <tr><td><a class="caselink" onclick="openCase('Mercado, Felix')">Mercado, Felix</a></td><td class="sub2">CM Christina · PL you</td><td><span class="badge b-info">Litigation · Trial prep</span></td><td><span class="badge b-ok">complete</span></td><td><span class="badge b-ok">resolved</span></td><td><span class="badge b-warn">mediation Aug 06, 2026</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Paralegals get the <b>full</b> CM dashboard on demand — treatment, PD, provider calls, all of it (your database tier already permits it). The reverse is intentionally milestone-only.</div>`;
+}
+go('dash');
+
+/* ---------- global file search (every screen, always) ---------- */
+function gsSource(){ return cases.map(c=>({id:c.id,label:c.client,sub:'DOI '+c.doi+' · '+c.cause+' · '+c.posture,meta:(c.phone||'')+' '+(c.email||'')})); }
+let gsSel=0;
+function gsDigits(s){return (s||'').replace(/\D/g,'')}
+function gsHit(q,qd,f){
+  if(!f)return false;
+  if(String(f).toLowerCase().includes(q))return true;           // partial text, anywhere
+  if(qd.length>=3&&gsDigits(f).includes(qd))return true;        // partial phone, any formatting
+  return false;
+}
+function gsFilter(q){
+  const d=document.getElementById('gs-drop');
+  const qq=(q||'').trim();
+  if(!qq){d.classList.remove('open');return}
+  const ql=qq.toLowerCase();
+  const qd=gsDigits(ql);
+  const hits=gsSource().filter(it=>gsHit(ql,qd,it.label)||gsHit(ql,qd,it.sub)||gsHit(ql,qd,it.meta)).slice(0,6);
+  gsSel=-1;
+  d.innerHTML=hits.map(it=>`<div class="gs-item" data-id="${it.id}" data-label="${it.label}"><span><b>${it.label}</b></span><span class="gs-sub">${it.sub||''}</span></div>`).join('')
+    +`<div class="gs-item gs-all" data-q="${qq}"><span>🔎 See all results for “${qq}”</span><span class="gs-sub">grouped by category — or just press Enter</span></div>`;
+  d.classList.add('open');
+  d.querySelectorAll('.gs-item').forEach(el=>el.addEventListener('mousedown',()=>{
+    if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q); else gsOpen(el.dataset.id,el.dataset.label);}));
+}
+function gsKey(e){
+  const d=document.getElementById('gs-drop');
+  const items=[...d.querySelectorAll('.gs-item')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!items.length)return;
+    gsSel=e.key==='ArrowDown'?(gsSel+1)%items.length:(gsSel<=0?items.length-1:gsSel-1);
+    items.forEach((x,i)=>x.classList.toggle('sel',i===gsSel));
+  }else if(e.key==='Enter'){
+    const q=e.target.value.trim();
+    if(gsSel>=0&&items[gsSel]){
+      const el=items[gsSel];
+      if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q||q); else gsOpen(el.dataset.id,el.dataset.label);
+    }else if(q){gsShowAll(q)}
+    e.target.blur();
+  }else if(e.key==='Escape'){gsClose();e.target.blur()}
+}
+function gsShowAll(q){
+  gsClose(); document.getElementById('gs-input').value='';
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  const cats=gsCategories(q.toLowerCase());
+  const total=cats.reduce((n,c)=>n+c.items.length,0);
+  document.getElementById('view').innerHTML=
+   `<div class="panel"><h2>🔎 Search results for “${q}” — ${total} match${total===1?'':'es'} in ${cats.filter(c=>c.items.length).length} categories</h2></div>`+
+   cats.map(c=>c.items.length?`
+   <div class="panel"><h2>${c.title} · ${c.items.length}</h2><table><tbody>
+   ${c.items.map(it=>`<tr><td style="width:38%"><a class="caselink" onclick="${it.act}">${it.label}</a></td><td class="sub2" style="font-size:12.5px">${it.sub||''}</td></tr>`).join('')}
+   </tbody></table></div>`:'').join('')+
+   (total?'':'<div class="panel"><h2>No matches</h2><div class="sub2" style="padding:14px">The real build also searches phone numbers, claim #s, cause #s, notes, and documents — database permissions applied.</div></div>');
+}
+function gsClose(){document.getElementById('gs-drop').classList.remove('open')}
+function gsOpen(id,label){
+  gsClose(); document.getElementById('gs-input').value='';
+  go('detail',Number(id));
+}
+
+function gsCategories(q){
+  const qd=gsDigits(q); const m=s=>gsHit(q,qd,s);
+  return [
+   {title:'Cases & Clients', items:cases.filter(c=>m(c.client)||m(c.cause)||m(c.phone)||m(c.email)).map(c=>({label:c.client,sub:'DOI '+c.doi+' · '+c.cause+' · '+c.posture,act:`go('detail',${c.id})`}))},
+   {title:'Defendants & Defense Counsel', items:cases.flatMap(c=>c.defendants.filter(d=>m(d.name)||m(d.counsel)).map(d=>({label:d.name+(d.counsel?' — '+d.counsel:''),sub:(d.served?'served':'NOT SERVED')+' · on '+c.client,act:`go('detail',${c.id})`})))},
+   {title:'Mediators', items:Object.keys(MEDIATOR_INTEL).filter(n=>m(n)).map(n=>({label:n,sub:(MEDIATOR_INTEL[n].carriers.map(x=>x.c+': '+x.n+'×').join(' · ')||'no firm history yet'),act:`toast('Mediator dossier — carrier + defense-firm history shows on candidate cards')`}))},
+   {title:'Depositions', items:cases.flatMap(c=>c.depos.filter(d=>m(d.who)).map(d=>({label:d.who,sub:d.when+' · on '+c.client,act:`go('detail',${c.id})`})))},
+  ];
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Secrets & local env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node (Phase 1 app in web/)
+node_modules/
+web/node_modules/
+web/.next/
+web/out/
+web/dist/
+web/coverage/
+web/playwright-report/
+web/test-results/
+.next/
+out/
+dist/
+coverage/
+playwright-report/
+test-results/

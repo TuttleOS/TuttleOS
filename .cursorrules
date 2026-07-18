@@ -1,0 +1,19 @@
+# Tuttle OS — Cursor rules (distilled; full spec in MASTER_PROMPT.md — read it first)
+
+- Stack is fixed: Next.js App Router + TypeScript + Tailwind + Supabase (Postgres/Auth/Realtime/Storage) + TanStack Query + RHF/Zod + Playwright. Deploy: Vercel.
+- The database in sql/ is finished and authoritative. Security (RLS), audit, deadline math, and task generation live in Postgres. Never re-implement, bypass, or soften them in the app layer. Surface DB errors; don't work around them.
+- Never rename existing database objects. Column names are the API. New objects follow docs/DESIGN_NOTES.md "Naming Standard" (_at/_date/_due/_deadline; <verb>_by; bare-adjective booleans; singular tables; <table>_id PKs).
+- Schema changes ONLY as new numbered migrations with tested rollbacks, rehearsed on a scratch database before the real one. sql/tests/test_v2.5_battery.sql must stay green.
+- No hard deletes anywhere — soft delete via deleted_at; all list queries filter deleted_at IS NULL.
+- Legal deadlines are computed in the database (functions/triggers), never client-side. UI formats dates only.
+- Every displayed date shows day, month, AND year (date-fns "MMM d, yyyy"; timestamps "MMM d, yyyy, h:mm a"). No exceptions.
+- Status colors always ship icon + label, never color alone. Red=jurisdictional/overdue, amber=watch, green=done, blue=court-order/info — theme-invariant.
+- All colors/fonts via design tokens in one theme file (default "Parchment", plus "Midnight" dark). No hard-coded colors in components.
+- Every status indicator is a clickable link to its section (scroll + expand + flash). No dead-end status. Missing targets explain themselves.
+- Case pages default to Focus view (needs-you-now strip + collapsed cards); Full view toggle available.
+- Global search bar on every screen: partial matching, digit-normalized phones, DOI shown to disambiguate clients, Enter → categorized results page.
+- Every case surface shows the assigned CM and paralegal; missing assignment renders red UNASSIGNED (flag, never block).
+- Tasks: completion provenance (system/manual/manual_override + required reason). Document-backed tasks complete via the document, never a checkbox. Task chains: completing a link spawns the next; per-defendant instantiation; the service coverage board audits every defendant.
+- mockups/*.html are the functional spec; docs/ui-design-decisions.md is the owner's rulebook and wins all conflicts.
+- Fictional data only in seeds/tests. Real client data only via sql/migration/ run by the owner. No PHI to any AI/OCR service until the owner confirms BAAs.
+- When a workflow question isn't answered by the spec: smallest reasonable implementation + "// OWNER-DECISION-NEEDED:" comment + entry in DECISIONS_NEEDED.md. Never silently invent legal workflow.

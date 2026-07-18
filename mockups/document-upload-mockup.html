@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tuttle OS — Document Upload (v2.2 OPTIONAL preview)</title>
+<style>
+  :root{--page:#f4f3f0;--surface:#fff;--ink:#1f2328;--muted:#6d7178;--grid:#e3e1dc;--blue:#3b82c4;--blue-dk:#1c5cab;--blue-lt:#e3eefa;--good-text:#1e7a1e}
+  *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--page);color:var(--ink);font-size:14px}
+  .mockbar{background:#fdf3d7;border-bottom:1px solid #f2d891;color:#7a5600;font-size:12px;text-align:center;padding:6px}
+  .topbar{display:flex;align-items:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--grid);padding:10px 18px}
+  .brand{font-weight:800;letter-spacing:.5px}.brand span{color:var(--blue-dk)}
+  .ws-chip{background:var(--blue-lt);color:var(--blue-dk);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600}
+  .wrap{max-width:1060px;margin:14px auto;padding:0 14px}
+  .card{background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  h3{margin:0 0 8px;font-size:15px} .sub2{color:var(--muted);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px} th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;padding:6px 8px;border-bottom:1px solid var(--grid)} td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+  .badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+  .b-ok{background:#e2f4e2;color:var(--good-text)} .b-warn{background:#fdf3d7;color:#7a5600} .b-info{background:var(--blue-lt);color:var(--blue-dk)} .b-crit{background:#fbe3e3;color:#8f1f1f} .b-na{background:#f0efec;color:var(--muted)}
+  .drop{border:2px dashed var(--blue);border-radius:12px;background:var(--blue-lt);padding:22px;text-align:center;cursor:pointer;font-size:13px;color:var(--blue-dk)}
+  select,input[type=date],input[type=text]{border:1px solid var(--grid);border-radius:6px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--ink)}
+  .frow{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center;padding:4px 0;font-size:12.5px}
+  button{border:1px solid var(--grid);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+  .go{border-color:var(--good-text);color:var(--good-text);font-weight:600}
+  .bar{height:8px;background:var(--page);border-radius:4px;overflow:hidden;margin-top:8px;display:none}.bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .5s}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2328;color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .3s;max-width:640px;text-align:center;z-index:50}
+  .strike{text-decoration:line-through;color:var(--muted)}
+  .note-callout{background:#fdf3d7;border:1px solid #f2d891;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#7a5600;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="mockbar"><b>OPTIONAL v2.2 PREVIEW</b> — standalone demo of native file upload. None of your four workspaces has been changed. Backing out = never run the v2.2 script (and delete this file); a tested rollback script exists if it's ever applied and regretted.</div>
+<div class="topbar">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="ws-chip">Case Documents — upload preview</div>
+  <div class="sub2">Cantu, Rodrigo · DOI Mar 14, 2026 · 2026-CI-07733 · CM Christina · PL Priscilla</div>
+</div>
+<div class="wrap">
+
+  <div class="card">
+    <h3>📎 Add a document to this case <span class="sub2">(workflow.document — bytes go to encrypted Storage; the database keeps the pointer + every date)</span></h3>
+    <div class="drop" onclick="pickFile()">⬆ Drop a file here or click to browse<div class="sub2" id="picked" style="margin-top:4px">demo cycles through sample files — click me</div></div>
+    <div class="bar" id="bar"><i id="bari"></i></div>
+    <div class="frow"><span>Document type*</span>
+      <select id="dtype" onchange="typeHint()">
+        <optgroup label="Medical"><option value="medical_records">Medical records</option><option value="medical_bills">Medical bills</option></optgroup>
+        <optgroup label="Litigation"><option value="petition">Petition</option><option value="answer">Answer (defendant)</option><option value="citation">Citation</option><option value="dco">Scheduling order (DCO)</option><option value="production">Discovery production (Bates)</option><option value="affidavit_18001">§ 18.001 affidavit</option><option value="depo_transcript">Deposition transcript</option></optgroup>
+        <optgroup label="Investigation"><option value="police_report">Police / crash report (CR-3)</option><option value="photos_video">Photos / video</option></optgroup>
+        <optgroup label="Intake & General"><option value="contract">Contingent-fee contract</option><option value="hipaa_auth">HIPAA authorization</option><option value="correspondence">Correspondence</option><option value="other">Other</option></optgroup>
+      </select></div>
+    <div class="frow"><span>Title*</span><input type="text" id="dtitle" placeholder="e.g. Alamo Orthopedics — records 3/14/2026–7/1/2026" style="width:100%"></div>
+    <div class="frow"><span id="datelab">Received date*</span><input type="date" id="ddate"></div>
+    <div class="frow" id="batesrow" style="display:none"><span>Bates range</span><span style="display:flex;gap:8px"><input type="text" id="bfrom" placeholder="DEF 000001" style="width:130px"><input type="text" id="bto" placeholder="DEF 000214" style="width:130px"></span></div>
+    <div id="hint" class="sub2" style="margin:4px 0 0 170px"></div>
+    <div style="margin-top:10px"><button class="go" onclick="up()">Upload — save to case</button></div>
+  </div>
+
+  <div class="card">
+    <h3>Documents on this case <span class="sub2">— every row RLS-tiered exactly like the data; 🔒 = hidden from intake (row AND file); 🤖 = AI pass (OCR every page → describe → classify → extract)</span></h3>
+    <div style="margin:4px 0 10px">
+      <input type="text" id="doc-q" placeholder='🔎 Search EVERYTHING in this case file — try "fatigue" or "MRI" (full text of every page, not just titles)' style="width:100%" oninput="docSearch()">
+      <div id="doc-hits" style="display:none;background:var(--page);border:1px solid var(--grid);border-radius:8px;padding:8px 12px;margin-top:6px"></div>
+    </div>
+    <table><thead><tr><th>Type</th><th>Document</th><th>Status / dates</th><th>File</th><th>Uploaded</th><th></th></tr></thead>
+    <tbody id="docs"></tbody></table>
+    <div class="note-callout">Files are <b>immutable</b> — a corrected or amended version uploads as a NEW file chained to the old one (↳ supersedes), so the record of what existed when is never lost. Deletes are soft, like everywhere else in Tuttle OS. Legacy Dropbox files don't have to move: the same row can point at Dropbox until re-uploaded.</div>
+  </div>
+
+  <div class="card">
+    <h3>Access log <span class="sub2">— workflow.document_access_log: who touched which file, when (attorneys see all; staff see their own)</span></h3>
+    <table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Document</th></tr></thead><tbody id="alog">
+      <tr><td class="sub2">Jul 13, 2026, 9:02 AM</td><td>Priscilla O.</td><td><span class="badge b-info">download</span></td><td>CR-3 Crash Report — SAPD 26-118842</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+let tt; function toast(m){const t=$('#toast');t.innerHTML=m;t.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>t.style.opacity=0,5200)}
+const RESTRICTED=['medical_records','medical_bills','petition','answer','citation','dco','production','affidavit_18001','depo_transcript','police_report','photos_video'];
+const SAMPLES=[
+ {f:'SAPD_crash_report_26-118842.pdf', t:'police_report', title:'CR-3 Crash Report — SAPD 26-118842', mb:1.2},
+ {f:'alamo_ortho_records_2026.pdf', t:'medical_records', title:'Alamo Orthopedics — records Mar 14, 2026–Jul 1, 2026', mb:48.7},
+ {f:'original_petition_signed.pdf', t:'petition', title:'Plaintiff’s Original Petition (filed)', mb:0.4},
+ {f:'def_kestrel_answer.pdf', t:'answer', title:'Def Kestrel Logistics — Original Answer', mb:0.3},
+ {f:'vehicle_photos_scene.jpg', t:'photos_video', title:'Scene + vehicle photos (client phone)', mb:6.8},
+ {f:'signed_contract_EN.pdf', t:'contract', title:'Contingent-fee contract — executed', mb:0.5},
+ {f:'kestrel_production_vol1.pdf', t:'production', title:'Def Kestrel production Vol. 1', mb:112.3},
+];
+let si=-1, picked=null;
+function pickFile(){si=(si+1)%SAMPLES.length;picked=SAMPLES[si];
+  $('#picked').textContent='Selected: '+picked.f+' ('+picked.mb+' MB)';
+  $('#dtype').value=picked.t;$('#dtitle').value=picked.title;typeHint();}
+const AUTO={
+ police_report:'⚙ Task auto-completed: “Obtain police / crash report — portal retrieval” (completion_method = system). Sign-up checklist updated.',
+ answer:'⚙ Answer entry opens pre-filled — saving vacates the TRCP 99 deadline and generates the post-answer set (§ 18.001 clocks, disclosures, L2 provisional dates).',
+ petition:'⚙ To Be Filed: “FILED — enter it” opens pre-filled; court-scoped local-rule templates arm (e.g. 225th 45-day DCO rule).',
+ dco:'⚙ Scheduling-order entry opens — dates in the order get docketed as COURT ORDER and synced to the firm calendar.',
+ medical_records:'⚙ Records request marked RECEIVED; linked to the Alamo Ortho treatment episode; supplement flags recalculated.',
+ medical_bills:'⚙ Balance snapshot updated on the treatment episode; cost-to-date recalculated.',
+ photos_video:'⚙ Linked to the Property Damage card as scene evidence.',
+ contract:'⚙ Contract-executed trigger fires: the 9-task sign-up checklist generates (double-fire guarded).',
+ hipaa_auth:'⚙ Task auto-completed: HIPAA authorizations (completion_method = system).',
+ affidavit_18001:'⚙ § 18.001 affidavit deadline satisfied for this defendant; counter-affidavit watch continues.',
+ production:'⚙ Bates range indexed — searchable in discovery tracking; deficiency cross-check queued.',
+};
+function typeHint(){const t=$('#dtype').value;
+  $('#batesrow').style.display=t==='production'?'':'none';
+  $('#datelab').textContent=(t==='petition'||t==='answer'||t==='dco'||t==='affidavit_18001')?'Filed / served date*':'Received date*';
+  $('#hint').innerHTML=(RESTRICTED.includes(t)?'🔒 restricted category — intake will not see this row or file. ':'')+(AUTO[t]?'Saving will fire automation: '+AUTO[t].replace('⚙ ',''):'');}
+let DOCS=[
+ {type:'production',lab:'Production',title:'Def Kestrel production Vol. 2 (Bates DEF 000215–000334)',file:'kestrel_prod_vol2.pdf · 118.4 MB',status:'received Jul 2, 2026',by:'Priscilla O. · Jul 2, 2026, 2:20 PM',lock:true,
+  ai:{status:'enriched',pages:120,desc:'Dispatch logs and driver communications for the crash week. Text messages between dispatcher and driver reference schedule pressure and fatigue complaints (pp. 87–91).',
+      text:'page 87: driver texted dispatch — up since 3am running on fumes third double this week · page 88: dispatcher — load has to move tonight · driver fatigue referenced again page 91'}},
+ {type:'medical_records',lab:'Medical records',title:'Alamo Orthopedics — complete records',file:'alamo_ortho.pdf · 48.7 MB',status:'received Jun 20, 2026',by:'Christina C. · Jun 20, 2026, 11:05 AM',lock:true,
+  ai:{status:'enriched',pages:214,desc:'Full ortho chart Mar 14–Jul 1, 2026: initial eval, 18 PT visits, cervical MRI order + report (C5-6 herniation), ESI recommendation. ALL 214 pages OCR’d and searchable.',
+      text:'cervical MRI c5-6 herniation · epidural steroid injection recommended · physical therapy attendance gap flagged May 2 to May 19, 2026'}},
+ {type:'contract',lab:'Contract',title:'Contingent-fee contract — executed',file:'signed_contract_EN.pdf · 0.5 MB',status:'executed Apr 2, 2026',by:'Maria V. · Apr 2, 2026, 3:15 PM',lock:false,
+  ai:{status:'enriched',pages:6,desc:'Executed contingent-fee agreement (EN), signed Apr 2, 2026; standard tiers; expenses off the top.',text:'contingent fee agreement executed'}},
+ {type:'police_report',lab:'Police report',title:'CR-3 Crash Report — SAPD 26-118842',file:'SAPD_crash_report.pdf · 1.2 MB',status:'received Apr 9, 2026',by:'Christina C. · Apr 9, 2026, 10:40 AM',lock:true,
+  ai:{status:'failed',pages:null,error:'OCR error: unreadable page 4 (skewed scan) — 3 attempts',desc:null,text:''}},
+];
+function esc(s){return s.replace(/</g,'&lt;')}
+function aiChip(d,i){
+  if(!d.ai)return '<span class="badge b-na">queued</span>';
+  const a=d.ai;
+  if(a.status==='enriched')return `<span class="badge b-ok" title="Every page OCR'd; description + extraction written by the AI pass">🤖 enriched · ${a.pages} pp</span>`;
+  if(a.status==='processing')return '<span class="badge b-info">🤖 processing…</span>';
+  if(a.status==='queued')return '<span class="badge b-na">🤖 queued</span>';
+  return `<span class="badge b-crit" title="${esc(a.error||'')}">🤖 FAILED — <a style="cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();retryAi(${i})">retry</a></span>`;
+}
+function retryAi(i){DOCS[i].ai={status:'processing'};renderDocs();
+  setTimeout(()=>{DOCS[i].ai={status:'enriched',pages:38,desc:'CR-3 crash report: unit 2 (Kestrel tractor-trailer) failed to control speed; contributing factor 44 (fatigued/asleep) coded by investigating officer. Diagram p. 3.',text:'contributing factor fatigued asleep unit 2 failed to control speed'};renderDocs();
+  toast('Re-OCR succeeded on retry — document enriched; contributing factor 44 (fatigue) now searchable.')},1200);}
+function docSearch(){
+  const q=document.getElementById('doc-q').value.trim().toLowerCase();
+  const box=document.getElementById('doc-hits');
+  if(!q){box.style.display='none';return}
+  const hits=DOCS.map((d,i)=>({d,i})).filter(({d})=>((d.ai&&(d.ai.text||'')+' '+(d.ai.desc||''))+' '+d.title).toLowerCase().includes(q));
+  box.style.display='';
+  box.innerHTML=`<b style="font-size:12.5px">${hits.length} document(s) mention “${esc(q)}”</b>`+(hits.length?hits.map(({d})=>{
+    const src=((d.ai&&d.ai.text)||'')+' '+((d.ai&&d.ai.desc)||'');
+    const at=src.toLowerCase().indexOf(q);
+    const snip=at>-1?('…'+src.slice(Math.max(0,at-60),at+q.length+60)+'…'):d.title;
+    return `<div style="border-top:1px solid var(--grid);padding:6px 0;font-size:12.5px"><b>${esc(d.title)}</b><div class="sub2">${esc(snip).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>')}</div></div>`;
+  }).join(''):'<div class="sub2" style="padding:6px 0">no matches in this case file</div>');
+}
+function aiAction(i,kind){
+  const d=DOCS[i];
+  logRow('view',d.title);
+  if(kind==='sum')toast('🤖 On-demand job enqueued: SUMMARIZE (complete document — all '+((d.ai&&d.ai.pages)||'?')+' pages, never first-pages-only). Result lands on the document row and in your My Activity.');
+  else toast('🤖 On-demand job enqueued: EXTRACT TREATMENT DATA — dates, providers, CPT/ICD codes into structured fields; feeds the treatment log and § 18.001 affidavit prep.');
+}
+function renderDocs(){
+  $('#docs').innerHTML=DOCS.map((d,i)=>`<tr>
+    <td><span class="badge ${d.lock?'b-warn':'b-na'}">${d.lab}</span>${d.lock?'<div class="sub2">🔒 no intake</div>':''}</td>
+    <td class="${d.old?'strike':''}">${esc(d.title)}${d.super?'<div class="sub2">↳ supersedes: '+esc(d.super)+'</div>':''}
+      ${d.ai&&d.ai.desc?`<div class="sub2" style="margin-top:3px">🤖 ${esc(d.ai.desc)}</div>`:''}
+      <div style="margin-top:3px">${aiChip(d,i)}</div></td>
+    <td class="sub2">${d.status}${d.bates?'<div>Bates '+d.bates+'</div>':''}</td>
+    <td class="sub2">${d.file}</td>
+    <td class="sub2">${d.by}</td>
+    <td>${d.old?'':`<button onclick="view(${i})">View</button> <button onclick="supersede(${i})">↺ New version</button>
+      ${d.ai&&d.ai.status==='enriched'?`<div style="margin-top:4px"><button onclick="aiAction(${i},'sum')" title="Complete-document summary — every page">🤖 Summarize</button>${d.type==='medical_records'?` <button onclick="aiAction(${i},'ext')">🤖 Extract treatment</button>`:''}</div>`:''}`}</td>
+  </tr>`).join('');
+}
+function up(){
+  if(!picked){toast('Pick a file first (click the drop zone)');return}
+  if(!$('#ddate').value){toast('The date is required — every document carries its real-world date, day-month-year');return}
+  const t=$('#dtype').value;
+  $('#bar').style.display='block';$('#bari').style.width='0';
+  setTimeout(()=>$('#bari').style.width='100%',30);
+  setTimeout(()=>{
+    $('#bar').style.display='none';
+    const dt=new Date($('#ddate').value+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    DOCS.unshift({type:t,lab:$('#dtype').selectedOptions[0].text,title:$('#dtitle').value||picked.title,
+      file:picked.f+' · '+picked.mb+' MB',status:($('#datelab').textContent.startsWith('Filed')?'filed/served ':'received ')+dt,
+      by:'Priscilla O. · Jul 13, 2026, now',lock:RESTRICTED.includes(t),
+      bates:t==='production'&&$('#bfrom').value?$('#bfrom').value+' – '+$('#bto').value:null,
+      ai:{status:'queued'}});
+    renderDocs();
+    const newDoc=DOCS[0], estPages=Math.max(1,Math.round(picked.mb*2));
+    setTimeout(()=>{if(newDoc.ai&&newDoc.ai.status==='queued'){newDoc.ai={status:'processing'};renderDocs();}},900);
+    setTimeout(()=>{if(newDoc.ai&&newDoc.ai.status==='processing'){newDoc.ai={status:'enriched',pages:estPages,desc:'AI pass complete: classified as '+t.replace(/_/g,' ')+', every page OCR’d, key dates/parties extracted into structured fields.',text:t.replace(/_/g,' ')};renderDocs();toast('🤖 AI pass finished — described, classified, extracted; full text now searchable above.');}},2400);
+    logRow('upload',DOCS[0].title);
+    toast('✓ Saved — file encrypted in Storage, row written to workflow.document, synced.<br>'+(AUTO[t]||''));
+    picked=null;$('#picked').textContent='demo cycles through sample files — click me';$('#dtitle').value='';$('#ddate').value='';
+  },650);
+}
+function view(i){logRow('view',DOCS[i].title);toast('Opens via a short-lived signed URL — this view was just written to the access log below (HIPAA trail).')}
+function supersede(i){
+  const old=DOCS[i];
+  DOCS[i]={...old,old:true};
+  DOCS.unshift({...old,old:false,super:old.title,title:old.title+' (corrected)',by:'Priscilla O. · Jul 13, 2026, now',status:old.status+' · v2'});
+  renderDocs();logRow('replace',DOCS[0].title);
+  toast('New version chained via supersedes_document_id — the original stays on the record, struck through, never overwritten.');
+}
+function logRow(action,doc){
+  const b={upload:'b-ok',view:'b-info',replace:'b-warn'}[action]||'b-na';
+  $('#alog').insertAdjacentHTML('afterbegin',`<tr><td class="sub2">Jul 13, 2026, now</td><td>Priscilla O.</td><td><span class="badge ${b}">${action}</span></td><td>${esc(doc)}</td></tr>`);
+}
+renderDocs();typeHint();
+</script>
+</body>
+</html>

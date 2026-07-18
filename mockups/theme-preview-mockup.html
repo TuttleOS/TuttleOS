@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tuttle OS — Theme Preview (colors & fonts)</title>
+<style>
+  /* ============ THEME TOKENS — the ONLY thing that changes per theme ============ */
+  body[data-theme="parchment"]{
+    --page:#f4f3f0;--surface:#fff;--ink:#1f2328;--muted:#6d7178;--grid:#e3e1dc;
+    --accent:#3b82c4;--accent-dk:#1c5cab;--accent-lt:#e3eefa;--sidebar:#fff;--sidebar-ink:#1f2328;--top:#fff;--top-ink:#1f2328;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--display:inherit;
+  }
+  body[data-theme="navy"]{
+    --page:#f7f5f0;--surface:#fffdf8;--ink:#22262b;--muted:#6b7078;--grid:#e6e2d8;
+    --accent:#b08d3f;--accent-dk:#8a6c2a;--accent-lt:#f3ecdc;--sidebar:#152947;--sidebar-ink:#e8ecf3;--top:#152947;--top-ink:#f2f4f8;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--display:Georgia,'Times New Roman',serif;
+  }
+  body[data-theme="crashguy"]{
+    --page:#f6f6f7;--surface:#fff;--ink:#17181c;--muted:#5f646c;--grid:#e5e5e8;
+    --accent:#d5312e;--accent-dk:#a81f1d;--accent-lt:#fdeaea;--sidebar:#17181c;--sidebar-ink:#f2f2f2;--top:#17181c;--top-ink:#fff;
+    --font:'Segoe UI',system-ui,Roboto,sans-serif;--display:inherit;
+  }
+  body[data-theme="midnight"]{
+    --page:#14171c;--surface:#1d2128;--ink:#e6e8ec;--muted:#9aa0aa;--grid:#2c313a;
+    --accent:#5b9bd9;--accent-dk:#8bbcec;--accent-lt:#24344a;--sidebar:#1a1e25;--sidebar-ink:#dfe3e9;--top:#1a1e25;--top-ink:#eceef2;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--display:inherit;
+  }
+  /* ============ everything below NEVER changes between themes ============ */
+  *{box-sizing:border-box} body{margin:0;font-family:var(--font);background:var(--page);color:var(--ink);font-size:14px;transition:background .25s}
+  .pickbar{background:var(--surface);border-bottom:1px solid var(--grid);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+  .sw{display:flex;gap:0;border:2px solid var(--grid);border-radius:8px;overflow:hidden;cursor:pointer}
+  .sw i{width:22px;height:22px;display:block}
+  .sw.on{border-color:var(--accent-dk);box-shadow:0 0 0 2px var(--accent-lt)}
+  .swlab{font-size:12px;font-weight:600;margin-right:14px;cursor:pointer}
+  .top{display:flex;align-items:center;gap:14px;background:var(--top);color:var(--top-ink);padding:10px 18px}
+  .brand{font-weight:800;letter-spacing:.5px;font-family:var(--display)}.brand span{color:var(--accent)}
+  .chip{background:var(--accent-lt);color:var(--accent-dk);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600}
+  .search{margin-left:auto;background:var(--page);color:var(--muted);border-radius:999px;padding:6px 16px;font-size:12.5px;border:1px solid var(--grid)}
+  .layout{display:grid;grid-template-columns:190px 1fr;min-height:520px}
+  nav{background:var(--sidebar);color:var(--sidebar-ink);padding:12px 8px}
+  nav b{display:block;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:2px;cursor:pointer}
+  nav b.on{background:var(--accent-lt);color:var(--accent-dk)}
+  main{padding:16px}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .tile{background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:10px 12px}
+  .tile .k{font-size:11.5px;color:var(--muted);font-weight:600}.tile .v{font-size:22px;font-weight:800;font-family:var(--display)}
+  .tile.crit{border-color:#d88} .tile.warn{border-color:#d9b96a}
+  .card{background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+  h3{margin:0 0 8px;font-size:15px;font-family:var(--display)} .sub2{color:var(--muted);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px} th{text-align:left;color:var(--muted);font-size:11.5px;padding:5px 8px;border-bottom:1px solid var(--grid)} td{padding:7px 8px;border-bottom:1px solid var(--grid)}
+  .badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:600}
+  .b-ok{background:#e2f4e2;color:#1e7a1e}.b-warn{background:#fdf3d7;color:#7a5600}.b-crit{background:#fbe3e3;color:#8f1f1f}.b-info{background:var(--accent-lt);color:var(--accent-dk)}
+  body[data-theme="midnight"] .b-ok{background:#1d3a1d;color:#8fd48f} body[data-theme="midnight"] .b-warn{background:#403514;color:#e8c96a} body[data-theme="midnight"] .b-crit{background:#472020;color:#f1a0a0}
+  a.case{color:var(--accent-dk);font-weight:600;text-decoration:none;border-bottom:1px dotted var(--accent)}
+  .tl{display:flex;gap:0;flex-wrap:wrap}
+  .tl div{flex:1;min-width:96px;font-size:10.5px;padding:6px 12px 6px 4px;position:relative;color:var(--muted)}
+  .tl div::after{content:'›';position:absolute;right:2px;top:6px}
+  .tl b{display:block;font-size:11px;color:var(--ink)}
+  .tl .done b{color:var(--muted)} .tl .now{background:var(--accent-lt);border-radius:8px} .tl .now b{color:var(--accent-dk)}
+  button.go{border:1px solid #1e7a1e;color:#1e7a1e;background:transparent;border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+  body[data-theme="midnight"] button.go{border-color:#8fd48f;color:#8fd48f}
+  .note{background:var(--accent-lt);color:var(--accent-dk);border-radius:8px;padding:8px 12px;font-size:12px;margin-top:10px}
+</style>
+</head>
+<body data-theme="parchment">
+<div class="pickbar">
+  <span style="font-weight:700;font-size:13px">🎨 Pick a look — same screens, only the token block changes:</span>
+  <span class="sw on" data-t="parchment" onclick="setT('parchment',this)"><i style="background:#f4f3f0"></i><i style="background:#3b82c4"></i><i style="background:#1f2328"></i></span><span class="swlab" onclick="setT('parchment')">Parchment (current)</span>
+  <span class="sw" data-t="navy" onclick="setT('navy',this)"><i style="background:#152947"></i><i style="background:#b08d3f"></i><i style="background:#fffdf8"></i></span><span class="swlab" onclick="setT('navy')">Counsel Navy & Brass</span>
+  <span class="sw" data-t="crashguy" onclick="setT('crashguy',this)"><i style="background:#17181c"></i><i style="background:#d5312e"></i><i style="background:#fff"></i></span><span class="swlab" onclick="setT('crashguy')">Crash Guy Bold</span>
+  <span class="sw" data-t="midnight" onclick="setT('midnight',this)"><i style="background:#14171c"></i><i style="background:#5b9bd9"></i><i style="background:#1d2128"></i></span><span class="swlab" onclick="setT('midnight')">Midnight (dark)</span>
+</div>
+
+<div class="top">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="chip">Litigation Paralegal Workspace</div>
+  <div class="search">🔎 Search files — name, cause #, phone…</div>
+  <div style="font-size:12.5px">Priscilla Ortega · Litigation Paralegal</div>
+</div>
+<div class="layout">
+  <nav>
+    <b class="on">My Cases</b><b>To Be Filed</b><b>SOL Watchlist</b><b>Service Incomplete</b><b>Depositions</b><b>Mediations</b><b>Trials</b><b>Deadline Horizon</b>
+  </nav>
+  <main>
+    <div class="tiles">
+      <div class="tile"><div class="k">My litigation cases</div><div class="v">14</div></div>
+      <div class="tile crit"><div class="k">🛑 Jurisdictional 45d</div><div class="v">5</div></div>
+      <div class="tile crit"><div class="k">🔔 Answers overdue</div><div class="v">1</div></div>
+      <div class="tile warn"><div class="k">📁 To be filed</div><div class="v">3</div></div>
+    </div>
+    <div class="card">
+      <h3>Case timeline <span class="sub2">— Cantu, Rodrigo · DOI Mar 14, 2026</span></h3>
+      <div class="tl">
+        <div class="done"><b>✓ Suit filed</b>Jun 26, 2026</div>
+        <div class="done"><b>✓ Citation issued</b>at filing</div>
+        <div class="now"><b>● Service</b>⚠ 1 of 2 unserved</div>
+        <div><b>○ Answers</b>TRCP 99</div>
+        <div><b>○ Scheduling order</b>225th: 45d rule</div>
+        <div><b>○ Disclosures</b>194.2(a)</div>
+        <div><b>○ Mediation</b>—</div>
+        <div><b>○ Trial</b>not set</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Deadline Horizon <span class="sub2">— next 45 days</span></h3>
+      <table>
+        <thead><tr><th>Date</th><th>Deadline</th><th>Case</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td><b>Jul 6, 2026</b> <span class="badge b-crit">OVERDUE</span></td><td>Answer due — Voss Freightways LLC</td><td><a class="case">Ibarra, Ramon</a></td><td class="sub2">rule</td></tr>
+          <tr><td><b>Jul 17, 2026</b></td><td><span class="badge b-crit">JX</span> Motion to compel — draft to Michael</td><td><a class="case">Ibarra, Ramon</a></td><td class="sub2">internal</td></tr>
+          <tr><td><b>Aug 10, 2026</b></td><td>DCO must be filed — 225th 45-day rule</td><td><a class="case">Whitfield, Dana</a></td><td class="sub2">rule</td></tr>
+          <tr><td><b>Sep 15, 2026</b></td><td><span class="badge b-info">COURT ORDER</span> Mediation deadline — DCO ¶9</td><td><a class="case">Ibarra, Ramon</a></td><td class="sub2">court order</td></tr>
+        </tbody>
+      </table>
+      <button class="go" style="margin-top:10px">Save order — docket deadlines</button>
+      <span class="badge b-ok" style="margin-left:8px">✓ served</span>
+      <span class="badge b-warn" style="margin-left:4px">answer due Aug 10, 2026</span>
+      <div class="note">Status colors keep their meanings in every theme — red is always jurisdictional/overdue, amber is always watch, green is always done — and always ship with an icon + label (universal rule 12). Dates always show day, month, and year (rule 13). Only the shell changes.</div>
+    </div>
+  </main>
+</div>
+<script>
+function setT(t,el){
+  document.body.setAttribute('data-theme',t);
+  document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on',s.getAttribute('data-t')===t));
+}
+</script>
+</body>
+</html>

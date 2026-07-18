@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuttle OS — Case Manager Workspace (Mockup)</title>
+<style>
+  :root{
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --blue-dk:#1c5cab; --blue-lt:#cde2fb;
+    --good:#0ca30c; --good-text:#006300; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --r:10px;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);font-size:14px;line-height:1.45}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:16px;padding:10px 20px;position:sticky;top:0;z-index:5}
+  .brand{font-weight:700;font-size:15px} .brand span{color:var(--blue)}
+  .ws-chip{font-size:12px;color:var(--ink2);background:var(--page);border:1px solid var(--grid);border-radius:999px;padding:3px 10px}
+  .spacer{flex:1}
+  .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px}
+  nav.side{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  nav.side button{border:1px solid var(--grid);background:var(--surface);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--ink2);cursor:pointer}
+  nav.side button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  nav.side .locked{opacity:.45;cursor:not-allowed}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+  .tile:hover{border-color:var(--baseline)}
+  .tile .k{font-size:12px;color:var(--ink2);margin-bottom:4px}
+  .tile .v{font-size:26px;font-weight:700}
+  .tile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .tile.crit{border-left:4px solid var(--critical)} .tile.warn{border-left:4px solid var(--warning)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+  .panel h2{font-size:14px;margin:0;padding:12px 16px;border-bottom:1px solid var(--grid)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--grid);font-size:12px;white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+  tr.row{cursor:pointer} tr.row:hover td{background:var(--page)}
+  .name{font-weight:600} .sub2{color:var(--muted);font-size:12px}
+  .caselink{font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none} .caselink:hover{text-decoration:underline}
+  .stage{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;background:var(--blue-lt);color:var(--blue-dk);white-space:nowrap}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .b-ok{background:#e2f4e2;color:var(--good-text)}
+  .b-warn{background:#fdf3d7;color:#7a5600}
+  .b-ser{background:#fde8df;color:#9a4218}
+  .b-crit{background:#fbe3e3;color:#8f1f1f}
+  .b-na{background:#f0efec;color:var(--muted)}
+  .b-info{background:var(--blue-lt);color:var(--blue-dk)}
+  .flags{display:flex;gap:4px;flex-wrap:wrap}
+  .sol{font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;border-radius:6px;padding:2px 7px}
+  .sol.far{background:#f0efec;color:var(--ink2)} .sol.near{background:#fdf3d7;color:#7a5600} .sol.crit{background:#fbe3e3;color:#8f1f1f}
+  .cols{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+  .card h3{margin:0 0 10px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  .back{color:var(--blue);cursor:pointer;font-size:13px;margin-bottom:12px;display:inline-block}
+  button.primary{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button.ghost{background:var(--surface);border:1px solid var(--grid);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  .btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .badgewall{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}
+  .contactstrip{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px 12px;background:var(--page);border:1px solid var(--grid);border-radius:8px;font-size:13.5px}
+  .contactstrip a{color:var(--blue);font-weight:600;text-decoration:none}
+  .contactstrip a:hover{text-decoration:underline}
+  .copybtn{border:1px solid var(--grid);background:var(--surface);border-radius:6px;padding:2px 8px;font-size:11.5px;color:var(--ink2);cursor:pointer}
+  .copybtn:hover{border-color:var(--blue);color:var(--blue)}
+  .tasklist li{list-style:none;display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13px}
+  .tasklist{margin:6px 0 0;padding:0}
+  .tick{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none}
+  .tick.y{background:#e2f4e2;color:var(--good-text)} .tick.n{background:#f0efec;color:var(--muted)}
+  .evt{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+  .evt input{accent-color:var(--blue)}
+  .note-callout{background:#fdf3d7;border:1px solid #f2d891;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#7a5600;margin-top:10px}
+  .callrow td{padding:10px 12px}
+  .bal{font-variant-numeric:tabular-nums}
+  .aging{font-variant-numeric:tabular-nums;font-weight:600}
+  .aging.bad{color:var(--critical)}
+  .log{margin:0;padding:0}
+  .log li{list-style:none;border-left:2px solid var(--grid);margin-left:6px;padding:2px 0 12px 14px;position:relative;font-size:13px}
+  .log li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--baseline);position:absolute;left:-5px;top:6px}
+  .log li.first::before{background:var(--blue)}
+  .log .when{color:var(--muted);font-size:12px}
+  .lockfoot{color:var(--muted);font-size:12px;text-align:center;padding:14px 0 30px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+  .mockbar{background:#eef4fc;border-bottom:1px solid #cfe0f5;color:#1c5cab;font-size:12px;text-align:center;padding:5px}
+  .prog{height:6px;background:var(--grid);border-radius:3px;overflow:hidden;margin-top:6px}
+  .prog>div{height:100%;background:var(--blue);border-radius:3px}
+  .gsearch{position:relative}
+  .gsearch input{width:250px;border:1px solid var(--grid);border-radius:999px;padding:7px 14px 7px 32px;font-size:13px;background:var(--page);color:var(--ink);outline:none}
+  .gsearch input:focus{border-color:var(--blue);background:var(--surface);width:310px}
+  .gsearch .gs-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .gs-drop{position:absolute;top:110%;left:0;right:0;background:var(--surface);border:1px solid var(--grid);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:30;display:none}
+  .gs-drop.open{display:block}
+  .gs-item{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .gs-item:hover,.gs-item.sel{background:var(--blue-lt)}
+  .gs-item .gs-sub{color:var(--muted);font-size:11.5px}
+  .gs-none{padding:10px 12px;font-size:12.5px;color:var(--muted)}
+  /* focus view: collapsed cards show only their header line */
+  .card.collapsed > *:not(h3){display:none}
+  .card.collapsed{padding-top:10px;padding-bottom:10px}
+  .card.collapsed h3{margin:0}
+  .jump-flash{outline:3px solid var(--blue);outline-offset:2px;transition:outline .3s}
+</style>
+</head>
+<body>
+<div class="mockbar">CLICKABLE MOCKUP — fictional data, nothing is saved. Built for design feedback only. &nbsp;·&nbsp; <a href="#" onclick="setPLMode(!PL_MODE);return false" style="color:#1c5cab;font-weight:600">demo: log in as paralegal ⇄ case manager</a></div>
+<div id="as-paralegal-banner" style="display:none;background:#fdf3d7;border-bottom:1px solid #f2d891;color:#7a5600;font-size:12.5px;text-align:center;padding:6px 10px">
+  🔁 <b>Case Manager view</b> — you are <b>Priscilla Ortega (Litigation Paralegal)</b>. Every tab and function works exactly as it does for a CM; everything you do audits under YOUR name.
+  <a href="litigation-paralegal-workspace-mockup.html" style="color:#1c5cab;font-weight:600;margin-left:10px">← Back to Paralegal workspace</a>
+</div>
+<div class="topbar">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="ws-chip">Case Manager Workspace</div>
+    <div class="gsearch">
+    <span class="gs-icon">🔎</span>
+    <input id="gs-input" type="text" placeholder="Search files — name, cause #, phone…" autocomplete="off"
+      oninput="gsFilter(this.value)" onkeydown="gsKey(event)" onfocus="gsFilter(this.value)" onblur="setTimeout(()=>gsClose(),150)">
+    <div class="gs-drop" id="gs-drop"></div>
+  </div>
+  <div class="spacer"></div>
+  <a id="back-to-pl" href="litigation-paralegal-workspace-mockup.html" style="display:none;text-decoration:none;border:1px solid var(--blue);color:var(--blue-dk);background:var(--blue-lt);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;white-space:nowrap" title="Back to your Litigation Paralegal workspace">🔁 Paralegal view</a>
+  <div class="user"><div class="avatar">CC</div> Christina Calderon · Case Manager</div>
+</div>
+
+<div class="wrap">
+  <nav class="side">
+    <button class="on" id="nav-dash" onclick="go('dash')">My Caseload</button>
+    <button id="nav-calls" onclick="go('calls')">Provider Calls</button>
+    <button id="nav-tasks" onclick="go('tasks')">My Tasks</button>
+    <button id="nav-pview" onclick="go('pview')">Paralegal View (limited)</button>
+    <button id="nav-act" onclick="go('act')">My Activity</button>
+    <button class="locked" title="Attorney + lien/disbursement roles only — enforced by the database">Financials 🔒</button>
+    <button class="locked" title="Attorney + litigation paralegal only — enforced by the database">Discovery Content 🔒</button>
+  </nav>
+  <div id="view"></div>
+  <div class="lockfoot">Case Manager role: full case visibility including intake history · financial detail and discovery work product are restricted — enforced by the database, not just hidden.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY=new Date('2026-07-13');
+const DOC_BACKED={dinsco_lor:'the LOR SENT date is recorded on the DINSCO claim (generated ≠ sent)',pinsco_lor:'the LOR SENT date is recorded on the PINSCO claim (generated ≠ sent)',pinsco_dec:'the Dec Sheet is logged',hipaa_auth:'the signed authorization is logged',police_report:'the CR-3 is actually saved to the file (portal retrieval — keep checking)'};
+let pendingOverride=null;
+function age(dob){const d=new Date(dob);let a=TODAY.getFullYear()-d.getFullYear();if(TODAY<new Date(TODAY.getFullYear(),d.getMonth(),d.getDate()))a--;return a}
+function copyText(t,label){
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(
+    ()=>toast(label+' copied — ready to paste into a cc line'),
+    ()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(label+' copied — ready to paste into a cc line')});
+}
+function rcCall(n){toast('RingCentral call initiated to '+n+' — logged to this matter as an outbound call automatically')}
+function openCase(name){
+  const c=cases.find(x=>x.client===name);
+  if(c){go('detail',c.id)}
+  else toast('That case exists in the full system — this mockup only carries 6 sample cases');
+}
+/* --------- fictional caseload --------- */
+/* incident groups — ONE crash, MULTIPLE clients. Each client is their OWN matter:
+   own SOL, own medicals, own negotiation, own settlement. The group ties them together. */
+const GROUPS={
+ G1:{label:'Crash of Jul 8, 2026 — Culebra Rd @ Callaghan', members:[1,7,8],
+   roles:{1:'driver (our vehicle)',7:'front passenger — Rosa’s sister',8:'rear passenger — MINOR (Rosa’s son, 9)'},
+   waiver:{status:'cleared', detail:'Passenger-vs-driver conflict analyzed (Isela could theoretically claim against Rosa). Cleared by Michael Jul 12, 2026; written waivers signed by both adults, Mateo’s via next friend; representation_link on file with copy-sharing ON.'},
+   copySharing:true,
+   shared:[
+     ['Police report','ONE portal pull — when the CR-3 posts it files to all three matters and completes each checklist task'],
+     ['DINSCO liability','SAME at-fault policy — GEICO 30/60: THREE BI claimants share the $60,000 aggregate (max $30k each). Allocation & settlement sequencing = ATTORNEY decision; the three demands are tracked together.'],
+     ['Property damage','Rosa’s matter ONLY — she owns the vehicle. No PD card on Isela’s or Mateo’s files.'],
+   ]},
+};
+const cases=[
+ {id:1, client:'Delgado, Rosa', grp:'G1', paralegal:'Priscilla Ortega', pd:{status:'Not Started',setup:true}, claims:[], episodes:[], treatCov:{}, treatLog:[], dob:'1991-03-22', phone:'(210) 555-0119', email:'rosa.d@example.com', type:'Car Crash', doi:'2026-07-08', signup:'2026-07-13', stage:'Viability', daysInStage:0, lang:'ES',
+  level:{s:'missing', note:'due with 7-day review — Jul 20, 2026'}, sol:'2028-07-08',
+  badges:{pd:'In Progress', auth:'Outstanding', liens:'Not Screened', treat:'Not Started', tbi:false, viab:'Pending — due Jul 20, 2026', dps:'—', pubrec:'—'},
+  checklist:[
+    ['Obtain HIPAA / medical authorizations',false,'hipaa_auth'],
+    ['Open DINSCO (3rd-party) claim',false,'dinsco_claim'],
+    ['Send DINSCO LOR',false,'dinsco_lor'],
+    ['Open PINSCO (1st-party) claim',false,'pinsco_claim'],
+    ['Send PINSCO LOR',false,'pinsco_lor'],
+    ['Obtain PINSCO Dec Sheet',false,'pinsco_dec'],
+    ['Obtain police / crash report — portal, retry until in file',false,'police_report'],
+    ['Complete Case Profile for 7-day review',false,null],
+    ['Confirm SOL / limitations analysis',false,null]],
+  pinscoRefused:false,
+  flags:['7-day review clock running','Checklist 0/9'],
+  notes:[{when:'Jul 13, 2026, 9:05 AM',who:'system',what:'Contract executed — matter opened; checklist created; viability due Jul 20, 2026'},{when:'Jul 12, 2026, 4:10 PM',who:'MT',what:'Companion matters signed: sister Isela (passenger) + son Mateo (minor). Passenger-vs-driver conflict CLEARED, waivers executed, copy-sharing on. GEICO 30/60 — three claimants share the $60k aggregate.'}]},
+ {id:7, client:'Delgado, Isela', grp:'G1', paralegal:'Priscilla Ortega', pd:{status:'N/A'}, claims:[], episodes:[], treatCov:{}, treatLog:[], dob:'1994-08-02', phone:'(210) 555-0173', email:'isela.d@example.com', type:'Car Crash', doi:'2026-07-08', signup:'2026-07-13', stage:'Viability', daysInStage:0, lang:'ES',
+  level:{s:'missing', note:'due with 7-day review — Jul 20, 2026'}, sol:'2028-07-08',
+  badges:{pd:'N/A', auth:'Outstanding', liens:'Not Screened', treat:'Not Started', tbi:false, viab:'Pending — due Jul 20, 2026', dps:'—', pubrec:'—'},
+  checklist:[
+    ['Obtain HIPAA / medical authorizations',false,'hipaa_auth'],
+    ['Open DINSCO (3rd-party) claim',false,'dinsco_claim'],
+    ['Send DINSCO LOR',false,'dinsco_lor'],
+    ['Open PINSCO (1st-party) claim',false,'pinsco_claim'],
+    ['Send PINSCO LOR',false,'pinsco_lor'],
+    ['Obtain PINSCO Dec Sheet',false,'pinsco_dec'],
+    ['Obtain police / crash report — portal, retry until in file',false,'police_report'],
+    ['Complete Case Profile for 7-day review',false,null],
+    ['Confirm SOL / limitations analysis',false,null]],
+  pinscoRefused:false,
+  flags:['7-day review clock running','Checklist 0/9'],
+  notes:[{when:'Jul 13, 2026, 9:10 AM',who:'system',what:'Contract executed — companion matter to Rosa Delgado (same crash); conflict waiver on file'}]},
+ {id:8, client:'Delgado, Mateo', grp:'G1', minor:true, nextFriend:'Delgado, Rosa (mother)', paralegal:'Priscilla Ortega', pd:{status:'N/A'}, claims:[], episodes:[], treatCov:{}, treatLog:[], dob:'2017-02-14', phone:'(210) 555-0119', email:'rosa.d@example.com', type:'Car Crash', doi:'2026-07-08', signup:'2026-07-13', stage:'Viability', daysInStage:0, lang:'ES',
+  level:{s:'missing', note:'due with 7-day review — Jul 20, 2026'}, sol:'ATTORNEY-VERIFY',
+  badges:{pd:'N/A', auth:'Outstanding', liens:'Not Screened', treat:'Not Started', tbi:false, viab:'Pending — due Jul 20, 2026', dps:'—', pubrec:'—'},
+  checklist:[
+    ['Obtain HIPAA / medical authorizations (signed by next friend)',false,'hipaa_auth'],
+    ['Open DINSCO (3rd-party) claim',false,'dinsco_claim'],
+    ['Send DINSCO LOR',false,'dinsco_lor'],
+    ['Open PINSCO (1st-party) claim',false,'pinsco_claim'],
+    ['Send PINSCO LOR',false,'pinsco_lor'],
+    ['Obtain PINSCO Dec Sheet',false,'pinsco_dec'],
+    ['Obtain police / crash report — portal, retry until in file',false,'police_report'],
+    ['Complete Case Profile for 7-day review',false,null],
+    ['Confirm SOL / limitations analysis — MINOR tolling (CPRC 16.001) ATTORNEY-VERIFY',false,null]],
+  pinscoRefused:false,
+  flags:['MINOR — friendly suit / court approval at settlement','Checklist 0/9'],
+  notes:[{when:'Jul 13, 2026, 9:12 AM',who:'system',what:'Contract via next friend Rosa Delgado (mother). Minor: limitations tolled (ATTORNEY-VERIFY); settlement will need court approval / friendly suit.'}]},
+ {id:2, client:'Okafor, Chidi', paralegal:'Priscilla Ortega', pd:{route:'DINSCO PD — Allstate (Marcus Lin, PD adjuster)', status:'Resolved',vehicle:'2021 Toyota Tacoma',location:'returned to client',repair:'repairable — Caliber Collision',valuation:'$8,412 estimate paid',lienholder:'n/a',rental:'ended (11 days)',lou:'—',dv:'evaluated — $1,900 claimed',deductible:'$500 reimbursed',lastTouch:'May 02, 2026',days:72,resolved:'May 02, 2026'}, claims:[
+   {role:'DINSCO · liability',carrier:'Allstate',num:'0482-77619',limits:'30k/60k',status:'liability accepted 100%',lor:'Apr 15, 2026',adjusters:[
+     {fn:'BI',name:'Brenda Yates',phone:'(800) 555-0666 x4417',email:'byates@allstate.example.com'},
+     {fn:'PD',name:'Marcus Lin',phone:'(800) 555-0668 x2203',email:'mlin@allstate.example.com'}]},
+   {role:'PINSCO · PIP',carrier:'State Farm',num:'SF-291-4483',limits:'$2,500 PIP',status:'open',lor:'Apr 15, 2026',adjusters:[
+     {fn:'PIP',name:'PIP Unit 3',phone:'(800) 555-0721',email:'pipunit3@statefarm.example.com'}]}], dob:'1984-11-05', phone:'(210) 555-0184', email:'c.okafor@example.com', type:'Car Crash', doi:'2026-04-02', signup:'2026-04-10', stage:'Treating', daysInStage:62, lang:'EN',
+  level:{s:'approved', v:2, by:'MT · Apr 17, 2026'}, sol:'2028-04-02',
+  badges:{pd:'Resolved', auth:'Received', liens:'Possible — health plan', treat:'On Track', tbi:true, viab:'Approved', dps:'Fulfilled', pubrec:'—'},
+  clinical:[['Initial visit — Alamo Chiro',true,'Apr 14, 2026'],['MRI referral → Prime Imaging (cervical)',true,'May 20, 2026'],['MRI completed',true,'May 28, 2026'],['TPI — Dr. Reyes',true,'Jun 18, 2026'],['ESI — cervical',false,'recommended Jul 2, 2026'],['RFA',false,''],['Surgical referral',false,'']],
+  provider:{name:'Alamo Chiropractic & Rehab', lastCall:'Jun 30, 2026', nextCall:'Jul 14, 2026', balance:'$6,840'},
+  episodes:[
+   {cat:'ambulance',name:'Bexar County EMS',status:'bill requested',bal:'$1,890',v:1,firstVisit:'Apr 2, 2026',lastVisit:'Apr 2, 2026'},
+   {cat:'er',name:'Baptist Medical Center ER',status:'complete',bal:'$9,412',v:1,firstVisit:'Apr 2, 2026',lastVisit:'Apr 2, 2026',recordsRequested:true},
+   {cat:'imaging',name:'Prime Imaging — cervical MRI',status:'complete',bal:'$2,300'},
+   {cat:'chiro',name:'Alamo Chiropractic & Rehab',status:'active · PONS anchor ⭐',bal:'$6,840'}],
+  treatCov:{ambulance:'added',er:'added',imaging:'added',chiro:'added',urgent:'na',surgeon:'na',other:'na'},
+  treatLog:[
+   {date:'Apr 2, 2026',item:'ER visit',part:'—',provider:'Baptist Medical Center ER',cost:'$9,412'},
+   {date:'Apr 2, 2026',item:'Ambulance transport',part:'—',provider:'Bexar County EMS',cost:'$1,890'},
+   {date:'May 28, 2026',item:'MRI',part:'cervical',provider:'Prime Imaging',cost:'$2,300'},
+   {date:'Jun 18, 2026',item:'TPI',part:'cervical',provider:'Dr. Reyes',cost:'—'}],
+  flags:[],
+  notes:[{when:'Jul 02, 2026, 3:40 PM',who:'CC',what:'Provider call: ESI recommended cervical; client deciding. Balance $6,840'},{when:'Jun 18, 2026, 1:15 PM',who:'CC',what:'TPI completed. Client reports 40% relief'}]},
+ {id:3, client:'Trevino, Marisol', paralegal:'D. Ayala', pd:{route:'DINSCO PD — GEICO', status:'Resolved',vehicle:'2016 Honda CR-V',location:'total loss — title transferred',repair:'total loss',valuation:'$11,850 accepted',lienholder:'paid off — resolved',rental:'ended',lou:'—',dv:'n/a (total loss)',deductible:'n/a (3rd party)',lastTouch:'Jan 20, 2026',days:174,resolved:'Jan 20, 2026'}, claims:[{role:'DINSCO · liability',carrier:'GEICO',num:'GC-8837-201',limits:'50k/100k',status:'liability accepted 100%',lor:'Dec 09, 2026',adjusters:[{fn:'BI',name:'Ray Delaluz',phone:'(800) 555-0834 x220',email:'rdelaluz@geico.example.com'}]}], dob:'1978-06-30', phone:'(210) 555-0147', email:'marisol.t@example.com', type:'Car Crash', doi:'2025-11-21', signup:'2025-12-02', stage:'Records', daysInStage:34, lang:'ES',
+  level:{s:'approved', v:1, by:'DB · Dec 12, 2026'}, sol:'2027-11-21',
+  badges:{pd:'Resolved', auth:'Received', liens:'None Known', treat:'Complete', tbi:false, viab:'Approved', dps:'—', pubrec:'Fulfilled'},
+  records:[['Baptist ER — records + bills',true,'—'],['Alamo Chiro — records + bills',true,'—'],['Prime Imaging — records',true,'—'],['Dr. Reyes (pain mgmt) — records + bills',false,'21d'],['Baptist ER — 18.001 affidavit',false,'14d'],['Wage verification — HEB',false,'9d']],
+  flags:['Records request aging 21d'],
+  notes:[{when:'Jul 08, 2026, 10:20 AM',who:'CC',what:'Dr. Reyes office says records "in process" — 3rd follow-up. Escalate next week'},{when:'Jun 22, 2026, 2:00 PM',who:'CC',what:'Treatment complete per provider; moving to records'}]},
+ {id:4, client:'Boudreaux, Amos', paralegal:'Priscilla Ortega', pd:{route:'DINSCO PD — Great West (claim GWC-2025-118843)', status:'In Progress',vehicle:'2018 Ford F-250',location:'client\'s driveway (released from storage)',repair:'total loss — DISPUTED',valuation:'carrier: $28,100 · our comps: $33,400',lienholder:'Ford Credit — payoff $19,205',rental:'denied by carrier — LOU being pursued',lou:'$3,200 demanded',dv:'n/a (total loss)',deductible:'n/a (3rd party)',lastTouch:'Jul 09, 2026',days:4}, claims:[
+   {role:'DINSCO · liability (commercial)',carrier:'Great West Casualty',num:'GWC-2025-118842',limits:'$1M CSL',status:'liability disputed',lor:'Sep 24, 2026',adjusters:[
+     {fn:'BI',name:'Litigation Unit B',phone:'(800) 555-0910',email:'unitB@gwccnet.example.com'},
+     {fn:'LIT',name:'Sandra Pruett (lit adjuster)',phone:'(800) 555-0912 x140',email:'spruett@gwccnet.example.com'}]},
+   {role:'PD · DINSCO',carrier:'Great West Casualty',num:'GWC-2025-118843',limits:'—',status:'total-loss dispute',lor:'Sep 24, 2026',adjusters:[
+     {fn:'PD',name:'Property Unit',phone:'(800) 555-0911',email:'pd@gwccnet.example.com'}]}], dob:'1969-01-17', phone:'(830) 555-0126', email:'aboudreaux@example.com', type:'18-Wheeler Crash', doi:'2025-09-14', signup:'2025-09-18', stage:'Demand', daysInStage:11, lang:'EN',
+  level:{s:'approved', v:3, by:'MT · Oct 01, 2026', note:'Level 3 — demand requires attorney approval'}, sol:'2027-09-14',
+  badges:{pd:'In Progress — total loss dispute', auth:'Received', liens:'Confirmed — Medicare', treat:'Complete', tbi:true, viab:'Approved', dps:'Fulfilled', pubrec:'AG Referral'},
+  demand:{records:'6/6 received', bills:'$48,212', aff:'18.001s: 5 of 6 in hand', kate:'In review — sent Jul 10, 2026', atty:'Pending Kate'},
+  flags:['PD unresolved at demand — red flag','Commercial / Level 3'],
+  notes:[{when:'Jul 10, 2026, 4:45 PM',who:'CC',what:'Demand draft sent to Kate for review. PD total-loss dispute still open with carrier — flagged'},{when:'Jul 09, 2026, 11:30 AM',who:'CC',what:'Final 18.001 (Prime Imaging) promised by Jul 18, 2026'}]},
+ {id:5, client:'Vasquez, Elena', paralegal:'D. Ayala', pd:{route:'DINSCO PD — Progressive', status:'Resolved',vehicle:'2020 Kia Sorento',location:'repaired & returned',repair:'repairable',valuation:'$6,240 paid',lienholder:'n/a',rental:'ended (8 days)',lou:'—',dv:'evaluated — waived (minor damage)',deductible:'$500 reimbursed',lastTouch:'Sep 12, 2025',days:304,resolved:'Sep 12, 2025'}, claims:[{role:'DINSCO · liability',carrier:'Progressive',num:'PRG-44-902113',limits:'30k/60k',status:'offer on table — $22,500',lor:'Jul 10, 2025',adjusters:[{fn:'BI',name:'Monica Bell',phone:'(800) 555-0450 x881',email:'mbell@progressive.example.com'}]}], dob:'1995-09-08', phone:'(210) 555-0192', email:'elena.v@example.com', type:'Car Crash', doi:'2025-06-30', signup:'2025-07-06', stage:'Negotiation', daysInStage:19, lang:'EN',
+  level:{s:'approved', v:2, by:'MT · Jul 20, 2025'}, sol:'2027-06-30',
+  badges:{pd:'Resolved', auth:'Received', liens:'Confirmed — flagged for Emily', treat:'Complete', tbi:false, viab:'Approved', dps:'—', pubrec:'—'},
+  nego:{demand:'$85,000 sent May 29, 2026', offer:'$22,500 (Jun 24, 2026)', counter:'$71,000 (Jul 01, 2026)', next:'Adjuster callback overdue 5d'},
+  flags:['Demand response overdue'],
+  notes:[{when:'Jul 08, 2026, 3:10 PM',who:'CC',what:'Adjuster promised supervisor review by Jul 08, 2026 — nothing received. Tickler fired'},{when:'Jul 01, 2026, 9:50 AM',who:'CC',what:'Client authorized counter at $71k (documented)'}]},
+ {id:6, client:'Nguyen, Bao', paralegal:'— UNASSIGNED', pd:{status:'N/A'}, claims:[{role:'DINSCO · premises liability',carrier:'Travelers',num:'TRV-P-66120',limits:'unknown — limits request sent',status:'open',lor:'Jun 10, 2026',adjusters:[{fn:'BI',name:'pending assignment',phone:'(800) 555-0577',email:'claims@travelers.example.com'}]}], dob:'1988-04-12', phone:'(210) 555-0138', email:'bao.nguyen@example.com', type:'Slip and Fall / Premises', doi:'2026-05-30', signup:'2026-06-04', stage:'Treating', daysInStage:39, lang:'EN',
+  level:{s:'missing', note:'MISSING past day 7 — RED FLAG'}, sol:'2028-05-30',
+  badges:{pd:'N/A', auth:'Problem — clinic unresponsive', liens:'Possible — Medicaid', treat:'Gap Concern — 24d since last visit', tbi:false, viab:'Approved w/ conditions', dps:'—', pubrec:'Sent'},
+  episodes:[{cat:'pt',name:'Northside PT & Wellness',status:'gap concern — 24d',bal:'$3,150'}],
+  treatCov:{pt:'added',er:'added',ambulance:'na',urgent:'added',imaging:'todo',pain:'todo',chiro:'na',surgeon:'na'},
+  flags:['Level missing past day 7','Treatment gap 24d','Auth problem'],
+  notes:[{when:'Jul 11, 2026, 2:25 PM',who:'CC',what:'Client missed 2 PT appts — says work schedule. Explained gap risk, rebooked Jul 15, 2026'},{when:'Jul 03, 2026, 10:00 AM',who:'CC',what:'Clinic still hasn’t returned signed auth — 3rd attempt'}]},
+];
+const PROVIDERS={
+ 'Alamo Chiropractic & Rehab':{phone:'(210) 555-0300',contact:'Records dept: Maria x204',addr:'4200 Broadway, San Antonio',method:'fax + portal'},
+ 'Northside PT & Wellness':{phone:'(210) 555-0410',contact:'Front desk: Kevin',addr:'9800 San Pedro Ave, San Antonio',method:'email'},
+ 'Mission Trail Pain Institute':{phone:'(210) 555-0525',contact:'Scheduler: Dana x11',addr:'3327 SE Military Dr, San Antonio',method:'portal'},
+};
+let provOpen=null, adjNoteOpen=null, callForm=null, provForm=null, PF_LOCS=[];
+let fuOpen=false;
+const FOLLOWUPS=[];   // dispatched client follow-up tasks
+const MY_ACTIVITY=[
+ {when:'Jul 13, 2026, 8:42 AM',client:'Trevino, Marisol',what:'Records follow-up letter generated — Dr. Reyes (21d aging)'},
+ {when:'Jul 12, 2026, 4:55 PM',client:'Boudreaux, Amos',what:'Demand draft sent to Kate for review'},
+ {when:'Jul 12, 2026, 2:10 PM',client:'Okafor, Chidi',what:'Provider call — Alamo Chiro: on track, balance $6,840'},
+ {when:'Jul 12, 2026, 10:05 AM',client:'Nguyen, Bao',what:'Client call — missed PT appts, rebooked Jul 15, 2026; gap risk explained'},
+];
+function act(client,what){MY_ACTIVITY.unshift({when:'Jul 13, 2026, now',client:client,what:what})}
+const ADJ_NOTES={
+ 'brenda yates':[{when:'Feb 11, 2025',who:'CC',case:'Cantu, Rodrigo (2024 wreck)',text:'Lowballs first offer ~20% of specials; moves quickly once suit is actually filed. Email works, voicemail doesn’t.'}],
+ 'monica bell':[{when:'Jun 24, 2026',who:'CC',case:'Vasquez, Elena',text:'Pleasant but slow — took 3 follow-ups to get first offer. Asking for supervisor review got movement.'}],
+ 'litigation unit b':[{when:'Oct 12, 2025',who:'MT',case:'Boudreaux, Amos',text:'Unit rotates reps weekly — always get the rep’s name and direct extension at the start of the call.'}],
+};
+const calls=[
+ {client:'Okafor, Chidi', provider:'Alamo Chiropractic & Rehab', due:'Jul 14, 2026', last:'Jun 30, 2026', balance:'$6,840', status:'due'},
+ {client:'Nguyen, Bao', provider:'Northside PT & Wellness', due:'Jul 12, 2026', last:'Jun 28, 2026', balance:'$3,150', status:'overdue'},
+ {client:'Delgado, Rosa', provider:'— first provider TBD at viability', due:'—', last:'—', balance:'—', status:'na'},
+ {client:'Reyes, Tomás', provider:'Mission Trail Pain Institute', due:'Jul 15, 2026', last:'Jul 01, 2026', balance:'$11,420', status:'soon'},
+ {client:'Salinas, Grace', provider:'Alamo Chiropractic & Rehab', due:'Jul 16, 2026', last:'Jul 02, 2026', balance:'$2,980', status:'soon'},
+];
+let current=null;
+
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function fmt(d){return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function solBadge(iso){
+  const days=Math.round((new Date(iso)-TODAY)/86400000);
+  if(isNaN(days))return `<span class="sol near" title="Minor / special limitations — never trust the 2-year default">SOL: ⚠ ${iso}</span>`;
+  const cls=days<120?'crit':days<365?'near':'far';
+  return `<span class="sol ${cls}">${days}d to SOL</span>`}
+function caseAge(c){return Math.round((TODAY-new Date(c.signup))/86400000)}
+function levelBadge(l){
+  if(l.s==='missing')return `<span class="badge b-crit">🛑 Level missing</span>`;
+  return `<span class="badge b-info">Level ${l.v} · ${l.by.split(' ·')[0]}</span>`}
+function go(v,id){
+  current=id!=null?cases.find(c=>c.id===id):null;
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  ({dash:'#nav-dash',calls:'#nav-calls',tasks:'#nav-tasks',pview:'#nav-pview',act:'#nav-act'})[v] && $(({dash:'#nav-dash',calls:'#nav-calls',tasks:'#nav-tasks',pview:'#nav-pview',act:'#nav-act'})[v])?.classList.add('on');
+  if(v==='dash')renderDash(); else if(v==='calls')renderCalls(); else if(v==='tasks')renderTasks(); else if(v==='pview')renderPView(); else if(v==='act')renderActivity(); else renderDetail();
+}
+
+/* --------- dashboard --------- */
+function renderDash(){
+  const flagged=cases.filter(c=>c.flags.length);
+  $('#view').innerHTML=`
+  <div class="tiles">
+    <div class="tile"><div class="k">My active cases</div><div class="v">${cases.length}</div><div class="sub">of 71 assigned (mockup shows 6)</div></div>
+    <div class="tile warn"><div class="k">⚠ Provider calls due</div><div class="v">2</div><div class="sub">1 overdue — Nguyen</div></div>
+    <div class="tile warn"><div class="k">⚠ Checklist tasks due</div><div class="v">5</div><div class="sub">Delgado sign-up set, due Jul 16, 2026–18</div></div>
+    <div class="tile crit"><div class="k">🛑 Red flags</div><div class="v">${flagged.reduce((n,c)=>n+c.flags.length,0)}</div><div class="sub">across ${flagged.length} cases</div></div>
+    <div class="tile"><div class="k">7-day reviews to prep</div><div class="v">1</div><div class="sub">Delgado — due Jul 20, 2026</div></div>
+  </div>
+  <div class="panel">
+    <h2>My Caseload — one row per matter, every red flag visible</h2>
+    <table>
+      <thead><tr><th>Client</th><th>Stage</th><th>Age / in stage</th><th>Level</th><th>Treatment</th><th>PD</th><th>SOL</th><th>Red flags</th></tr></thead>
+      <tbody>
+      ${cases.map(c=>{
+        const t=c.badges.treat, tcls=t.includes('Gap')?'b-warn':t.includes('Noncomp')?'b-crit':t==='Complete'?'b-ok':t==='On Track'?'b-ok':'b-na';
+        const p=c.badges.pd, pcls=p.startsWith('Resolved')?'b-ok':p.startsWith('In Progress')?'b-warn':'b-na';
+        return `<tr class="row" onclick="go('detail',${c.id})">
+        <td><div class="name">${c.client} ${c.badges.tbi?'<span class="badge b-ser" title="TBI indicated — never expires">🧠 TBI</span>':''} ${c.grp?`<span class="badge b-info" title="${GROUPS[c.grp].label} — every client from this crash is their own matter, linked">👪 ${GROUPS[c.grp].members.indexOf(c.id)+1} of ${GROUPS[c.grp].members.length} · same crash</span>`:''} ${c.minor?'<span class="badge b-warn" title="Next friend: '+c.nextFriend+'">MINOR</span>':''}</div><div class="sub2">${c.type} · ${c.lang} · CM Christina · PL ${c.paralegal||'—'}</div></td>
+        <td><span class="stage">${c.stage}</span></td>
+        <td class="sub2">${caseAge(c)}d · <b>${c.daysInStage}d</b></td>
+        <td>${levelBadge(c.level)}</td>
+        <td><span class="badge ${tcls}">${t}</span></td>
+        <td><span class="badge ${pcls}">${p}</span></td>
+        <td>${solBadge(c.sol)}</td>
+        <td><div class="flags">${c.flags.map(f=>`<span class="badge b-crit">${f}</span>`).join('')||'<span class="sub2">—</span>'}</div></td>
+      </tr>`}).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* --------- case detail --------- */
+function renderChecklistItem(c,[t,done,kind],i){
+  const dinscoLorGated = kind==='dinsco_lor' && !c.checklist.find(x=>x[2]==='dinsco_claim')[1];
+  if(kind==='pinsco_claim' && c.pinscoRefused)
+    return `<li><span class="tick y" style="background:#fdf3d7;color:#7a5600">!</span>${t}
+      <span class="badge b-warn">client refused — documented Jul 13, 2026 · CC → coverage assessment</span></li>`;
+  if(kind==='pinsco_lor' && c.pinscoRefused)
+    return `<li><span class="tick y" style="background:#f0efec;color:var(--muted)">–</span><span style="color:var(--muted)">${t} — skipped (refusal documented)</span></li>`;
+  if(kind==='pinsco_dec' && c.pinscoRefused)
+    return `<li><span class="tick y" style="background:#f0efec;color:var(--muted)">–</span><span style="color:var(--muted)">${t} — skipped (claim refusal documented)</span></li>`;
+  const ovr=c.overrides&&c.overrides[i];
+  const docNote=DOC_BACKED[kind]&&!done?` <span class="sub2" title="Completes automatically from the document log">⚙ auto when ${DOC_BACKED[kind]}</span>`:'';
+  const ovrBadge=done&&ovr?` <span class="badge b-warn" title="${ovr}">OVERRIDE — logged for Michael</span>`:'';
+  let row=`<li><span class="tick ${done?'y':'n'}" style="cursor:pointer" onclick="tickTask(${i})">${done?'✓':''}</span>
+    <span class="${dinscoLorGated?'sub2':''}">${t}${dinscoLorGated?' <span class="badge b-na">waits for DINSCO claim</span>':''}${docNote}${ovrBadge}</span>
+    ${kind==='pinsco_claim'&&!done?`<button class="ghost" style="margin-left:auto" onclick="refusePinsco()">Client refused →</button>`:''}</li>`;
+  if(pendingOverride===i)row+=`<li style="background:#fdf3d7;border-radius:8px;padding:8px 10px;display:block">
+    <div style="font-size:12.5px;color:#7a5600;margin-bottom:6px"><b>Manual override</b> — this task normally completes itself when ${DOC_BACKED[kind]}. A reason is required and Michael can see override patterns.</div>
+    <input type="text" id="ovr-reason" placeholder="Why is this being completed by hand? (required)" style="margin-bottom:6px">
+    <button class="primary" onclick="confirmOverride(${i})">Complete with override</button>
+    <button class="ghost" onclick="pendingOverride=null;renderDetail()">Cancel</button></li>`;
+  return row;
+}
+const TREAT_CATS=[['ambulance','Ambulance / EMS'],['er','Hospital / ER'],['urgent','Urgent care'],
+ ['chiro','Chiropractic'],['pt','Physical therapy'],['imaging','Imaging (MRI/CT/X-ray)'],
+ ['pain','Pain management'],['surgeon','Surgical consult'],['other','Other']];
+function renderTreatment(c){
+  if(!c.episodes)return c.clinical?renderClinicalOnly(c):'';
+  const cov=c.treatCov||{};
+  const open=TREAT_CATS.filter(([k])=>!cov[k]||cov[k]==='todo');
+  return `<div class="card"><h3>Treatment — all providers <span class="sub2">(one episode per provider; check every box or mark it N/A)</span>
+      ${open.length?`<span class="badge b-warn">${open.length} unchecked</span>`:'<span class="badge b-ok">✔ all boxes addressed</span>'}</h3>
+    ${c.episodes.length?`<table style="margin-bottom:8px"><thead><tr><th>Type</th><th>Provider</th><th>Status</th><th>Balance</th></tr></thead><tbody>
+      ${c.episodes.map((e,ei)=>`<tr>
+        <td><span class="badge b-info">${(TREAT_CATS.find(x=>x[0]===e.cat)||['','Other'])[1]}</span></td>
+        <td class="name">${PROVIDERS[e.name.split(' — ')[0]]?`<a class="caselink" onclick="openProvider('${e.name.split(' — ')[0]}','${c.client}')">${e.name}</a>`:e.name}
+          ${e.v>1?`<span class="badge b-warn" title="first ${e.firstVisit} · latest ${e.lastVisit}">${e.v} visits</span>`:''}
+          ${e.supplementNeeded?'<span class="badge b-crit" title="A visit happened after the records request went out — the request misses it">⚠ records supplement needed</span>':''}</td>
+        <td><span class="badge ${/active|anchor/.test(e.status)?'b-ok':/gap|concern/.test(e.status)?'b-warn':/requested/.test(e.status)?'b-warn':'b-na'}">${e.status}</span></td>
+        <td class="bal">${e.bal}
+          ${['er','urgent','ambulance'].includes(e.cat)?`<a class="caselink" style="font-size:11.5px;margin-left:6px" title="Client went back — log it so records ranges, bills, and the damages narrative stay right" onclick="logVisit(${ei})">+ visit</a>`:''}</td></tr>`).join('')}
+    </tbody></table>`:'<div class="sub2" style="margin-bottom:6px">No providers yet — work the boxes below.</div>'}
+    ${(c.treatLog&&c.treatLog.length)?`
+    <div class="sub2" style="margin:8px 0 2px"><b>Treatment log</b> — what's been done, when, and cost so far:
+      <span class="badge b-info" style="margin-left:6px">cost to date ${'$'+c.episodes.reduce((s,e)=>s+(parseFloat((e.bal||'').replace(/[^0-9.]/g,''))||0),0).toLocaleString()}</span></div>
+    <table style="margin-bottom:6px"><thead><tr><th>Date</th><th>Procedure</th><th>Body part</th><th>Provider</th><th>Cost</th></tr></thead><tbody>
+      ${c.treatLog.map(t=>`<tr><td class="sub2">${t.date}</td><td class="name">${t.item}</td><td>${t.part!=='—'?`<span class="badge b-info">${t.part}</span>`:'<span class="sub2">—</span>'}</td><td class="sub2">${t.provider}</td><td class="bal">${t.cost}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="sub2" style="margin-bottom:6px">MRIs are once-per-body-part — done parts lock in the call form so nobody asks again (repeat only with a documented reason).</div>`:''}
+    <div class="sub2" style="margin:4px 0 4px"><b>Coverage boxes</b> — every category gets an answer (missed ambulance bills become surprise liens):</div>
+    ${TREAT_CATS.map(([k,label])=>{
+      const st=cov[k]||'todo';
+      if(st==='added')return `<div class="evt"><span class="tick y">✓</span> ${label} <span class="sub2">${c.episodes.filter(e=>e.cat===k).map(e=>e.name).join(', ')}</span></div>`;
+      if(st==='na')return `<div class="evt" style="opacity:.55"><span class="tick" style="background:#f0efec;color:var(--muted)">–</span> ${label} <span class="sub2">N/A</span> <a class="caselink" style="font-size:11px" onclick="current.treatCov['${k}']='todo';renderDetail()">undo</a></div>`;
+      if(c.covAdding===k)return `<div class="evt" style="background:#eef4fc;border-radius:8px;padding:6px 8px;flex-wrap:wrap">
+        <b style="min-width:150px">${label}:</b>
+        <input type="text" id="cov-name" list="prov-list" placeholder="provider name — directory or new" style="flex:1;min-width:180px">
+        <datalist id="prov-list">${Object.keys(PROVIDERS).map(p=>`<option>${p}</option>`).join('')}</datalist>
+        <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" id="cov-lop">LOP</label>
+        <button class="primary" onclick="covAddSave('${k}')">Add</button>
+        <button class="ghost" onclick="current.covAdding=null;renderDetail()">✕</button></div>`;
+      return `<div class="evt"><span class="tick" style="background:#fbe3e3;color:#8f1f1f">☐</span> ${label}
+        <button class="ghost" style="padding:2px 8px;font-size:11.5px" onclick="current.covAdding='${k}';renderDetail()">+ add provider</button>
+        <button class="ghost" style="padding:2px 8px;font-size:11.5px" onclick="current.treatCov['${k}']='na';renderDetail()">N/A</button></div>`;
+    }).join('')}
+    ${provForm?renderProviderForm():''}
+    ${c.clinical?renderClinicalInner(c):''}
+  </div>`;
+}
+function renderProviderForm(){
+  const f=provForm;
+  return `<div style="background:#eef4fc;border:1px solid #cfe0f5;border-radius:10px;padding:12px;margin-top:10px">
+    <div style="font-weight:700;margin-bottom:4px">New provider — full record <span class="sub2">(${(TREAT_CATS.find(x=>x[0]===f.cat)||['','Other'])[1]})</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+      <div><label>Provider name <span class="req">*</span></label><input type="text" id="pf-name" value="${f.name}"></div>
+      <div><label>Provider type</label><select id="pf-type"><option>hospital</option><option>emergency</option><option>urgent_care</option><option>ems</option><option>chiropractic</option><option>physical_therapy</option><option>imaging</option><option>pain_management</option><option>orthopedic</option><option>surgery_center</option><option>other</option></select></div>
+      <div><label>Main phone <span class="req">*</span></label><input type="tel" id="pf-phone" placeholder="(210) 555-0000"></div>
+      <div><label>Fax</label><input type="tel" id="pf-fax"></div>
+      <div><label>Records request method</label><select id="pf-rec-method"><option>fax</option><option>portal</option><option>email</option><option>mail</option><option>Datavant/Ciox vendor</option></select></div>
+      <div><label>Records contact</label><input type="text" id="pf-rec-contact" placeholder="Records dept: name / ext"></div>
+    </div>
+    <div class="checkline"><input type="checkbox" id="pf-lop-ok"> <label for="pf-lop-ok" style="margin:0">Accepts LOP</label></div>
+    <div style="font-weight:600;margin:10px 0 2px">Addresses <span class="sub2">— these are often NOT the same place:</span></div>
+    <label>🏢 Business address <span class="req">*</span></label>
+    <input type="text" id="pf-biz" placeholder="corporate / main office">
+    <div class="checkline"><input type="checkbox" id="pf-same-remit" checked onchange="document.getElementById('pf-remit-wrap').style.display=this.checked?'none':'block'"> <label for="pf-same-remit" style="margin:0">💵 Payments / remit go to the business address</label></div>
+    <div id="pf-remit-wrap" style="display:none">
+      <label>💵 Payment / remit address <span class="req">*</span> <span class="sub2">(where checks actually go — lockboxes and billing services are common)</span></label>
+      <input type="text" id="pf-remit" placeholder="PO Box / lockbox / billing service">
+    </div>
+    <label>📍 Treatment locations <span class="sub2">(where the client is actually seen — can be several, and different from the business address)</span></label>
+    <div id="pf-locs"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <input type="text" id="pf-loc-label" placeholder="label (e.g. Northside clinic)" style="flex:1;min-width:140px">
+      <input type="text" id="pf-loc-addr" placeholder="address" style="flex:2;min-width:200px">
+      <button class="ghost" onclick="pfAddLoc()">+ add location</button>
+    </div>
+    <div class="sub2" style="margin-top:4px">If no treatment location is added, the business address is assumed to be where the client treats.</div>
+    <div class="btnrow">
+      <button class="primary" onclick="pfSave()">Create provider & start episode</button>
+      <button class="ghost" onclick="provForm=null;renderDetail()">Cancel</button>
+    </div>
+  </div>`;
+}
+function renderClinicalInner(c){
+  return `<div class="sub2" style="margin:10px 0 4px"><b>Clinical events</b> — checkbox log, feeds the demand:</div>
+    ${c.clinical.map(([e,done,when])=>`<div class="evt"><input type="checkbox" ${done?'checked':''} onclick="toast('Mockup: clinical event toggled — flows to Case Profile and demand automatically')"> ${e} <span class="sub2">${when}</span></div>`).join('')}
+    <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">PONS anchor: <a class="caselink" onclick="openProvider('${c.provider.name}','${c.client}')">${c.provider.name}</a> — last call ${c.provider.lastCall}, next <b>${c.provider.nextCall}</b>, balance <b>${c.provider.balance}</b></div>`;
+}
+function renderClinicalOnly(c){return ''}
+function logVisit(ei){
+  const e=current.episodes[ei];
+  e.v=(e.v||1)+1; e.lastVisit='Jul 13, 2026'; act(current.client,'Return visit #'+e.v+' logged — '+e.name);
+  if(e.recordsRequested)e.supplementNeeded=true;
+  if(current.clinical)current.clinical.push(['Return visit #'+e.v+' — '+e.name,true,'Jul 13, 2026']);
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'Client returned to '+e.name+' (visit #'+e.v+'). visit_count + last_visit_date updated'+(e.supplementNeeded?'; RECORDS SUPPLEMENT FLAGGED — prior request predates this visit':'')+'. Expect an additional bill.'});
+  renderDetail();
+  toast('Visit #'+e.v+' logged — clinical event + note added'+(e.supplementNeeded?'; ⚠ records request predates this visit: supplement task created':''));
+}
+function covAddSave(k){
+  const name=document.getElementById('cov-name').value.trim();
+  if(!name){toast('Provider name required — pick from the directory or type a new one');return}
+  const lop=document.getElementById('cov-lop').checked;
+  if(!Object.keys(PROVIDERS).includes(name)){
+    provForm={cat:k,name:name,lop:lop}; PF_LOCS=[]; current.covAdding=null; renderDetail();
+    toast('New provider — complete the provider record first (addresses matter: business ≠ payments ≠ treatment locations)');
+    return;
+  }
+  finishEpisode(k,name,lop,'provider from directory');
+}
+function finishEpisode(k,name,lop,srcNote){
+  current.episodes.push({cat:k,name:name+(lop?' (LOP)':''),status:'scheduled',bal:'$0'});
+  current.treatCov[k]='added'; current.covAdding=null; act(current.client,'Treatment episode added: '+name);
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'Treatment episode added: '+name+' ('+k+')'+(lop?' — UNDER LOP, flagged for attorney approval':'')+'. Bi-weekly call automation scheduled.'});
+  renderDetail();
+  toast('medical.treatment_episode created — '+srcNote+(lop?'; LOP → attorney approval queue':''));
+}
+function pfAddLoc(){
+  const addr=document.getElementById('pf-loc-addr').value.trim();
+  if(!addr){toast('Treatment location needs an address');return}
+  const label=document.getElementById('pf-loc-label').value.trim()||('Location '+(PF_LOCS.length+1));
+  PF_LOCS.push({label:label,addr:addr});
+  const row=document.createElement('div'); row.className='evt';
+  row.innerHTML='<span class="tick y">✓</span> <b>'+label+'</b> <span class="sub2">'+addr+'</span>';
+  document.getElementById('pf-locs').appendChild(row);
+  document.getElementById('pf-loc-label').value=''; document.getElementById('pf-loc-addr').value='';
+  toast('Treatment location added — stored as its own labeled address row');
+}
+function pfSave(){
+  const g=id=>document.getElementById(id).value.trim();
+  const name=g('pf-name'), biz=g('pf-biz'), phone=g('pf-phone');
+  if(!name||!biz||!phone){toast('Name, phone, and BUSINESS address are required for a new provider');return}
+  const sameRemit=document.getElementById('pf-same-remit').checked;
+  const remit=sameRemit?biz:g('pf-remit');
+  if(!sameRemit&&!remit){toast('Payment/remit address required — or check “same as business”');return}
+  const locs=PF_LOCS.length?PF_LOCS:[{label:'Treatment location',addr:biz}];
+  PROVIDERS[name]={phone:phone,contact:g('pf-rec-contact')||'—',addr:biz,method:g('pf-rec-method')};
+  const f=provForm; provForm=null;
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'NEW provider created: '+name+' ('+g('pf-type')+'). Addresses — business: '+biz+(sameRemit?' (payments same)':'; PAYMENTS/REMIT DIFFERS: '+remit)+'; treatment location(s): '+locs.map(l=>l.label).join(', ')+'. Records via '+g('pf-rec-method')+'.'});
+  finishEpisode(f.cat,name,f.lop,'NEW provider → core.organization + medical.provider + '+(2+(sameRemit?0:1)+locs.length-1)+' labeled contact_point address rows (business'+(sameRemit?'':' / payments-remit')+' / '+locs.length+' treatment location'+(locs.length>1?'s':'')+')');
+}
+function renderPdCard(c){
+  if(!c.pd||c.pd.status==='N/A')return '';
+  const p=c.pd;
+  /* ---- SETUP: vehicle facts first, then the DINSCO-vs-PINSCO routing decision ---- */
+  if(p.setup){
+    const pinscoBlocked=c.pinscoRefused;
+    return `<div class="card"><h3>Property damage — set up the track <span class="badge b-warn">Not Started</span></h3>
+      <div class="sub2" style="margin-bottom:6px"><b>Step 1 — vehicle facts</b> (from the client call and/or the CR-3; the crash report confirms VIN/plate when it posts):</div>
+      <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:0 8px">
+        <div><label>Year</label><input type="text" id="pd-year" placeholder="2019"></div>
+        <div><label>Make</label><input type="text" id="pd-make" placeholder="Nissan"></div>
+        <div><label>Model</label><input type="text" id="pd-model" placeholder="Altima"></div>
+      </div>
+      <label>Current location <span class="req">*</span> <span class="sub2">(a tow/storage yard starts the daily-storage clock)</span></label>
+      <input type="text" id="pd-loc" placeholder="client's home / Alamo Towing & Storage / body shop…">
+      <div class="checkline"><input type="checkbox" id="pd-drivable"> <label for="pd-drivable" style="margin:0">Drivable</label></div>
+      <label>Where did this info come from?</label>
+      <div class="checkline" style="margin-top:2px"><input type="checkbox" id="pd-src-client" checked> <label for="pd-src-client" style="margin:0">Client call</label>
+      <input type="checkbox" id="pd-src-cr3" style="margin-left:14px"> <label for="pd-src-cr3" style="margin:0">Police report (CR-3)</label></div>
+      ${!document.getElementById?'':''}
+      <div class="sub2" style="margin:12px 0 6px"><b>Step 2 — route the PD claim.</b> Which insurance carries the property damage?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="defbox" style="margin:0">
+          <b>DINSCO PD</b> <span class="sub2">(their liability carrier)</span>
+          <div class="sub2" style="margin:4px 0">No deductible · needs liability acceptance · slower if disputed</div>
+          <button class="primary" onclick="pdRoute('DINSCO')">Route via DINSCO</button>
+        </div>
+        <div class="defbox" style="margin:0;${pinscoBlocked?'opacity:.55':''}">
+          <b>PINSCO collision</b> <span class="sub2">(client's own policy)</span>
+          <div class="sub2" style="margin:4px 0">Faster · deductible now, subrogation later${pinscoBlocked?'<br><span class="miss">⚠ client REFUSED a 1st-party claim — unavailable unless they reconsider</span>':''}</div>
+          <button class="ghost" ${pinscoBlocked?'disabled title="PINSCO claim refusal documented — reopen that conversation first"':''} onclick="pdRoute('PINSCO')">Route via PINSCO</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(p.status==='Resolved' && !c.pdOpen)
+    return `<div class="card" style="padding:10px 16px">
+      <h3 style="margin:0;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="current.pdOpen=true;renderDetail()">
+        <span class="tick y">✓</span> Property damage — resolved ${p.resolved?'('+p.resolved+')':''} <span class="sub2">${p.repair}</span>
+        <a class="caselink" style="font-weight:400;font-size:12px;margin-left:auto">▸ show</a></h3></div>`;
+  /* ---- EDIT MODE ---- */
+  if(c.pdEdit){
+    const F=(id,lbl,val)=>`<div class="k">${lbl}</div><div><input type="text" id="pde-${id}" value="${(val||'').replace(/"/g,'&quot;')}"></div>`;
+    return `<div class="card"><h3>Property damage — updating <span class="sub2">(every save stamps last-touch and feeds the PD Aging report)</span></h3>
+      <div class="kv">
+        <div class="k">Status</div><div><select id="pde-status">${['In Progress','Resolved'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        ${F('vehicle','Vehicle',p.vehicle)}${F('location','Location',p.location)}
+        ${F('repair','Repair / total',p.repair)}${F('valuation','Valuation',p.valuation)}
+        ${F('lienholder','Lienholder',p.lienholder)}${F('rental','Rental / LOU',p.rental)}
+        ${F('dv','Diminished value',p.dv)}${F('deductible','Deductible',p.deductible)}
+      </div>
+      <div class="btnrow">
+        <button class="primary" onclick="pdSave()">Save update</button>
+        <button class="ghost" onclick="current.pdEdit=false;renderDetail()">Cancel</button>
+      </div>
+    </div>`;
+  }
+  const storage=p.location&&p.location.toUpperCase().includes('STORAGE');
+  const disputed=p.valuation&&p.valuation.includes('our comps');
+  return `<div class="card">
+    <h3>Property damage <span class="badge ${p.status==='Resolved'?'b-ok':'b-warn'}">${p.status}</span>
+      <span class="sub2">last touch ${p.lastTouch}</span>
+      <a class="caselink" style="font-weight:400;font-size:12px;margin-left:auto" onclick="current.pdEdit=true;renderDetail()">✎ update</a>
+      ${p.status==='Resolved'?`<a class="caselink" style="font-weight:400;font-size:12px" onclick="current.pdOpen=false;renderDetail()">▾ collapse</a>`:''}</h3>
+    <div class="kv">
+      <div class="k">Insurance route</div><div><b>${p.route||'<span class="miss">not routed — DINSCO or PINSCO?</span>'}</b></div>
+      <div class="k">Vehicle</div><div>${p.vehicle}</div>
+      <div class="k">Location</div><div>${storage?`<span class="miss">⚠ ${p.location}</span>`:p.location}</div>
+      <div class="k">Repair / total</div><div>${p.repair.includes('DISPUTED')?`<span class="miss">${p.repair}</span>`:p.repair}</div>
+      <div class="k">Valuation</div><div>${disputed?`<span class="miss">${p.valuation}</span>`:p.valuation}</div>
+      <div class="k">Lienholder</div><div>${p.lienholder}</div>
+      <div class="k">Rental / LOU</div><div>${p.rental}${p.lou&&p.lou!=='—'?' · LOU: '+p.lou:''}</div>
+      <div class="k">Diminished value</div><div>${p.dv}</div>
+      <div class="k">Deductible</div><div>${p.deductible}</div>
+    </div>
+    ${storage?'<div class="note-callout">⚠ <b>Storage is accruing daily.</b> Getting the vehicle released is the most time-sensitive PD move — feeds the PD Aging report.</div>':''}
+    ${c.stage==='Demand'&&p.status!=='Resolved'?'<div class="note-callout">🛑 <b>PD unresolved at demand stage</b> — red flag on the stalled-case dashboard until resolved (demand_blocker).</div>':''}
+  </div>`;
+}
+function pdRoute(which){
+  const y=document.getElementById('pd-year').value.trim(), mk=document.getElementById('pd-make').value.trim(),
+        md=document.getElementById('pd-model').value.trim(), loc=document.getElementById('pd-loc').value.trim();
+  if(!loc){toast('Vehicle location is required — it decides whether the storage clock is running');return}
+  const srcs=[document.getElementById('pd-src-client').checked?'client call':null,
+              document.getElementById('pd-src-cr3').checked?'CR-3':null].filter(Boolean).join(' + ')||'unrecorded';
+  const veh=[y,mk,md].filter(Boolean).join(' ')||'vehicle TBD';
+  const storage=/stor|tow/i.test(loc);
+  act(current.client,'PD track started — routed via '+which);
+  current.pd={status:'In Progress',
+    route:which==='DINSCO'?'DINSCO PD — liability carrier (claim role pd_dinsco)':'PINSCO collision (claim role pd_pinsco — deductible now, subro later)',
+    vehicle:veh+' (source: '+srcs+')', location:loc+(storage?' — STORAGE ACCRUING':''),
+    repair:'undetermined', valuation:'—', lienholder:'—', rental:'—', lou:'—', dv:'—',
+    deductible:which==='PINSCO'?'applies — track reimbursement':'n/a (3rd party)',
+    lastTouch:'Jul 13, 2026 (today)', days:0};
+  current.claims=current.claims||[];
+  current.claims.push({role:'PD · '+which,carrier:'— enter carrier —',num:'pending',limits:'—',status:'open',lor:'—',
+    adjusters:[{fn:'PD',name:'pending assignment',phone:'(800) 555-0000',email:'tbd@example.com'}]});
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'PD track started: '+veh+' at '+loc+' (info: '+srcs+'). Routed via '+which+' — property.pd_claim linked to the '+which+' PD insurance claim.'});
+  renderDetail();
+  toast('PD routed via '+which+' — vehicle saved to property.vehicle, pd_claim tied to the '+which+' PD claim'+(storage?'; STORAGE CLOCK RUNNING':''));
+}
+function pdSave(){
+  const p=current.pd, g=id=>document.getElementById('pde-'+id).value;
+  p.status=document.getElementById('pde-status').value;
+  ['vehicle','location','repair','valuation','lienholder','rental','dv','deductible'].forEach(k=>p[k]=g(k));
+  p.lastTouch='Jul 13, 2026 (today)'; p.days=0;
+  if(p.status==='Resolved'){p.resolved='Jul 13, 2026'; current.pdOpen=false;}
+  current.pdEdit=false;
+  act(current.client,'PD updated — '+p.repair+', valuation '+p.valuation);
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'PD updated: '+p.repair+' · valuation '+p.valuation+' · '+p.location});
+  renderDetail();
+  toast('property.pd_claim updated — last_touch stamped today, PD Aging clock reset, audit-logged');
+}
+function renderChecklistCard(c){
+  const doneN=c.checklist.filter(x=>x[1]).length, total=c.checklist.length, allDone=doneN===total;
+  const prog=`<div class="prog"><div style="width:${doneN/total*100}%"></div></div>`;
+  if(allDone && !c.checklistOpen)
+    return `<div class="card" style="padding:10px 16px">
+      <h3 style="margin:0;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="current.checklistOpen=true;renderDetail()">
+        <span class="tick y">✓</span> Sign-up checklist — complete (${total}/${total})
+        <a class="caselink" style="font-weight:400;font-size:12px;margin-left:auto">▸ show</a></h3></div>`;
+  const items=c.checklist.map((it,i)=>({h:renderChecklistItem(c,it,i),done:it[1],pending:pendingOverride===i}));
+  const openRows=items.filter(r=>!r.done||r.pending).map(r=>r.h).join('');
+  const doneRows=items.filter(r=>r.done&&!r.pending).map(r=>r.h).join('');
+  return `<div class="card"><h3>Sign-up checklist <span class="sub2">(auto-created at signature — owned by you)</span>
+      ${allDone?`<a class="caselink" style="font-weight:400;font-size:12px;margin-left:auto" onclick="current.checklistOpen=false;renderDetail()">▾ collapse</a>`:''}</h3>
+    <ul class="tasklist">${openRows||'<li class="sub2" style="padding:4px 0">All tasks complete 🎉</li>'}</ul>
+    ${doneN&&!allDone?`<div style="margin-top:4px"><a class="caselink" style="font-weight:600;font-size:12.5px" onclick="current.showDoneTasks=!current.showDoneTasks;renderDetail()">${c.showDoneTasks?'▾ hide':'▸ show'} ${doneN} completed</a></div>${c.showDoneTasks?`<ul class="tasklist" style="opacity:.75">${doneRows}</ul>`:''}`:''}
+    ${allDone?`<ul class="tasklist" style="opacity:.75">${doneRows}</ul>`:''}
+    ${c.pinscoRefused?'<div class="note-callout">⚠ <b>PINSCO refusal documented.</b> Saved to the coverage assessment (permission_to_use = No + note, audit-logged). This feeds the Level inputs — Michael sees it at the 7-day review.</div>':''}
+    ${prog}
+    <div class="btnrow"><button class="primary" onclick="toast('Mockup: opens the Case Profile form (liability, coverage, injuries, lien screen) that generates the 7-day viability report')">Open Case Profile → 7-day review prep</button></div>
+  </div>`;
+}
+/* companion cases — one crash, multiple clients (core.incident_group + representation_link) */
+function renderGroup(c){
+  const g=GROUPS[c.grp];
+  const w=g.waiver;
+  return `<div class="card" style="margin-bottom:16px;border-left:4px solid var(--blue)">
+    <h3 style="margin:0 0 6px">👪 Companion cases — ${g.label} <span class="sub2">(core.incident_group: one crash, ${g.members.length} clients — each is their OWN matter)</span></h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      ${g.members.map(id=>{const m=cases.find(x=>x.id===id);
+        return `<span style="border:1px solid ${id===c.id?'var(--blue)':'var(--grid)'};background:${id===c.id?'var(--blue-lt)':'var(--page)'};border-radius:10px;padding:6px 12px;font-size:12.5px">
+          ${id===c.id?'<b>'+m.client+'</b> <span class="sub2">(this file)</span>':`<a class="caselink" onclick="go('detail',${id})">${m.client}</a>`}
+          <div class="sub2">${g.roles[id]}${m.minor?' · next friend: '+m.nextFriend:''} · ${m.stage}</div></span>`}).join('')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <span class="badge ${w.status==='cleared'?'b-ok':'b-crit'}" title="${w.detail}">${w.status==='cleared'?'✓ conflict waiver CLEARED — hover for detail':'⚠ CONFLICT CHECK PENDING — no cross-file sharing'}</span>
+      <span class="badge ${g.copySharing?'b-ok':'b-na'}">${g.copySharing?'✓ copy-sharing ON between files':'copy-sharing OFF'}</span>
+    </div>
+    <table style="margin-top:4px"><tbody>
+      ${g.shared.map(([k,v])=>`<tr><td style="width:150px;font-weight:600;font-size:12.5px">${k}</td><td style="font-size:12.5px">${v}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="note-callout" style="margin-top:8px">What is NEVER shared: medicals, treatment, negotiation, and settlement are <b>strictly per client</b> — Isela's records don't touch Rosa's file and vice versa (the waiver covers representation, not a merged file). ${g.members.some(id=>cases.find(x=>x.id===id).minor)?'<b>Mateo is a minor:</b> limitations tolled (ATTORNEY-VERIFY) and any settlement needs court approval / friendly suit.':''} The shared $60k aggregate means the three demands move as a coordinated strategy — Michael allocates.</div>
+  </div>`;
+}
+function renderDetail(){
+  const c=current;
+  const B=c.badges;
+  const badge=(label,val)=>{
+    let cls='b-na';
+    if(/Resolved|Received|Approved$|On Track|Complete|Fulfilled|None Known/.test(val))cls='b-ok';
+    else if(/In Progress|Outstanding|Possible|Pending|Sent|conditions|Screened/.test(val))cls='b-warn';
+    else if(/Problem|Gap|Confirmed|missing|MISSING|AG/.test(val))cls='b-ser';
+    if(val==='—'||val==='N/A')cls='b-na';
+    return `<span class="badge ${cls}" style="cursor:pointer" title="${label} — click to jump to that section" onclick="jumpTo('${label}')">${label}: ${val} <span style="opacity:.55">↓</span></span>`};
+  $('#view').innerHTML=`
+  <span class="back" onclick="go('dash')">← Back to caseload</span>
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:18px;font-weight:700">${c.client}</span>
+      <span class="stage">${c.stage} · day ${c.daysInStage}</span>
+      ${levelBadge(c.level)}
+      ${c.badges.tbi?'<span class="badge b-ser">🧠 TBI indicated</span>':''}
+      ${c.minor?'<span class="badge b-warn">MINOR — next friend: '+c.nextFriend+'</span>':''}
+      ${solBadge(c.sol)}
+      <span class="sub2">${c.type} · DOI ${fmt(c.doi)} · signed ${fmt(c.signup)} · case age ${caseAge(c)}d</span>
+      <span class="sub2" style="width:100%">Team: <b>CM Christina</b> · Paralegal ${c.paralegal==='— UNASSIGNED'?'<span class="miss">⚠ UNASSIGNED — every case needs one</span>':'<b>'+c.paralegal+'</b>'} · Attorney <b>M. Tuttle</b></span>
+    </div>
+    <div style="margin-top:8px">
+      <button class="primary" style="background:var(--serious)" onclick="fuOpen=!fuOpen;renderDetail()">📞 Client called — create follow-up</button>
+      <span class="sub2" style="margin-left:8px">any user can do this on any case — the task routes to whoever owns it</span>
+    </div>
+    ${fuOpen?`<div style="background:#fdf3d7;border:1px solid #f2d891;border-radius:10px;padding:12px;margin-top:8px">
+      <label>What does the client need? <span class="req">*</span></label>
+      <input type="text" id="fu-text" placeholder="e.g., wants an update on the total-loss check; asked when depo is">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px">
+        <div><label>Route to (primary owner)</label>
+          <select id="fu-who">
+            <option value="cm">Case Manager — Christina</option>
+            <option value="pl">Paralegal — ${c.paralegal||'(unassigned)'}</option>
+            <option value="atty">Attorney — M. Tuttle</option>
+          </select></div>
+        <div><label>Due</label>
+          <select id="fu-due"><option>today</option><option selected>tomorrow</option><option>this week</option></select></div>
+        <div><label>Urgent?</label>
+          <select id="fu-urgent"><option value="no" selected>normal</option><option value="yes">🔴 urgent — client upset / time-sensitive</option></select></div>
+      </div>
+      <div class="btnrow">
+        <button class="primary" onclick="fuSave()">Send follow-up task</button>
+        <button class="ghost" onclick="fuOpen=false;renderDetail()">Cancel</button>
+        <span class="sub2" style="align-self:center">Primary owner gets the task; the other teammate sees it too and can help follow up.</span>
+      </div>
+    </div>`:''}
+    <div class="contactstrip">
+      <span>📞 <a href="tel:${c.phone.replace(/[^0-9]/g,'')}" onclick="rcCall('${c.phone}')" title="Click to call via RingCentral — the call logs to this matter automatically">${c.phone}</a></span>
+      <span>✉️ <a href="mailto:${c.email}" title="Opens a new email to the client">${c.email}</a>
+        <button class="copybtn" onclick="copyText('${c.email}','Email address')" title="Copy for cc'ing on an existing email">copy</button></span>
+      <span>🎂 ${fmt(c.dob)} <span class="sub2">(age ${age(c.dob)})</span></span>
+      <span class="sub2">${c.lang==='ES'?'Se habla español — client prefers Spanish':''}</span>
+    </div>
+    <div class="badgewall">
+      ${badge('PD',B.pd)}${badge('Auths',B.auth)}${badge('Liens',B.liens)}${badge('Treatment',B.treat)}
+      ${badge('Viability',B.viab)}${badge('DPS record',B.dps)}${badge('Public records',B.pubrec)}
+    </div>
+    ${c.level.s==='missing'?`<div class="note-callout">🛑 <b>Level is ${c.level.note.includes('RED')?'missing past day 7 — red flag on Michael’s dashboard':'due: '+c.level.note}.</b> You recommend; Michael or Daniel approves — the database rejects anyone else.</div>`:''}
+  </div>
+  ${c.grp?renderGroup(c):''}
+  <div class="cols">
+    <div>
+      ${c.checklist?renderChecklistCard(c):''}
+      ${renderPdCard(c)}
+      ${renderTreatment(c)}
+      ${c.records?`<div class="card"><h3>Records & bills tracking <span class="sub2">— per-provider, with aging ticklers</span></h3>
+        <table><thead><tr><th>Request</th><th>Status</th><th>Aging</th></tr></thead><tbody>
+        ${c.records.map(([r,done,age])=>`<tr><td>${r}</td><td>${done?'<span class="badge b-ok">✔ received</span>':'<span class="badge b-warn">outstanding</span>'}</td><td class="aging ${!done&&parseInt(age)>14?'bad':''}">${age}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="btnrow"><button class="ghost" onclick="toast('Mockup: follow-up letter generates from template with merge fields')">Generate follow-up letter</button></div>
+      </div>`:''}
+      ${c.demand?`<div class="card"><h3>Demand readiness</h3>
+        <div class="kv">
+          <div class="k">Records</div><div>${c.demand.records}</div>
+          <div class="k">Bills total</div><div>${c.demand.bills} <span class="sub2">(from structured bill entries)</span></div>
+          <div class="k">18.001 affidavits</div><div>${c.demand.aff}</div>
+          <div class="k">Kate review</div><div><span class="badge b-warn">${c.demand.kate}</span></div>
+          <div class="k">Attorney approval</div><div><span class="badge b-na">${c.demand.atty}</span> <span class="sub2">— required for Level 3</span></div>
+        </div>
+        ${c.flags.includes('PD unresolved at demand — red flag')?'<div class="note-callout">⚠ <b>PD unresolved at demand stage</b> — this is a red flag on the stalled-case dashboard until resolved.</div>':''}
+      </div>`:''}
+      ${c.nego?`<div class="card"><h3>Negotiation <span class="sub2">— every offer logged, client authority documented</span></h3>
+        <div class="kv">
+          <div class="k">Demand</div><div>${c.nego.demand}</div>
+          <div class="k">Offer</div><div>${c.nego.offer}</div>
+          <div class="k">Counter</div><div>${c.nego.counter} <span class="badge b-ok">client authority ✔</span></div>
+          <div class="k">Next</div><div><span class="badge b-crit">${c.nego.next}</span></div>
+        </div>
+        <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">Settlement amounts and disbursement live in Emily's workspace — this panel shows negotiation posture only. File-suit decision rests with Michael.</div>
+      </div>`:''}
+    </div>
+      <div class="card"><h3>Insurance & claims <span class="sub2">— adjuster contact lives here</span></h3>
+        ${(c.claims&&c.claims.length)?c.claims.map((cl,ci)=>`
+          <div style="border:1px solid var(--grid);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+              <span class="badge ${cl.role.startsWith('DINSCO')?'b-info':'b-ok'}">${cl.role}</span>
+              <b>${cl.carrier}</b> <span class="sub2">claim # ${cl.num}</span>
+              <span class="sub2">limits: ${cl.limits}</span>
+            </div>
+            ${(cl.adjusters||[]).map(a=>`
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:13px;padding:3px 0">
+              <span class="badge b-na" title="Adjuster function on this claim">${a.fn}</span>
+              <span style="min-width:150px">${a.name}</span>
+              <span>📞 <a class="caselink" href="tel:${a.phone.replace(/[^0-9]/g,'')}" onclick="adjCall('${a.name} (${cl.carrier})','${c.client}')" title="RingCentral — binds matter + claim + this adjuster">${a.phone}</a></span>
+              <span>✉️ <a class="caselink" href="mailto:${a.email}">${a.email}</a>
+                <button class="copybtn" onclick="copyText('${a.email}','Adjuster email')">copy</button></span>
+              <a class="caselink" style="font-weight:400;font-size:12px" onclick="toggleAdjNotes('${a.name.toLowerCase()}')" title="Firm-wide history of how this adjuster works — from every case, not just this one">💬 history (${(ADJ_NOTES[a.name.toLowerCase()]||[]).length})</a>
+            </div>
+            ${adjNoteOpen===a.name.toLowerCase()?`
+            <div style="background:var(--page);border:1px solid var(--grid);border-radius:8px;padding:8px 10px;margin:4px 0 6px">
+              <div class="sub2" style="margin-bottom:6px"><b>${a.name}</b> — how this adjuster works (all cases, firm-wide)</div>
+              ${(ADJ_NOTES[a.name.toLowerCase()]||[]).map(n=>`<div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--grid)">${n.text}<div class="sub2">${n.when} · ${n.who} · from <i>${n.case}</i></div></div>`).join('')||'<div class="sub2">No notes yet — be the first.</div>'}
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <input type="text" id="adj-note-input" placeholder="e.g., Won’t discuss limits until records complete…" style="flex:1">
+                <button class="primary" onclick="addAdjNote('${a.name.toLowerCase()}','${a.name}')">Add</button>
+              </div>
+            </div>`:''}`).join('')}
+            <div class="sub2" style="margin-top:2px"><a class="caselink" style="font-weight:400;font-size:12px" onclick="toast('Mockup: adds another adjuster (BI/PD/PIP/litigation/supervisor) to this claim — rotations keep history')">+ add adjuster</a></div>
+            ${cl.lor==='—'?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
+              <span class="badge b-warn">LOR generated ≠ sent</span>
+              <span class="sub2">date actually sent:</span>
+              <input type="date" id="lor-date-${ci}" style="width:150px">
+              <button class="ghost" onclick="recordLorSent(${ci})">Record sent date</button>
+            </div><div class="sub2" style="margin-top:4px">status: ${cl.status}</div>`
+            :`<div class="sub2" style="margin-top:4px">status: ${cl.status} · LOR sent ${cl.lor}</div>`}
+          </div>`).join('')
+        :`<div class="sub2">No claims opened yet — the DINSCO/PINSCO checklist tasks create them:</div>
+          <div class="btnrow">
+            <button class="primary" onclick="openClaimStub('dinsco')">Open DINSCO claim</button>
+            <button class="ghost" onclick="openClaimStub('pinsco')">Open PINSCO claim</button>
+          </div>`}
+      </div>
+
+    <div>
+      <div class="card"><h3>Notes <span class="sub2">(includes intake history)</span></h3>
+        <ul class="log">${c.notes.map((n,i)=>`<li class="${i===0?'first':''}"><div>${n.what}</div><div class="when">${n.when} · ${n.who}</div></li>`).join('')}</ul>
+        <div class="btnrow"><button class="ghost" onclick="toast('Mockup: note scope selector — this matter / selected linked / all linked / incident group (blocked until conflict cleared)')">+ Add note</button></div>
+      </div>
+      <div class="card"><h3>Next actions</h3>
+        <div class="sub2" style="line-height:1.8">
+        ${c.id===1?'• Work the 5-task sign-up checklist (due Jul 16, 2026–18)<br>• Complete Case Profile before Jul 20, 2026 review<br>• Conflict check: sister-passenger linked matter':''}
+        ${c.id===2?'• Jul 14, 2026 provider call (auto-scheduled)<br>• Chase ESI decision with client<br>• Watch health-plan lien — screen updated?':''}
+        ${c.id===3?'• Escalate Dr. Reyes records (21d aging)<br>• Chase Baptist 18.001 affidavit<br>• Wage verification follow-up':''}
+        ${c.id===4?'• Await Kate review; then Michael (Level 3)<br>• Push PD total-loss dispute — red flag<br>• Final 18.001 promised Jul 18, 2026':''}
+        ${c.id===5?'• Adjuster callback overdue — call today<br>• If stall continues: file-suit memo to Michael':''}
+        ${c.id===6?'• Get Level recommended TODAY — past day 7<br>• Client PT rebooked Jul 15, 2026 — confirm attendance<br>• Auth problem: call clinic manager':''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  applyFocus(c);
+}
+
+/* ---------------- FOCUS VIEW — progressive disclosure (Michael 2026-07-13: anti-clutter) ----------------
+   Everything reachable, only the actionable visible. Cards collapse to their one-line
+   headers unless they contain red/serious status or an open form; click a header to expand.
+   Next-actions strip synthesizes what needs the user NOW. Full view = the old everything-open page. */
+let focusMode=true;
+let openSecs=new Set();
+function focusToggle(){focusMode=!focusMode;openSecs=new Set();renderDetail()}
+
+/* status badge → jump to the section it describes (expands it first in Focus view) */
+const JUMP_MAP={
+  'PD':'Property damage', 'Auths':'Sign-up checklist', 'Treatment':'Treatment',
+  'Viability':'Sign-up checklist', 'DPS record':'Records & bills', 'Public records':'Records & bills',
+  'Liens':null, // lien detail lives in Emily's lien/disbursement workspace — restricted tier
+};
+function jumpTo(label){
+  const key=JUMP_MAP[label];
+  if(key===null){toast('Lien detail lives in the Lien & Disbursement workspace (restricted tier) — this badge is the CM-visible status only');return}
+  const c=current;
+  const cards=[...document.querySelectorAll('#view .cols .card')];
+  const idx=cards.findIndex(cd=>{const h=cd.querySelector('h3');return h&&h.innerText.toUpperCase().includes(key.toUpperCase())});
+  if(idx<0){toast('No '+key+' section on this file yet — nothing to jump to (status shows why)');return}
+  openSecs.add(c.id+':'+idx);
+  renderDetail();
+  const target=[...document.querySelectorAll('#view .cols .card')][idx];
+  if(target){
+    target.scrollIntoView({behavior:'smooth',block:'start'});
+    target.classList.add('jump-flash');
+    setTimeout(()=>target.classList.remove('jump-flash'),1600);
+  }
+}
+function nextActions(c){
+  const items=[];
+  (c.flags||[]).forEach(f=>{if(!/Checklist/.test(f))items.push(['crit',f])});
+  if(c.level&&c.level.s==='missing')items.push(['crit','Level recommendation '+(c.level.note||'due')]);
+  const left=(c.checklist||[]).filter(x=>!x[1]).length;
+  if(left)items.push(['warn','Sign-up checklist: '+left+' item(s) open']);
+  if(c.provider&&c.provider.nextCall)items.push(['warn','Provider call — '+c.provider.name+' due '+c.provider.nextCall]);
+  if(c.pd&&c.pd.status==='In Progress'&&c.pd.days>=4)items.push(['warn','PD: '+c.pd.days+'d since last touch — '+(c.pd.repair||'')]);
+  if(c.grp)items.push(['info','Companion cases: '+(GROUPS[c.grp].members.length-1)+' linked client(s) from this crash']);
+  return items;
+}
+function focusStrip(c){
+  const items=nextActions(c);
+  return `<div class="card" style="margin-bottom:16px;border-left:4px solid ${items.some(i=>i[0]==='crit')?'#c4453b':'var(--blue)'}">
+    <h3 style="margin:0 0 6px">🎯 Needs you now <span class="sub2">— everything else on this page is one click away</span></h3>
+    ${items.length?items.map(([k,t])=>`<span class="badge ${k==='crit'?'b-crit':k==='warn'?'b-warn':'b-info'}" style="margin:2px 4px 2px 0;cursor:pointer" onclick="focusMode=false;renderDetail()" title="click to open the full page">${t}</span>`).join(''):'<span class="sub2">Nothing urgent — the file is quiet. ✓</span>'}
+  </div>`;
+}
+function applyFocus(c){
+  const tools=`<span style="margin-left:auto"><button class="ghost" onclick="focusToggle()" title="Focus = collapsed cards + needs-you-now strip. Full = everything open (the classic view).">${focusMode?'🗂 Full view':'🎯 Focus view'}</button></span>`;
+  const hdr=document.querySelector('#view .card div');
+  if(hdr&&!hdr.querySelector('button.ghost'))hdr.insertAdjacentHTML('beforeend',tools);
+  if(!focusMode)return;
+  // insert the needs-you-now strip after the header card
+  const headerCard=document.querySelector('#view > .card');
+  if(headerCard)headerCard.insertAdjacentHTML('afterend',focusStrip(c));
+  // collapse every card in the columns unless it is HOT (red/serious status or an open form) or user-opened
+  document.querySelectorAll('#view .cols .card').forEach((card,i)=>{
+    const key=c.id+':'+i;
+    const hot=card.querySelector('.b-crit, .b-ser, .miss, input, select, textarea');
+    const h3=card.querySelector('h3');
+    if(!h3)return;
+    if(!hot&&!openSecs.has(key)){
+      card.classList.add('collapsed');
+      h3.style.cursor='pointer';
+      h3.title='Click to expand';
+      if(!h3.dataset.caret){h3.dataset.caret='1';h3.insertAdjacentHTML('afterbegin','<span class="sub2" style="margin-right:6px">▸</span>');}
+      h3.onclick=()=>{openSecs.add(key);card.classList.remove('collapsed');const ca=h3.querySelector('span.sub2');if(ca&&ca.textContent==='▸')ca.remove();h3.onclick=()=>{openSecs.delete(key);renderDetail()};};
+    }else if(openSecs.has(key)){
+      h3.style.cursor='pointer';
+      h3.onclick=()=>{openSecs.delete(key);renderDetail()};
+    }
+  });
+}
+function tickTask(i){
+  const [t,done,kind]=current.checklist[i];
+  if(kind==='dinsco_lor' && !done && !current.checklist.find(x=>x[2]==='dinsco_claim')[1]){
+    toast('Open the DINSCO claim first — the LOR needs a claim number'); return;
+  }
+  if(DOC_BACKED[kind] && !done){ pendingOverride=i; renderDetail(); return; }
+  if(done && current.overrides && current.overrides[i]) delete current.overrides[i];
+  current.checklist[i][1]=!done; pendingOverride=null; act(current.client,(done?'Reopened':'Completed')+' task: '+t); renderDetail();
+  toast(done?'Task reopened — audit-logged':'Task completed (manual) — status, completed_at, completed_by stamped');
+}
+function confirmOverride(i){
+  const r=document.getElementById('ovr-reason').value.trim();
+  if(!r){toast('A reason is required for an override — the database enforces it');return}
+  current.overrides=current.overrides||{}; current.overrides[i]=r; act(current.client,'OVERRIDE-completed task: '+current.checklist[i][0]+' — '+r);
+  current.checklist[i][1]=true; pendingOverride=null; renderDetail();
+  toast('Override logged: completion_method=manual_override + your reason — visible in Michael’s pattern report');
+}
+function refusePinsco(){
+  current.pinscoRefused=true;
+  current.checklist.find(x=>x[2]==='pinsco_claim')[1]=true;
+  current.checklist.find(x=>x[2]==='pinsco_lor')[1]=true;
+  current.checklist.find(x=>x[2]==='pinsco_dec')[1]=true;  /* refusal waives the Dec Sheet too */
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'Client REFUSED to open PINSCO (1st-party) claim after risks explained. Documented in coverage assessment: permission_to_use = No, note recorded. Feeds Level inputs.'});
+  renderDetail();
+  toast('Refusal documented — coverage assessment updated, note logged, audit-stamped');
+}
+
+/* --------- provider calls --------- */
+function renderCalls(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Bi-weekly Provider Call Queue — calls log in one tap and self-reschedule (+14d)</h2>
+    <table>
+      <thead><tr><th>Client</th><th>Provider</th><th>Last call</th><th>Balance snapshot</th><th>Due</th><th></th></tr></thead>
+      <tbody>
+      ${calls.map((k,i)=>{
+        const P=PROVIDERS[k.provider];
+        let row=`<tr class="callrow">
+        <td><a class="caselink" onclick="openCase('${k.client}')">${k.client}</a></td>
+        <td>${P?`<a class="caselink" onclick="provOpen=provOpen===${i}?null:${i};renderCalls()">${k.provider}</a>`:k.provider}</td>
+        <td class="sub2">${k.last}</td><td class="bal">${k.balance}</td>
+        <td>${k.status==='overdue'?'<span class="badge b-crit">⚠ overdue — '+k.due+'</span>':k.status==='due'?'<span class="badge b-warn">due '+k.due+'</span>':k.status==='na'?'<span class="badge b-na">—</span>':'<span class="badge b-na">'+k.due+'</span>'}</td>
+        <td>${k.status==='na'?'':k.inCall?`<button class="primary" style="background:var(--good-text)" onclick="callForm=callForm===${i}?null:${i};renderCalls()">Complete call log</button>`:`<button class="primary" onclick="callForm=callForm===${i}?null:${i};renderCalls()">Log call</button>`}</td>
+      </tr>`;
+        if(callForm===i)row+=`<tr><td colspan="6" style="background:var(--page)">
+          <div style="padding:6px 2px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px">
+              <div><label>Reached someone?</label>
+                <select id="clf-reached"><option value="yes" selected>Yes — spoke with office</option><option value="no">No — voicemail / no answer</option></select></div>
+              <div><label>Treatment status</label>
+                <select id="clf-status"><option>on track — treating as planned</option><option>gap concern — missed appointment(s)</option><option>noncompliant</option><option>treatment complete / discharged</option></select></div>
+              <div><label>Approx. balance</label><input type="text" id="clf-bal" placeholder="$ from office" value="${k.balance!=='—'?k.balance:''}"></div>
+              <div><label>Date client was seen <span class="sub2">(this report — if they can tell us)</span></label><input type="date" id="clf-seen"></div>
+              <div><label>Initial visit date</label>${(()=>{const c=cases.find(x=>x.client===k.client);const e=c&&c.episodes&&c.episodes.find(e=>k.provider.startsWith(e.name.split(' — ')[0])||e.name.startsWith(k.provider.split(' & ')[0]));
+                return e&&e.firstVisit?`<div class="badge b-ok" style="margin-top:4px">✓ on file — ${e.firstVisit}</div><input type="hidden" id="clf-initial">`:`<input type="date" id="clf-initial">`;})()}</div>
+              <div><label>Next appointment</label><input type="date" id="clf-next"></div>
+            </div>
+            <label style="margin-top:8px">Clinical events reported on this call <span class="sub2">(checkbox log — flows to Case Profile & demand)</span></label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:2px 14px">
+              <div class="checkline" style="margin-top:2px"><input type="checkbox" id="clf-mri-ref"><label for="clf-mri-ref" style="margin:0">MRI referral → <input type="text" id="clf-mri-where" placeholder="where" style="width:110px;padding:3px 6px"></label></div>
+              <div class="checkline" style="margin-top:2px;grid-column:1/-1"><b style="min-width:44px">MRI done:</b>
+                ${['lumbar','cervical','thoracic','brain','other'].map(r=>{
+                  const done=(cases.find(x=>x.client===k.client)?.treatLog||[]).find(t=>t.item==='MRI'&&t.part===r);
+                  return done?`<span class="badge b-ok" title="already done — no need to ask again">✓ ${r} (${done.date})</span>`
+                    :`<label style="margin:0;font-weight:400;display:flex;align-items:center;gap:3px"><input type="checkbox" id="clf-mridone-${r}" onchange="document.getElementById('clf-mridone-${r}-date').style.display=this.checked?'inline-block':'none'">${r}<input type="date" id="clf-mridone-${r}-date" title="date if known" style="display:none;width:135px;padding:2px 5px">${r==='other'?` <input type="text" id="clf-mridone-other-txt" placeholder="which part" style="width:90px;padding:3px 6px">`:''}</label>`;
+                }).join('')}
+                <span class="sub2">— once done on a body part, it's done; multiple parts can be same or different dates</span></div>
+              <div class="checkline" style="margin-top:2px"><input type="checkbox" id="clf-tpi"><label for="clf-tpi" style="margin:0">TPI</label></div>
+              <div class="checkline" style="margin-top:2px;grid-column:1/-1"><b style="min-width:44px">ESI:</b>
+                ${['lumbar','cervical','thoracic','other'].map(r=>`<label style="margin:0;font-weight:400;display:flex;align-items:center;gap:3px"><input type="checkbox" id="clf-esi-${r}" onchange="document.getElementById('clf-esi-${r}-date').style.display=this.checked?'inline-block':'none'">${r}<input type="date" id="clf-esi-${r}-date" title="date if known" style="display:none;width:135px;padding:2px 5px">${r==='other'?` <input type="text" id="clf-esi-other-txt" placeholder="which part" style="width:90px;padding:3px 6px">`:''}</label>`).join('')}
+                <span class="sub2">— multiple body parts per visit happens; check each</span></div>
+              <div class="checkline" style="margin-top:2px;grid-column:1/-1"><b style="min-width:44px">MBB:</b>
+                ${['lumbar','cervical','thoracic','other'].map(r=>`<label style="margin:0;font-weight:400;display:flex;align-items:center;gap:3px"><input type="checkbox" id="clf-mbb-${r}" onchange="document.getElementById('clf-mbb-${r}-date').style.display=this.checked?'inline-block':'none'">${r}<input type="date" id="clf-mbb-${r}-date" title="date if known" style="display:none;width:135px;padding:2px 5px">${r==='other'?` <input type="text" id="clf-mbb-other-txt" placeholder="which part" style="width:90px;padding:3px 6px">`:''}</label>`).join('')}
+                <span class="sub2">— tracked separately from ESI (different procedure, RFA precursor)</span></div>
+              <div class="checkline" style="margin-top:2px"><input type="checkbox" id="clf-rfa"><label for="clf-rfa" style="margin:0">RFA recommended</label></div>
+              <div class="checkline" style="margin-top:2px"><input type="checkbox" id="clf-surg"><label for="clf-surg" style="margin:0">Surgical referral</label></div>
+            </div>
+            <label style="margin-top:8px">Call note</label>
+            <input type="text" id="clf-note" placeholder="anything else the office said…">
+            <div class="btnrow">
+              <button class="primary" onclick="saveCallLog(${i})">Save call log</button>
+              <button class="ghost" onclick="callForm=null;renderCalls()">Cancel</button>
+              <span class="sub2" style="align-self:center">Saving writes medical.provider_contact_log, snapshots the balance on the episode, and self-schedules the next call (+14d). Gap/noncompliant escalates immediately.</span>
+            </div>
+          </div>
+        </td></tr>`;
+        if(provOpen===i&&P)row+=`<tr><td></td><td colspan="5" style="background:var(--page)">
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:4px 0;font-size:13px">
+            <span>📞 <a class="caselink" href="tel:${P.phone.replace(/[^0-9]/g,'')}" onclick="provCall(${i})" title="Calls via RingCentral — logged to ${k.client}'s case as a provider contact">${P.phone}</a></span>
+            <span class="sub2">${P.contact}</span><span class="sub2">${P.addr}</span>
+            <span class="sub2">records via ${P.method}</span>
+          </div>
+          <div class="sub2" style="padding-bottom:6px">Calling from here binds the call to <b>${k.client}</b>'s case + this provider — it appears in the provider contact log and the case history automatically.</div>
+        </td></tr>`;
+        return row;}).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Each logged call captures: treatment status, approximate balance, and any clinical events (MRI referral, TPI, ESI/MBB, RFA, surgical referral) by checkbox — then schedules the next call automatically. Gaps escalate immediately.</div>`;
+}
+function toggleAdjNotes(key){adjNoteOpen=adjNoteOpen===key?null:key;renderDetail()}
+function addAdjNote(key,name){
+  const v=document.getElementById('adj-note-input').value.trim();
+  if(!v){toast('Type the observation first');return}
+  (ADJ_NOTES[key]=ADJ_NOTES[key]||[]).unshift({when:'Jul 13, 2026, now',who:'CC',case:current.client,text:v});
+  renderDetail();
+  toast('Adjuster note saved — visible on every case this adjuster touches, attributed to you');
+}
+function adjCall(carrier,client){toast('RingCentral call to '+carrier+' adjuster — logged to '+client+"'s case, bound to this claim")}
+function recordLorSent(ci){
+  const el=document.getElementById('lor-date-'+ci);
+  if(!el.value){toast('Pick the date the LOR actually went out — required, this is the proof of completion');return}
+  const cl=current.claims[ci];
+  const d=new Date(el.value+'T12:00');
+  cl.lor=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  act(current.client,'LOR sent date recorded — '+cl.role+' ('+cl.lor+')');
+  const kind=cl.role.startsWith('DINSCO')||cl.role.startsWith('PD')?'dinsco_lor':'pinsco_lor';
+  const item=current.checklist&&current.checklist.find(x=>x[2]===kind);
+  if(item&&!item[1]){item[1]=true;toast('insurance.claim.lor_sent_date = '+cl.lor+' — the '+(kind==='dinsco_lor'?'DINSCO':'PINSCO')+' LOR task completed itself (system)');}
+  else toast('LOR sent date recorded: '+cl.lor);
+  renderDetail();
+}
+function openClaimStub(kind){
+  const c1=current;
+  const label=kind==='dinsco'?'DINSCO · liability':'PINSCO · (PIP / UM-UIM / MedPay)';
+  c1.claims.push({role:label,carrier:'— enter carrier —',num:'pending',limits:'TBD',status:'open',lor:'—',adjusters:[{fn:'BI',name:'pending assignment',phone:'(800) 555-0000',email:'tbd@example.com'}]});
+  const k=kind==='dinsco'?'dinsco_claim':'pinsco_claim';
+  const item=c1.checklist&&c1.checklist.find(x=>x[2]===k);
+  if(item&&!item[1]){item[1]=true;toast('Claim opened — the matching checklist task completed itself (completion_method=system)')}
+  else toast('Claim opened');
+  renderDetail();
+}
+function startEpisode(){
+  const c1=current;
+  const pname=document.getElementById('prov-pick').value;
+  const lop=document.getElementById('prov-lop').checked;
+  c1.needsProvider=false;
+  c1.provider={name:pname,lastCall:'—',nextCall:'Jul 27, 2026',balance:'$0'};
+  c1.clinical=[['Initial visit — '+pname+' (scheduled)',false,'']];
+  c1.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'Treatment episode started: '+pname+(lop?' — UNDER LOP (flagged for attorney approval)':'')+'. First bi-weekly provider call scheduled Jul 27, 2026.'});
+  renderDetail();
+  toast('Episode created (status: scheduled) — provider call automation is live'+(lop?'; LOP flagged for attorney approval':''));
+}
+function openProvider(pname,client){
+  const i=calls.findIndex(k=>k.provider===pname&&k.client===client);
+  go('calls'); if(i>=0){provOpen=i;renderCalls();}
+  toast('Provider card opened — phone here logs to '+client+"'s case");
+}
+function provCall(i){
+  calls[i].inCall=true; renderCalls();
+  toast('RingCentral call to '+calls[i].provider+' initiated — provider contact log opened on '+calls[i].client+"'s case (status: initiated)");
+}
+function logCall(i){callForm=callForm===i?null:i;renderCalls()}
+function saveCallLog(i){
+  const k=calls[i];
+  const reached=document.getElementById('clf-reached').value==='yes';
+  const status=document.getElementById('clf-status').value;
+  const bal=document.getElementById('clf-bal').value.trim();
+  const next=document.getElementById('clf-next').value;
+  const note=document.getElementById('clf-note').value.trim();
+  const evts=[];
+  if(document.getElementById('clf-mri-ref').checked)evts.push('MRI referral'+(document.getElementById('clf-mri-where').value?' → '+document.getElementById('clf-mri-where').value:''));
+  if(document.getElementById('clf-tpi').checked){evts.push('TPI');logItems.push({item:'TPI',part:'—'});}
+  const logItems=[];
+  const otherTxt=proc=>{const el=document.getElementById('clf-'+proc+'-other-txt');return el?el.value.trim():''};
+  const fmtD=iso=>iso?new Date(iso+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):null;
+  const procDate=(proc,r)=>{const el=document.getElementById('clf-'+proc+'-'+r+'-date');return el?fmtD(el.value):null};
+  for(const r of ['lumbar','cervical','thoracic','other']){
+    if(document.getElementById('clf-esi-'+r).checked){
+      const part=r==='other'?otherTxt('esi'):r;
+      if(!part){toast('ESI "other" needs the body part typed in');return}
+      const dE=procDate('esi',r); evts.push('ESI — '+part+(dE?' ('+dE+')':'')); logItems.push({item:'ESI',part:part,d:dE});
+    }
+    if(document.getElementById('clf-mbb-'+r).checked){
+      const part=r==='other'?otherTxt('mbb'):r;
+      if(!part){toast('MBB "other" needs the body part typed in');return}
+      const dM=procDate('mbb',r); evts.push('MBB — '+part+(dM?' ('+dM+')':'')); logItems.push({item:'MBB',part:part,d:dM});
+    }
+  }
+  for(const r of ['lumbar','cervical','thoracic','brain','other']){
+    const el=document.getElementById('clf-mridone-'+r);
+    if(el&&el.checked){
+      const part=r==='other'?otherTxt('mridone'):r;
+      if(!part){toast('MRI "other" needs the body part typed in');return}
+      const dR=procDate('mridone',r); evts.push('MRI completed — '+part+(dR?' ('+dR+')':'')); logItems.push({item:'MRI',part:part,d:dR});
+    }
+  }
+  if(document.getElementById('clf-rfa').checked){evts.push('RFA recommended');logItems.push({item:'RFA recommended',part:'—'});}
+  if(document.getElementById('clf-surg').checked){evts.push('Surgical referral');logItems.push({item:'Surgical referral',part:'—'});}
+  const gap=/gap|noncompliant/.test(status);
+  const wasCall=k.inCall;
+  k.inCall=false; k.last='Jul 13, 2026'; k.due=reached?'Jul 27, 2026':'Jul 15, 2026'; k.status=reached?'soon':'due';
+  if(bal)k.balance=bal;
+  // sync onto the case: episode balance + clinical events + note
+  const c=cases.find(x=>x.client===k.client);
+  if(c){
+    const seen=fmtD(document.getElementById('clf-seen')?.value);
+    const initEl=document.getElementById('clf-initial');
+    const initD=initEl&&initEl.type==='date'?fmtD(initEl.value):null;
+    if(c.episodes){const e=c.episodes.find(e=>k.provider.startsWith(e.name.split(' — ')[0])||e.name.startsWith(k.provider.split(' & ')[0]));
+      if(e){if(bal)e.bal=bal; if(seen)e.lastVisit=seen; if(initD&&!e.firstVisit)e.firstVisit=initD;}}
+    c.treatLog=c.treatLog||[];
+    if(initD)c.treatLog.push({date:initD,item:'Initial visit',part:'—',provider:k.provider,cost:'—'});
+    if(seen)c.treatLog.push({date:seen,item:'Office visit',part:'—',provider:k.provider,cost:'—'});
+    if(c.provider&&k.provider===c.provider.name){c.provider.balance=bal||c.provider.balance;c.provider.lastCall='Jul 13, 2026';c.provider.nextCall=k.due;}
+    if(c.clinical)evts.forEach(ev=>c.clinical.push([ev+' — reported on provider call',true,'Jul 13, 2026']));
+    logItems.forEach(li=>c.treatLog.push({date:li.d||'Jul 13, 2026 (rptd)',item:li.item,part:li.part,provider:k.provider,cost:'—'}));
+    if(c.notes)c.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'Provider call — '+k.provider+': '+(reached?status:'no answer — voicemail')+(bal?'; balance '+bal:'')+(next?'; next appt '+next:'')+(evts.length?'; events: '+evts.join(', '):'')+(note?'. '+note:'')});
+  }
+  act(k.client,'Provider call logged — '+k.provider+(evts.length?' ('+evts.join(', ')+')':'')); callForm=null; provOpen=null; renderCalls();
+  toast(!reached?'No-answer logged (reached=false) — retry scheduled Jul 15, 2026, not +14d'
+    :gap?'⚠ GAP/COMPLIANCE CONCERN — escalated immediately: flag on the case + Michael\'s dashboard; next call Jul 27, 2026'
+    :'Call saved to provider_contact_log — balance snapshotted'+(evts.length?', '+evts.length+' clinical event(s) logged':'')+(wasCall?', RingCentral duration attached':'')+'; next call auto-scheduled Jul 27, 2026');
+}
+
+/* --------- tasks --------- */
+const extraTasks=[
+ {t:'Provider call — Northside PT (overdue)', c:'Nguyen, Bao', src:'bi-weekly automation', pri:['overdue','b-crit'], due:'Jul 12, 2026', done:false},
+ {t:'Records follow-up — Dr. Reyes (21d)', c:'Trevino, Marisol', src:'aging tickler', pri:['high','b-warn'], due:'Jul 14, 2026', done:false},
+];
+function priFor(t){return /SOL/.test(t)?['critical','b-crit']:['high','b-warn']}
+function dueFor(t){return /SOL|Case Profile|LOR|Dec/.test(t)?'Jul 18, 2026':'Jul 16, 2026'}
+function renderTasks(){
+  const c1=cases.find(c=>c.id===1);
+  const rows=[];
+  c1.checklist.forEach((it,i)=>rows.push({kind:'cl',i,t:it[0],done:it[1],c:'Delgado, Rosa',src:'sign-up checklist',
+    pri:priFor(it[0]),due:dueFor(it[0]),
+    skipped:c1.pinscoRefused&&['pinsco_claim','pinsco_lor','pinsco_dec'].includes(it[2])}));
+  extraTasks.forEach((e,i)=>rows.push({kind:'x',i,t:e.t,done:e.done,c:e.c,src:e.src,pri:e.pri,due:e.due,skipped:false}));
+  FOLLOWUPS.forEach((f,i)=>rows.push({kind:'fu',i,t:'📞 Client follow-up: '+f.txt+(f.mine?'':' <span class="badge b-na">backup — primary: '+f.primary+'</span>'),
+    done:f.done||false,c:f.client,src:'client call',pri:f.urgent?['urgent','b-crit']:['high','b-warn'],due:f.due,skipped:false}));
+  const open=rows.filter(r=>!r.done).length;
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>My Tasks — ${open} open · generated by the system, never hand-maintained</h2>
+    <table>
+      <thead><tr><th style="width:34px"></th><th>Task</th><th>Case</th><th>Source</th><th>Priority</th><th>Due</th></tr></thead>
+      <tbody>
+      ${rows.map(r=>`<tr style="${r.done?'opacity:.6':''}">
+        <td>${r.skipped?'<span class="tick y" style="background:#f0efec;color:var(--muted)">–</span>'
+          :`<span class="tick ${r.done?'y':'n'}" style="cursor:pointer" title="${r.done?'Click to reopen':'Mark complete'}" onclick="completeFromTasks('${r.kind}',${r.i})">${r.done?'✓':''}</span>`}</td>
+        <td style="${r.done&&!r.skipped?'text-decoration:line-through':''}">${r.t}
+          ${r.done&&!r.skipped?'<span class="sub2"> · done just now — CC</span>':''}
+          ${r.skipped?'<span class="sub2"> · skipped — refusal documented</span>':''}</td>
+        <td><a class="caselink" onclick="openCase('${r.c}')">${r.c}</a></td><td class="sub2">${r.src}</td>
+        <td><span class="badge ${r.pri[1]}">${r.pri[0]}</span></td><td>${r.due}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">
+  Completing a task here and ticking it on the case page are the <b>same action on the same record</b> —
+  the database stamps <b>status = done, completed_at, completed_by (you)</b>, audit-logs the change, and the
+  case-page checklist, progress bar, and Michael's dashboard update instantly. Clicking a ✓ reopens it
+  (status back to open, completion cleared — also audit-logged).</div>`;
+}
+function completeFromTasks(kind,i){
+  if(kind==='cl'){
+    const c1=cases.find(c=>c.id===1);
+    const [t,done,k]=c1.checklist[i];
+    if(k==='dinsco_lor'&&!done&&!c1.checklist.find(x=>x[2]==='dinsco_claim')[1]){toast('Open the DINSCO claim first — the LOR needs a claim number');return}
+    if(DOC_BACKED[k]&&!done){go('detail',1);pendingOverride=i;renderDetail();toast('Document-backed task — completes automatically, or override here with a reason');return}
+    c1.checklist[i][1]=!done;
+  } else if(kind==='fu'){ FOLLOWUPS[i].done=!FOLLOWUPS[i].done; } else { extraTasks[i].done=!extraTasks[i].done; }
+  renderTasks();
+  toast('workflow.task updated — status, completed_at, completed_by stamped · audit-logged');
+}
+
+function fuSave(){
+  const txt=document.getElementById('fu-text').value.trim();
+  if(!txt){toast('Type what the client needs — that IS the task');return}
+  const who=document.getElementById('fu-who').value;
+  const due=document.getElementById('fu-due').value;
+  const urgent=document.getElementById('fu-urgent').value==='yes';
+  const names={cm:'Christina (CM)',pl:(current.paralegal||'?')+' (paralegal)',atty:'M. Tuttle (attorney)'};
+  const primary=names[who];
+  const backup=who==='cm'?(current.paralegal||'—')+' (paralegal)':'Christina (CM)';
+  FOLLOWUPS.push({client:current.client,txt:txt,primary:primary,backup:backup,due:due,urgent:urgent,mine:who==='cm'});
+  current.notes.unshift({when:'Jul 13, 2026, now',who:'CC',what:'CLIENT CALLED: "'+txt+'" → follow-up task sent to '+primary+' (backup: '+backup+'), due '+due+(urgent?' — URGENT':'')});
+  act(current.client,'Client call logged → follow-up dispatched to '+primary);
+  fuOpen=false; renderDetail();
+  toast('Follow-up task created — owner: '+primary+'; '+backup+' sees it too and can help. Call logged to communication_log.');
+}
+function renderActivity(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>My Activity — everything I've touched, newest first. Got pulled away? Start at the top.</h2>
+    <table>
+      <thead><tr><th>When</th><th>Case</th><th>What I did</th><th></th></tr></thead>
+      <tbody>
+      ${MY_ACTIVITY.map((a,i)=>`<tr style="${i===0?'background:#eef4fc':''}">
+        <td class="sub2" style="white-space:nowrap">${a.when}${i===0?'<div><span class="badge b-info">⟵ you left off here</span></div>':''}</td>
+        <td><a class="caselink" onclick="openCase('${a.client}')">${a.client}</a></td>
+        <td style="font-size:12.5px">${a.what}</td>
+        <td>${i===0?`<button class="primary" onclick="openCase('${a.client}')">Resume →</button>`:''}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">Backed by the audit layer — every action is already attributed to you with a timestamp, so this tab is just YOUR slice of it: tasks, calls, notes, PD updates, LOR dates, overrides. Nothing extra to remember to log.</div>`;
+}
+function renderPView(){
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>Paralegal View — LIMITED · milestones only, no litigation granularity</h2>
+    <table>
+      <thead><tr><th>Case</th><th>Team</th><th>Milestone</th><th>What's next (milestone level)</th></tr></thead>
+      <tbody>
+        <tr><td><a class="caselink" onclick="openCase('Vasquez, Elena')">Vasquez, Elena</a></td><td class="sub2">CM Mark · PL D. Ayala</td><td><span class="badge b-warn">Not filed — file-suit decision w/ Michael</span></td><td class="sub2">if filed: service of defendant</td></tr>
+        <tr><td>Ibarra, Ramon <span class="sub2">(example — lit case)</span></td><td class="sub2">CM Christina · PL P. Ortega</td><td><span class="badge b-info">Suit FILED · in DISCOVERY</span></td><td class="sub2">depositions being scheduled (driver depo Jul 20, 2026)</td></tr>
+        <tr><td>Mercado, Felix <span class="sub2">(example — lit case)</span></td><td class="sub2">CM Christina · PL P. Ortega</td><td><span class="badge b-info">MEDIATION SET Aug 06, 2026 · TRIAL Nov 16, 2026</span></td><td class="sub2">client prep before mediation</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note-callout">Milestone level only — <b>filed, discovery, depositions being scheduled, mediation set, trial date</b> — enough to answer "what's happening with my lawsuit?" on a client call. No rule citations, no request-level discovery, no diligence logs; that granularity lives in the paralegal workspace. (Further parameters TBD — Michael.)</div>`;
+}
+/* workspace switcher: a litigation paralegal in CM view gets the FULL workspace, identified as themselves,
+   with a persistent '🔁 Paralegal view' button in the top bar to switch back. In the real build this keys off
+   the logged-in user's roles; in this mockup it activates via the switcher link or the demo toggle above. */
+let PL_MODE=false;
+const CM_CHIP=document.querySelector('.topbar .user').innerHTML;
+function setPLMode(on){
+  PL_MODE=on;
+  document.getElementById('as-paralegal-banner').style.display=on?'':'none';
+  document.getElementById('back-to-pl').style.display=on?'':'none';
+  document.querySelector('.topbar .user').innerHTML=on?'<div class="avatar">PO</div> Priscilla Ortega · Litigation Paralegal <span class="sub2" style="margin-left:4px">— in CM view</span>':CM_CHIP;
+}
+if(location.search.indexOf('as=paralegal')>-1)setPLMode(true);
+go('dash');
+
+/* ---------- global file search (every screen, always) ---------- */
+function gsSource(){ return cases.map(c=>({id:c.id,label:c.client,sub:'DOI '+fmt(c.doi)+' · '+c.stage,meta:(c.phone||'')+' '+(c.email||'')})); }
+let gsSel=0;
+function gsDigits(s){return (s||'').replace(/\D/g,'')}
+function gsHit(q,qd,f){
+  if(!f)return false;
+  if(String(f).toLowerCase().includes(q))return true;           // partial text, anywhere
+  if(qd.length>=3&&gsDigits(f).includes(qd))return true;        // partial phone, any formatting
+  return false;
+}
+function gsFilter(q){
+  const d=document.getElementById('gs-drop');
+  const qq=(q||'').trim();
+  if(!qq){d.classList.remove('open');return}
+  const ql=qq.toLowerCase();
+  const qd=gsDigits(ql);
+  const hits=gsSource().filter(it=>gsHit(ql,qd,it.label)||gsHit(ql,qd,it.sub)||gsHit(ql,qd,it.meta)).slice(0,6);
+  gsSel=-1;
+  d.innerHTML=hits.map(it=>`<div class="gs-item" data-id="${it.id}" data-label="${it.label}"><span><b>${it.label}</b></span><span class="gs-sub">${it.sub||''}</span></div>`).join('')
+    +`<div class="gs-item gs-all" data-q="${qq}"><span>🔎 See all results for “${qq}”</span><span class="gs-sub">grouped by category — or just press Enter</span></div>`;
+  d.classList.add('open');
+  d.querySelectorAll('.gs-item').forEach(el=>el.addEventListener('mousedown',()=>{
+    if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q); else gsOpen(el.dataset.id,el.dataset.label);}));
+}
+function gsKey(e){
+  const d=document.getElementById('gs-drop');
+  const items=[...d.querySelectorAll('.gs-item')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!items.length)return;
+    gsSel=e.key==='ArrowDown'?(gsSel+1)%items.length:(gsSel<=0?items.length-1:gsSel-1);
+    items.forEach((x,i)=>x.classList.toggle('sel',i===gsSel));
+  }else if(e.key==='Enter'){
+    const q=e.target.value.trim();
+    if(gsSel>=0&&items[gsSel]){
+      const el=items[gsSel];
+      if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q||q); else gsOpen(el.dataset.id,el.dataset.label);
+    }else if(q){gsShowAll(q)}
+    e.target.blur();
+  }else if(e.key==='Escape'){gsClose();e.target.blur()}
+}
+function gsShowAll(q){
+  gsClose(); document.getElementById('gs-input').value='';
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  const cats=gsCategories(q.toLowerCase());
+  const total=cats.reduce((n,c)=>n+c.items.length,0);
+  document.getElementById('view').innerHTML=
+   `<div class="panel"><h2>🔎 Search results for “${q}” — ${total} match${total===1?'':'es'} in ${cats.filter(c=>c.items.length).length} categories</h2></div>`+
+   cats.map(c=>c.items.length?`
+   <div class="panel"><h2>${c.title} · ${c.items.length}</h2><table><tbody>
+   ${c.items.map(it=>`<tr><td style="width:38%"><a class="caselink" onclick="${it.act}">${it.label}</a></td><td class="sub2" style="font-size:12.5px">${it.sub||''}</td></tr>`).join('')}
+   </tbody></table></div>`:'').join('')+
+   (total?'':'<div class="panel"><h2>No matches</h2><div class="sub2" style="padding:14px">The real build also searches phone numbers, claim #s, cause #s, notes, and documents — database permissions applied.</div></div>');
+}
+function gsClose(){document.getElementById('gs-drop').classList.remove('open')}
+function gsOpen(id,label){
+  gsClose(); document.getElementById('gs-input').value='';
+  go('detail',Number(id));
+}
+
+function gsProvJump(name){const i=calls.findIndex(k=>k.provider===name);go('calls');if(i>=0){provOpen=i;renderCalls();}}
+function gsCategories(q){
+  const qd=gsDigits(q); const m=s=>gsHit(q,qd,s);
+  return [
+   {title:'Cases & Clients', items:cases.filter(c=>m(c.client)||m(c.type)||m(c.phone)||m(c.email)).map(c=>({label:c.client,sub:'DOI '+fmt(c.doi)+' · '+(c.phone||'')+' · '+c.stage,act:`go('detail',${c.id})`}))},
+   {title:'Medical Providers', items:Object.keys(PROVIDERS).filter(p=>m(p)||m(PROVIDERS[p].phone)).map(p=>({label:p,sub:PROVIDERS[p].phone+' · '+PROVIDERS[p].addr,act:`gsProvJump('${p}')`}))},
+   {title:'Adjusters & Carriers', items:cases.flatMap(c=>(c.claims||[]).flatMap(cl=>(cl.adjusters||[]).filter(a=>m(a.name)||m(cl.carrier)||m(a.phone)||m(a.email)).map(a=>({label:a.name+' — '+cl.carrier,sub:a.fn+' · claim '+cl.num+' · on '+c.client,act:`go('detail',${c.id})`}))))},
+   {title:'Notes', items:cases.flatMap(c=>(c.notes||[]).filter(n=>m(n.what)).slice(0,2).map(n=>({label:c.client,sub:'“'+n.what.slice(0,90)+'…” — '+n.when,act:`go('detail',${c.id})`})))},
+  ];
+}
+
+</script>
+</body>
+</html>

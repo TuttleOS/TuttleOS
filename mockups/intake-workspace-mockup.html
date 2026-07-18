@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuttle OS — Intake Workspace (Mockup)</title>
+<style>
+  :root{
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --blue-dk:#1c5cab; --blue-lt:#cde2fb;
+    --good:#0ca30c; --good-text:#006300; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --r:10px;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);font-size:14px;line-height:1.45}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:16px;padding:10px 20px;position:sticky;top:0;z-index:5}
+  .brand{font-weight:700;font-size:15px;letter-spacing:.2px}
+  .brand span{color:var(--blue)}
+  .ws-chip{font-size:12px;color:var(--ink2);background:var(--page);border:1px solid var(--grid);border-radius:999px;padding:3px 10px}
+  .spacer{flex:1}
+  .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px}
+  nav.side{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  nav.side button{border:1px solid var(--grid);background:var(--surface);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--ink2);cursor:pointer}
+  nav.side button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  nav.side .locked{opacity:.45;cursor:not-allowed;position:relative}
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+  .tile:hover{border-color:var(--baseline)}
+  .tile .k{font-size:12px;color:var(--ink2);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .tile .v{font-size:26px;font-weight:700}
+  .tile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .tile.crit{border-left:4px solid var(--critical)}
+  .tile.warn{border-left:4px solid var(--warning)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  /* panel */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+  .panel h2{font-size:14px;margin:0;padding:12px 16px;border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:10px}
+  .filters{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--grid);flex-wrap:wrap}
+  .chip{border:1px solid var(--grid);background:var(--page);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--ink2);cursor:pointer}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--grid);font-size:12px;white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+  tr.row{cursor:pointer} tr.row:hover td{background:var(--page)}
+  .name{font-weight:600}
+  .sub2{color:var(--muted);font-size:12px}
+  /* badges: status colors always icon + label */
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;white-space:nowrap}
+  .b-open{background:var(--blue-lt);color:var(--blue-dk)}
+  .b-sent{background:#fdf3d7;color:#7a5600}
+  .b-signed{background:#e2f4e2;color:var(--good-text)}
+  .b-rej{background:#fbe3e3;color:#8f1f1f}
+  .b-noresp{background:#f0efec;color:var(--ink2)}
+  .miss{color:var(--critical);font-weight:600}
+  .ok{color:var(--good-text)}
+  .sol{font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;border-radius:6px;padding:2px 7px}
+  .sol.far{background:#f0efec;color:var(--ink2)}
+  .sol.near{background:#fdf3d7;color:#7a5600}
+  .sol.crit{background:#fbe3e3;color:#8f1f1f}
+  /* detail */
+  .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  @media(max-width:860px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+  .card h3{margin:0 0 10px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px}
+  .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  .gate li{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;list-style:none}
+  .gate{margin:0;padding:0}
+  .tick{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none}
+  .tick.y{background:#e2f4e2;color:var(--good-text)} .tick.n{background:#fbe3e3;color:#8f1f1f}
+  .gatebar{border-radius:8px;padding:10px 12px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;margin-top:10px}
+  .gatebar.blocked{background:#fbe3e3;color:#8f1f1f}
+  .gatebar.ready{background:#e2f4e2;color:var(--good-text)}
+  .jump-flash{outline:3px solid var(--blue) !important;outline-offset:2px}
+  .log{margin:0;padding:0}
+  .log li{list-style:none;border-left:2px solid var(--grid);margin-left:6px;padding:2px 0 12px 14px;position:relative;font-size:13px}
+  .log li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--baseline);position:absolute;left:-5px;top:6px}
+  .log li.first::before{background:var(--blue)}
+  .log .when{color:var(--muted);font-size:12px}
+  button.primary{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button.primary:disabled{background:var(--baseline);cursor:not-allowed}
+  button.ghost{background:var(--surface);border:1px solid var(--grid);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--ink2);cursor:pointer}
+  button.danger{background:var(--surface);border:1px solid var(--critical);color:var(--critical);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+  .btnrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .back{color:var(--blue);cursor:pointer;font-size:13px;margin-bottom:12px;display:inline-block}
+  input[type=text],input[type=date],input[type=email],input[type=tel],select,textarea{
+    width:100%;border:1px solid var(--grid);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--surface);color:var(--ink)}
+  label{font-size:12px;color:var(--ink2);display:block;margin:10px 0 4px;font-weight:600}
+  label .req{color:var(--critical)}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;color:var(--ink2)}
+  .note-callout{background:#fdf3d7;border:1px solid #f2d891;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#7a5600;margin-top:10px}
+  .tasklist li{list-style:none;display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13px}
+  .tasklist{margin:6px 0 0;padding:0}
+  .pri{font-size:11px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .pri.high{background:#fbe3e3;color:#8f1f1f}.pri.norm{background:#f0efec;color:var(--ink2)}.pri.critp{background:var(--critical);color:#fff}
+  .lockfoot{color:var(--muted);font-size:12px;text-align:center;padding:14px 0 30px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+  .mockbar{background:#eef4fc;border-bottom:1px solid #cfe0f5;color:#1c5cab;font-size:12px;text-align:center;padding:5px}
+  .gsearch{position:relative}
+  .gsearch input{width:250px;border:1px solid var(--grid);border-radius:999px;padding:7px 14px 7px 32px;font-size:13px;background:var(--page);color:var(--ink);outline:none}
+  .gsearch input:focus{border-color:var(--blue);background:var(--surface);width:310px}
+  .gsearch .gs-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .gs-drop{position:absolute;top:110%;left:0;right:0;background:var(--surface);border:1px solid var(--grid);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:30;display:none}
+  .gs-drop.open{display:block}
+  .gs-item{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .gs-item:hover,.gs-item.sel{background:var(--blue-lt)}
+  .gs-item .gs-sub{color:var(--muted);font-size:11.5px}
+  .gs-none{padding:10px 12px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="mockbar">CLICKABLE MOCKUP — fictional data, nothing is saved. Built for design feedback only.</div>
+<div class="topbar">
+  <div class="brand">TUTTLE <span>OS</span></div>
+  <div class="ws-chip">Intake Workspace</div>
+    <div class="gsearch">
+    <span class="gs-icon">🔎</span>
+    <input id="gs-input" type="text" placeholder="Search files — name, cause #, phone…" autocomplete="off"
+      oninput="gsFilter(this.value)" onkeydown="gsKey(event)" onfocus="gsFilter(this.value)" onblur="setTimeout(()=>gsClose(),150)">
+    <div class="gs-drop" id="gs-drop"></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="user"><div class="avatar">VR</div> Valeria Rosario · Intake Specialist</div>
+</div>
+
+<div class="wrap">
+  <nav class="side">
+    <button class="on" onclick="go('queue')" id="nav-queue">Lead Queue</button>
+    <button onclick="go('new')" id="nav-new">+ New Lead</button>
+    <button onclick="go('act')" id="nav-act">My Activity</button>
+    <button class="locked" title="Not available to the intake role — enforced by the database">Cases 🔒</button>
+    <button class="locked" title="Not available to the intake role — enforced by the database">Medical 🔒</button>
+    <button class="locked" title="Not available to the intake role — enforced by the database">Litigation 🔒</button>
+  </nav>
+
+  <div id="view"></div>
+  <div class="lockfoot">Intake role: case medical, litigation, negotiation, and financial data is not accessible from this login — enforced by the database, not just hidden.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ------------ fictional in-memory data ------------ */
+const TODAY = new Date('2026-07-13');
+const leads = [
+ {id:1, first:'Rosa', last:'Delgado', type:'Car Crash', doi:'2026-07-08', phone:'(210) 555-0119', email:'rosa.d@example.com',
+  city:'San Antonio', lang:'Spanish', source:'Google Ads', status:'open', attempts:[
+    {when:'Jul 12, 2026, 4:10 PM', who:'VR', what:'Called — left voicemail, texted intro (ES)'},
+    {when:'Jul 12, 2026, 9:02 AM', who:'system', what:'Web form received from crashguy.com'}]},
+ {id:2, first:'Marcus', last:'Webb', type:'Car Crash', doi:'2026-07-11', phone:'(726) 555-0142', email:'',
+  city:'Converse', lang:'English', source:'Past client referral', status:'open', attempts:[
+    {when:'Jul 13, 2026, 8:45 AM', who:'VR', what:'Spoke with client — wants office signing, no email'}]},
+ {id:3, first:'Alma', last:'Fuentes', type:'Slip and Fall / Premises', doi:'2026-06-29', phone:'(210) 555-0177', email:'alma.f@example.com',
+  city:'', lang:'Spanish', source:'TV', status:'contract_sent', attempts:[
+    {when:'Jul 11, 2026, 2:20 PM', who:'VR', what:'Contract sent via e-sign (ES version)'},
+    {when:'Jul 10, 2026, 11:05 AM', who:'VR', what:'Intake interview completed'}]},
+ {id:4, first:'Deshawn', last:'Carter', type:'Car Crash', doi:'2026-07-05', phone:'(830) 555-0155', email:'d.carter@example.com',
+  city:'New Braunfels', lang:'English', source:'Google Ads', status:'contract_sent', attempts:[
+    {when:'Jul 12, 2026, 3:30 PM', who:'VR', what:'Contract sent via e-sign — reminder scheduled'}]},
+ {id:5, first:'Priya', last:'Nair', type:'Car Crash', doi:'2026-07-01', phone:'(210) 555-0163', email:'priya.n@example.com',
+  city:'San Antonio', lang:'English', source:'Referral — Dr. Salinas', status:'signed', attempts:[
+    {when:'Jul 09, 2026, 10:15 AM', who:'system', what:'Contract executed — matter opened, checklist created'},
+    {when:'Jul 08, 2026, 1:00 PM', who:'VR', what:'Contract sent via e-sign'}]},
+ {id:6, first:'Gerald', last:'Kopecky', type:'Work Injury', doi:'2026-05-18', phone:'(210) 555-0108', email:'',
+  city:'Seguin', lang:'English', source:'TV', status:'rejected', nel:false, attempts:[
+    {when:'Jul 10, 2026, 9:40 AM', who:'MT', what:'Rejected — subscriber employer, comp bar. NON-ENGAGEMENT LETTER NOT YET SENT'},
+    {when:'Jul 08, 2026, 2:15 PM', who:'VR', what:'Intake interview completed'}]},
+ {id:7, first:'Lucia', last:'Barrera', type:'Car Crash', doi:'2026-06-14', phone:'(956) 555-0134', email:'lucia.b@example.com',
+  city:'Laredo', lang:'Spanish', source:'Google Ads', status:'no_response', attempts:[
+    {when:'Jul 09, 2026, 4:00 PM', who:'VR', what:'3rd attempt — VM full. Final letter queued'},
+    {when:'Jul 06, 2026, 10:30 AM', who:'VR', what:'2nd call attempt — no answer'},
+    {when:'Jul 02, 2026, 3:15 PM', who:'VR', what:'1st call attempt — no answer'}]},
+];
+const STATUS = {
+  open:          {label:'Open — working',    cls:'b-open',  icon:'●'},
+  contract_sent: {label:'Contract out',      cls:'b-sent',  icon:'✉'},
+  signed:        {label:'Signed → matter',   cls:'b-signed',icon:'✔'},
+  rejected:      {label:'Rejected',          cls:'b-rej',   icon:'✕'},
+  no_response:   {label:'No response',       cls:'b-noresp',icon:'…'},
+};
+let filter='all', current=null;
+
+/* ------------ helpers ------------ */
+const $=s=>document.querySelector(s);
+function fmt(d){return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function solOf(doi){const d=new Date(doi);d.setFullYear(d.getFullYear()+2);return d}
+function solBadge(doi){
+  const days=Math.round((solOf(doi)-TODAY)/86400000);
+  const cls=days<120?'crit':days<365?'near':'far';
+  return `<span class="sol ${cls}" title="Estimated SOL: DOI + 2 years (auto-computed; attorney verifies)">${days}d to SOL</span>`;
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function go(v,id){
+  current = id!=null ? leads.find(l=>l.id===id) : null;
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  if(v==='queue')$('#nav-queue').classList.add('on');
+  if(v==='new')$('#nav-new').classList.add('on');
+  if(v==='act')$('#nav-act').classList.add('on');
+  render(v);
+}
+
+/* ------------ views ------------ */
+function render(v){
+  if(v==='act')return renderMyActivity();
+  if(v==='queue')return renderQueue();
+  if(v==='detail')return renderDetail();
+  if(v==='new')return renderNew();
+}
+
+function renderMyActivity(){
+  const A=[
+   {when:'Jul 13, 2026, 9:02 AM',lead:1,client:'Delgado, Rosa',what:'Called — left voicemail, texted intro (ES)'},
+   {when:'Jul 12, 2026, 3:30 PM',lead:4,client:'Carter, Deshawn',what:'Contract sent via e-sign — reminder scheduled'},
+   {when:'Jul 12, 2026, 2:20 PM',lead:3,client:'Fuentes, Alma',what:'Contract sent (ES version)'},
+   {when:'Jul 11, 2026, 10:15 AM',lead:7,client:'Barrera, Lucia',what:'3rd attempt — VM full; final letter queued'},
+  ];
+  $('#view').innerHTML=`
+  <div class="panel">
+    <h2>My Activity — newest first. Interrupted? Pick up at the top.</h2>
+    <table><thead><tr><th>When</th><th>Lead</th><th>What I did</th><th></th></tr></thead><tbody>
+    ${A.map((a,i)=>`<tr style="${i===0?'background:#eef4fc':''}">
+      <td class="sub2" style="white-space:nowrap">${a.when}${i===0?'<div><span class="badge b-open">⟵ left off here</span></div>':''}</td>
+      <td><span class="caselink" onclick="go('detail',${a.lead})">${a.client}</span></td>
+      <td style="font-size:12.5px">${a.what}</td>
+      <td>${i===0?`<button class="primary" onclick="go('detail',${a.lead})">Resume →</button>`:''}</td></tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+function renderQueue(){
+  const counts={
+    week: leads.filter(l=>['open','contract_sent'].includes(l.status)).length,
+    firstContact: leads.filter(l=>l.status==='open').length,
+    out: leads.filter(l=>l.status==='contract_sent').length,
+    signed: leads.filter(l=>l.status==='signed').length,
+    nel: leads.filter(l=>l.status==='rejected'&&!l.nel).length,
+  };
+  const rows=leads.filter(l=>filter==='all'||l.status===filter).map(l=>{
+    const s=STATUS[l.status];
+    const missing=[!l.phone&&'phone',!l.email&&'email',!l.city&&'location'].filter(Boolean);
+    return `<tr class="row" onclick="go('detail',${l.id})">
+      <td><div class="name">${l.last}, ${l.first}</div><div class="sub2">${l.type} · ${l.lang}</div></td>
+      <td>${fmt(l.doi)}</td>
+      <td>${missing.length?`<span class="miss" title="Sign-up gate will block until provided">⚠ missing ${missing.join(', ')}</span>`:`<span class="ok">✔ complete</span>`}</td>
+      <td class="sub2">${l.source}</td>
+      <td>${solBadge(l.doi)}</td>
+      <td><span class="badge ${s.cls}">${s.icon} ${s.label}</span></td>
+      <td class="sub2">${l.attempts[0].when}</td>
+    </tr>`}).join('');
+  $('#view').innerHTML=`
+  <div class="tiles">
+    <div class="tile" onclick="setFilter('all')"><div class="k"><span class="dot" style="background:var(--blue)"></span>Active leads</div><div class="v">${counts.week}</div><div class="sub">open + contract out</div></div>
+    <div class="tile warn" onclick="setFilter('open')"><div class="k">⚠ Awaiting next touch</div><div class="v">${counts.firstContact}</div><div class="sub">call today</div></div>
+    <div class="tile" onclick="setFilter('contract_sent')"><div class="k"><span class="dot" style="background:var(--warning)"></span>Contracts out</div><div class="v">${counts.out}</div><div class="sub">chase signatures</div></div>
+    <div class="tile" onclick="setFilter('signed')"><div class="k"><span class="dot" style="background:var(--good)"></span>Signed this week</div><div class="v">${counts.signed}</div><div class="sub">handed to Case Manager</div></div>
+    <div class="tile crit" onclick="setFilter('rejected')"><div class="k">🛑 Non-engagement letters due</div><div class="v">${counts.nel}</div><div class="sub">malpractice control — send now</div></div>
+  </div>
+  <div class="panel">
+    <h2>Lead Queue</h2>
+    <div class="filters">
+      ${['all','open','contract_sent','signed','rejected','no_response'].map(f=>
+        `<span class="chip ${filter===f?'on':''}" onclick="setFilter('${f}')">${f==='all'?'All':STATUS[f].label}</span>`).join('')}
+    </div>
+    <table>
+      <thead><tr><th>Lead</th><th>Incident date</th><th>Sign-up minimums</th><th>Source</th><th>Est. SOL</th><th>Status</th><th>Last activity</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7" class="sub2" style="padding:20px">No leads in this status.</td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+function setFilter(f){filter=f;event.stopPropagation();renderQueue()}
+
+function renderDetail(){
+  const l=current,s=STATUS[l.status];
+  const gate=[
+    {k:'Full client name', ok:true, v:`${l.first} ${l.last}`},
+    {k:'Incident type', ok:true, v:l.type},
+    {k:'Incident date', ok:true, v:fmt(l.doi)},
+    {k:'Injury location', ok:!!l.city, v:l.city||'— city, county, or description required'},
+    {k:'Client phone', ok:!!l.phone, v:l.phone||'— required'},
+    {k:'Client email', ok:!!l.email||l.inPerson, v:l.email||(l.inPerson?'waived — in-person signing (audit-logged)':'— required unless in-person signing')},
+  ];
+  const ready=gate.every(g=>g.ok);
+  const checklist=`
+    <li><span class="pri high">HIGH</span> Obtain HIPAA / medical authorizations <span class="sub2">due +3d</span></li>
+    <li><span class="pri high">HIGH</span> Open insurance claims & send LORs <span class="sub2">due +3d</span></li>
+    <li><span class="pri norm">NORM</span> Order police / crash report <span class="sub2">due +3d</span></li>
+    <li><span class="pri high">HIGH</span> Complete Case Profile for 7-day review <span class="sub2">due +5d</span></li>
+    <li><span class="pri critp">CRIT</span> Confirm SOL calculation / limitations analysis <span class="sub2">due +5d</span></li>`;
+  $('#view').innerHTML=`
+  <span class="back" onclick="go('queue')">← Back to queue</span>
+  <div class="cols">
+    <div>
+      <div class="card">
+        <h3>Lead — ${l.last}, ${l.first} <span class="badge ${s.cls}" style="margin-left:8px">${s.icon} ${s.label}</span></h3>
+        <div class="kv">
+          <div class="k">Incident</div><div>${l.type} — ${fmt(l.doi)}</div>
+          <div class="k">Location</div><div>${l.city||'<span class="miss">unknown</span>'}</div>
+          <div class="k">Phone</div><div>${l.phone||'<span class="miss">missing</span>'}</div>
+          <div class="k">Email</div><div>${l.email||(l.inPerson?'<i>waived (in-person signing)</i>':'<span class="miss">missing</span>')}</div>
+          <div class="k">Language</div><div>${l.lang}${l.lang==='Spanish'?' — ES contract version will generate':''}</div>
+          <div class="k">Source</div><div>${l.source}</div>
+          <div class="k">Est. SOL</div><div>${fmt(solOf(l.doi))} ${solBadge(l.doi)}</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Sign-up gate — six minimums</h3>
+        <ul class="gate">
+          ${gate.map(g=>`<li><span class="tick ${g.ok?'y':'n'}">${g.ok?'✓':'✕'}</span><b style="min-width:130px">${g.k}</b><span class="sub2">${g.v}</span></li>`).join('')}
+        </ul>
+        ${l.status!=='signed'&&l.status!=='rejected'?`
+        <div class="checkline"><input type="checkbox" id="inp" ${l.inPerson?'checked':''} onchange="toggleInPerson()"> <label for="inp" style="margin:0">In-person signing — waives the <b>email</b> requirement only (audit-logged)</label></div>
+        <div class="gatebar ${ready?'ready':'blocked'}">${ready?'✔ Gate satisfied — the database will accept this matter':'✕ The database will refuse to open this matter until the gate is satisfied'}</div>
+        <div class="btnrow">
+          <button class="primary" ${ready?'':'disabled'} onclick="sendContract()">Generate & send contract ${l.lang==='Spanish'?'(EN + ES)':''}</button>
+          <button class="ghost" onclick="logAttempt()">+ Log contact attempt</button>
+          <button class="danger" onclick="rejectLead()">Reject lead…</button>
+        </div>`:''}
+        ${l.status==='rejected'&&!l.nel?`<div class="note-callout">🛑 <b>Non-engagement letter has not been sent.</b> This is the malpractice control — the rejection is not complete until it goes out. <button class="primary" style="margin-left:8px" onclick="sendNEL()">Send non-engagement letter</button></div>`:''}
+        ${l.status==='rejected'&&l.nel?`<div class="gatebar ready">✔ Non-engagement letter sent & logged</div>`:''}
+      </div>
+      ${l.status==='signed'?`
+      <div class="card">
+        <h3>Created automatically at signature</h3>
+        <div class="sub2" style="margin-bottom:6px">Contract executed ${l.attempts[0].when} → matter opened, 7-Day Viability Review due <b>Jul 16, 2026</b>, checklist assigned to Case Manager (Christina):</div>
+        <ul class="tasklist">${checklist}</ul>
+        <div class="note-callout" style="background:#eef4fc;border-color:#cfe0f5;color:#1c5cab">From here the matter belongs to the Case Manager workspace. Intake still sees this lead's history — but not the case's medical, litigation, or financial records.</div>
+      </div>`:''}
+    </div>
+    <div>
+      <div class="card">
+        <h3>Contact log</h3>
+        <ul class="log">
+          ${l.attempts.map((a,i)=>`<li class="${i===0?'first':''}"><div>${a.what}</div><div class="when">${a.when} · ${a.who==='system'?'automatic':a.who}</div></li>`).join('')}
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Rules in play (from your workflow doc)</h3>
+        <div class="sub2" style="line-height:1.7">
+        • Contract first — nothing else is required to save a lead.<br>
+        • Six minimums gate matter creation; database-enforced.<br>
+        • In-person checkbox waives email only; override is audit-logged.<br>
+        • Signature = case open: dates stamped, checklist created, 7-day review clock starts. Re-saving never duplicates.<br>
+        • Rejection triggers the non-engagement letter + rejected-case log.<br>
+        • Language drives the ES/EN contract version and HIPAA workflow.
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNew(){
+  $('#view').innerHTML=`
+  <div class="cols">
+    <div class="card">
+      <h3>New Lead — the six minimums</h3>
+      <div class="sub2">Only these six facts are required to sign someone up. Everything else can wait.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">
+        <div><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="Rosa" oninput="gateCheck()"></div>
+        <div><label>Middle name</label><input type="text" id="f-middle" placeholder="(optional)"></div>
+        <div><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="Delgado" oninput="gateCheck()"></div>
+        <div><label>Suffix</label><select id="f-suffix"><option value="">—</option><option>Jr.</option><option>Sr.</option><option>II</option><option>III</option><option>IV</option></select></div>
+      </div>
+      <label>Goes by <span class="sub2">(nickname — how the client wants to be addressed)</span></label><input type="text" id="f-goesby" placeholder="(optional)">
+      <label>Incident type <span class="req">*</span></label>
+      <select id="f-type" onchange="gateCheck()"><option value="">— choose —</option><option>Car Crash</option><option>Work Injury</option><option>Slip and Fall / Premises</option><option>Wrongful Death</option><option>Dog Bite</option><option>Other</option></select>
+      <label>Incident date <span class="req">*</span></label><input type="date" id="f-doi" onchange="gateCheck()">
+      <label>Injury location <span class="req">*</span> <span class="sub2">(city → county → description)</span></label><input type="text" id="f-loc" placeholder="San Antonio — or 'HEB parking lot off I-35 near Schertz'" oninput="gateCheck()">
+      <label>Client phone <span class="req">*</span></label>
+      <div style="display:flex;gap:8px">
+        <select id="f-country" style="width:110px" onchange="phoneInput()">
+          <option value="US" selected>🇺🇸 +1</option>
+          <option value="MX">🇲🇽 +52</option>
+        </select>
+        <input type="tel" id="f-phone" placeholder="(210) 555-0000" style="flex:1" oninput="phoneInput()">
+      </div>
+      <div id="f-phone-hint" class="sub2" style="margin-top:3px"></div>
+      <label>Client email <span class="req">*</span></label><input type="email" id="f-email" placeholder="client@email.com" oninput="gateCheck()">
+      <div class="checkline"><input type="checkbox" id="f-inperson" onchange="gateCheck()"> <label for="f-inperson" style="margin:0">In-person signing (waives email only — audit-logged)</label></div>
+      <label>Primary language</label>
+      <select id="f-lang"><option>English</option><option>Spanish</option><option>Other</option></select>
+      <div id="f-sol" class="note-callout" style="display:none"></div>
+      <div class="gatebar blocked" id="f-gate">✕ 6 of 6 minimums outstanding</div>
+      <div class="btnrow">
+        <button class="primary" id="f-save" disabled onclick="toast('Mockup: lead would be saved and the contact clock would start.')">Save lead</button>
+        <button class="ghost" onclick="toast('Mockup: partial save is always allowed for a LEAD — the gate only blocks opening a MATTER.')">Save partial (lead only)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>What happens next</h3>
+      <div class="sub2" style="line-height:1.8">
+      1. Lead saved → appears in the queue with a contact clock.<br>
+      2. Estimated SOL is computed immediately — even for leads you reject.<br>
+      3. Gate satisfied → generate the contract (ES version auto-selected for Spanish speakers).<br>
+      4. Signature executes → the database opens the matter, stamps the dates, creates the Case Manager's checklist, and starts the 7-day viability clock. Intake's job is done.<br><br>
+      <i>Nothing here is hand-maintained — the checklist, the dates, and the SOL all come from the six facts above.</i>
+      </div>
+    </div>
+  </div>`;
+  gateCheck();
+}
+function phoneDigits(){return ($('#f-phone').value||'').replace(/\D/g,'').slice(0,10)}
+function phoneValid(){return phoneDigits().length===10}
+function phoneInput(){
+  const c=$('#f-country').value, d=phoneDigits();
+  let out='';
+  if(c==='US'){
+    if(d.length>6)out='('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);
+    else if(d.length>3)out='('+d.slice(0,3)+') '+d.slice(3);
+    else out=d;
+    $('#f-phone').placeholder='(210) 555-0000';
+  }else{
+    if(d.length>6)out=d.slice(0,2)+' '+d.slice(2,6)+' '+d.slice(6);
+    else if(d.length>2)out=d.slice(0,2)+' '+d.slice(2);
+    else out=d;
+    $('#f-phone').placeholder='55 1234 5678';
+  }
+  $('#f-phone').value=out;
+  const h=$('#f-phone-hint');
+  if(!d.length){h.textContent='Digits only — letters and symbols are ignored. US is the default; switch to 🇲🇽 for Mexican numbers.';h.style.color='';}
+  else if(phoneValid()){h.textContent='✓ valid — stored as '+(c==='US'?'+1':'+52')+d+' (dialable via RingCentral)';h.style.color='var(--good-text)';}
+  else{h.textContent='✕ '+d.length+' of 10 digits — a complete '+(c==='US'?'US':'Mexican')+' number is required';h.style.color='var(--critical)';}
+  gateCheck();
+}
+function gateCheck(){
+  const first=$('#f-first').value.trim(), last=$('#f-last').value.trim(),
+        type=$('#f-type').value, doi=$('#f-doi').value,
+        loc=$('#f-loc').value.trim(),
+        em=$('#f-email').value.trim(), ip=$('#f-inperson').checked;
+  const name=first&&last;
+  const ph=phoneValid();
+  const items=[
+    ['Client name', !!name, 'f-first'], ['Incident type', !!type, 'f-type'], ['Incident date', !!doi, 'f-doi'],
+    ['Injury location', !!loc, 'f-loc'], ['Phone', !!ph, 'f-phone'], ['Email', (!!em||ip), 'f-email']];
+  const miss=items.filter(x=>!x[1]);
+  const bar=$('#f-gate'), save=$('#f-save');
+  if(doi){const s=solOf(doi);const days=Math.round((s-TODAY)/86400000);
+    $('#f-sol').style.display='block';
+    $('#f-sol').innerHTML=`⏱ Estimated SOL: <b>${fmt(s)}</b> (${days} days) — auto-computed as DOI + 2 years; the limitations analysis refines it after sign-up.`;}
+  if(miss.length===0){bar.className='gatebar ready';bar.textContent='✔ Gate satisfied — matter can open at signature';save.disabled=false}
+  else{bar.className='gatebar blocked';
+    bar.innerHTML=`✕ ${miss.length} of 6 minimums outstanding — click to fix: `+
+      miss.map(m=>`<span style="text-decoration:underline;cursor:pointer;margin-left:6px" onclick="intakeJump('${m[2]}')" title="Jump to this field">${m[0]}</span>`).join('');
+    save.disabled=true}
+}
+/* universal rule: no dead-end status — a missing minimum is a link to its field */
+function intakeJump(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  el.focus();
+  el.classList.add('jump-flash');
+  setTimeout(()=>el.classList.remove('jump-flash'),1600);
+}
+
+/* ------------ mock actions ------------ */
+function toggleInPerson(){current.inPerson=!current.inPerson;renderDetail();toast(current.inPerson?'Email requirement waived — override audit-logged':'Waiver removed')}
+function sendContract(){current.status='contract_sent';current.attempts.unshift({when:'Jul 13, 2026, now',who:'VR',what:`Contract sent via e-sign${current.lang==='Spanish'?' (EN + ES versions)':''}`});renderDetail();toast('Contract generated from template + merge fields')}
+function logAttempt(){current.attempts.unshift({when:'Jul 13, 2026, now',who:'VR',what:'Called client — (mockup entry)'});renderDetail();toast('Attempt logged — contact clock reset')}
+function rejectLead(){current.status='rejected';current.nel=false;current.attempts.unshift({when:'Jul 13, 2026, now',who:'VR',what:'Rejected at intake. NON-ENGAGEMENT LETTER NOT YET SENT'});renderDetail();toast('Rejected — non-engagement letter is now due')}
+function sendNEL(){current.nel=true;current.attempts.unshift({when:'Jul 13, 2026, now',who:'VR',what:'Non-engagement letter generated & sent (logged to rejected-case log)'});renderDetail();toast('Non-engagement letter sent — rejection complete')}
+
+go('queue');
+
+/* ---------- global file search (every screen, always) ---------- */
+function gsSource(){ return leads.map(l=>({id:l.id,label:l.last+', '+l.first,sub:'DOI '+fmt(l.doi)+' · '+STATUS[l.status].label,meta:(l.phone||'')+' '+(l.email||'')})); }
+let gsSel=0;
+function gsDigits(s){return (s||'').replace(/\D/g,'')}
+function gsHit(q,qd,f){
+  if(!f)return false;
+  if(String(f).toLowerCase().includes(q))return true;           // partial text, anywhere
+  if(qd.length>=3&&gsDigits(f).includes(qd))return true;        // partial phone, any formatting
+  return false;
+}
+function gsFilter(q){
+  const d=document.getElementById('gs-drop');
+  const qq=(q||'').trim();
+  if(!qq){d.classList.remove('open');return}
+  const ql=qq.toLowerCase();
+  const qd=gsDigits(ql);
+  const hits=gsSource().filter(it=>gsHit(ql,qd,it.label)||gsHit(ql,qd,it.sub)||gsHit(ql,qd,it.meta)).slice(0,6);
+  gsSel=-1;
+  d.innerHTML=hits.map(it=>`<div class="gs-item" data-id="${it.id}" data-label="${it.label}"><span><b>${it.label}</b></span><span class="gs-sub">${it.sub||''}</span></div>`).join('')
+    +`<div class="gs-item gs-all" data-q="${qq}"><span>🔎 See all results for “${qq}”</span><span class="gs-sub">grouped by category — or just press Enter</span></div>`;
+  d.classList.add('open');
+  d.querySelectorAll('.gs-item').forEach(el=>el.addEventListener('mousedown',()=>{
+    if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q); else gsOpen(el.dataset.id,el.dataset.label);}));
+}
+function gsKey(e){
+  const d=document.getElementById('gs-drop');
+  const items=[...d.querySelectorAll('.gs-item')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!items.length)return;
+    gsSel=e.key==='ArrowDown'?(gsSel+1)%items.length:(gsSel<=0?items.length-1:gsSel-1);
+    items.forEach((x,i)=>x.classList.toggle('sel',i===gsSel));
+  }else if(e.key==='Enter'){
+    const q=e.target.value.trim();
+    if(gsSel>=0&&items[gsSel]){
+      const el=items[gsSel];
+      if(el.classList.contains('gs-all'))gsShowAll(el.dataset.q||q); else gsOpen(el.dataset.id,el.dataset.label);
+    }else if(q){gsShowAll(q)}
+    e.target.blur();
+  }else if(e.key==='Escape'){gsClose();e.target.blur()}
+}
+function gsShowAll(q){
+  gsClose(); document.getElementById('gs-input').value='';
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.remove('on'));
+  const cats=gsCategories(q.toLowerCase());
+  const total=cats.reduce((n,c)=>n+c.items.length,0);
+  document.getElementById('view').innerHTML=
+   `<div class="panel"><h2>🔎 Search results for “${q}” — ${total} match${total===1?'':'es'} in ${cats.filter(c=>c.items.length).length} categories</h2></div>`+
+   cats.map(c=>c.items.length?`
+   <div class="panel"><h2>${c.title} · ${c.items.length}</h2><table><tbody>
+   ${c.items.map(it=>`<tr><td style="width:38%"><a class="caselink" onclick="${it.act}">${it.label}</a></td><td class="sub2" style="font-size:12.5px">${it.sub||''}</td></tr>`).join('')}
+   </tbody></table></div>`:'').join('')+
+   (total?'':'<div class="panel"><h2>No matches</h2><div class="sub2" style="padding:14px">The real build also searches phone numbers, claim #s, cause #s, notes, and documents — database permissions applied.</div></div>');
+}
+function gsClose(){document.getElementById('gs-drop').classList.remove('open')}
+function gsOpen(id,label){
+  gsClose(); document.getElementById('gs-input').value='';
+  go('detail',Number(id));
+}
+
+function gsCategories(q){
+  const qd=gsDigits(q); const m=s=>gsHit(q,qd,s);
+  return [
+   {title:'Leads & Clients', items:leads.filter(l=>m(l.last+', '+l.first)||m(l.type)||m(l.source)||m(l.phone)||m(l.email)).map(l=>({label:l.last+', '+l.first,sub:'DOI '+fmt(l.doi)+' · '+l.type+' · '+STATUS[l.status].label,act:`go('detail',${l.id})`}))},
+   {title:'Contact log entries', items:leads.flatMap(l=>l.attempts.filter(a=>m(a.what)).map(a=>({label:l.last+', '+l.first,sub:'“'+a.what+'” — '+a.when,act:`go('detail',${l.id})`})))},
+  ];
+}
+
+</script>
+</body>
+</html>
