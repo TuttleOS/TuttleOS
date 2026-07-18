@@ -48,25 +48,25 @@ export const OWNER_FLAG_FILTERS: {
   label: string;
   match: (r: StalledRow) => boolean;
 }[] = [
-  { key: "all", label: "All", match: () => true },
+  { key: "all", label: "All cases", match: () => true },
   {
     key: "missing_level",
-    label: "Missing Level",
+    label: "Missing case Level",
     match: (r) => r.flag_missing_level,
   },
   {
     key: "sol",
-    label: "SOL < 120d",
+    label: "Filing deadline soon",
     match: (r) => r.flag_sol_within_120d,
   },
   {
     key: "pd",
-    label: "PD unresolved",
+    label: "Property damage open",
     match: (r) => r.flag_pd_unresolved,
   },
   {
     key: "demand",
-    label: "Demand response overdue",
+    label: "Demand response late",
     match: (r) => r.flag_demand_response_overdue,
   },
   {
@@ -81,7 +81,7 @@ export const OWNER_FLAG_FILTERS: {
   },
   {
     key: "viability",
-    label: "Viability overdue",
+    label: "7-day review overdue",
     match: (r) => r.flag_viability_overdue,
   },
   {

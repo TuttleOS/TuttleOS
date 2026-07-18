@@ -10,6 +10,35 @@ import {
   type OverridePattern,
 } from "@/lib/owner/types";
 
+type Tone = "warn" | "crit" | "info";
+
+function flagTone(label: string): Tone {
+  if (
+    /SOL|Missing Level|filing deadline|Viability overdue/i.test(label) ||
+    label.includes("SOL")
+  ) {
+    return "crit";
+  }
+  if (/overdue|aging|unresolved|PD|Demand|Records|Disbursement|contact/i.test(label)) {
+    return "warn";
+  }
+  return "info";
+}
+
+function flagChipClass(tone: Tone): string {
+  if (tone === "crit") return "bg-danger-bg text-danger";
+  if (tone === "warn") return "bg-warning-bg text-warning";
+  return "bg-accent-lt text-accent-dk";
+}
+
+function displayFlag(label: string): string {
+  if (label === "SOL < 120d") return "Filing deadline < 120 days";
+  if (label === "Missing Level") return "Missing case Level";
+  if (label === "Viability overdue") return "7-day review overdue";
+  if (label === "PD unresolved") return "Property damage open";
+  return label;
+}
+
 export function OwnerDashboard({
   stalled,
   tiles,
@@ -40,176 +69,346 @@ export function OwnerDashboard({
     return stalled.filter(fn);
   }, [stalled, filter]);
 
+  const needsNow = useMemo(() => {
+    const items: {
+      key: string;
+      title: string;
+      detail: string;
+      count: number;
+      tone: Tone;
+      href?: string;
+      filterKey?: string;
+    }[] = [];
+
+    if (tiles.pendingApprovals > 0) {
+      items.push({
+        key: "approvals",
+        title: "Waiting on your approval",
+        detail: "Levels, L3 demands, and related decisions",
+        count: tiles.pendingApprovals,
+        tone: "crit",
+        href: "/owner/approvals",
+      });
+    }
+    if (tiles.solSoon > 0) {
+      items.push({
+        key: "sol",
+        title: "Filing deadline within 120 days",
+        detail: "Open SOL Watch for the full list",
+        count: tiles.solSoon,
+        tone: "crit",
+        href: "/owner/sol",
+      });
+    }
+    if (tiles.missingLevel > 0) {
+      items.push({
+        key: "level",
+        title: "Missing case Level",
+        detail: "Case managers are waiting on Level assignment",
+        count: tiles.missingLevel,
+        tone: "warn",
+        filterKey: "missing_level",
+      });
+    }
+    if (tiles.viability > 0) {
+      items.push({
+        key: "viability",
+        title: "7-day review overdue",
+        detail: "Viability reviews past due",
+        count: tiles.viability,
+        tone: "warn",
+        filterKey: "viability",
+      });
+    }
+    if (tiles.solMismatches > 0) {
+      items.push({
+        key: "mismatch",
+        title: "SOL date mismatches",
+        detail: "Stored vs computed filing deadlines disagree",
+        count: tiles.solMismatches,
+        tone: "crit",
+        href: "/owner/sol",
+      });
+    }
+    return items;
+  }, [tiles]);
+
+  function applyFilter(key: string) {
+    setFilter(key);
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-wide text-accent-dk">
-          Owner dashboard
+          Owner
         </p>
-        <h1 className="text-2xl font-bold">Stalled Cases</h1>
-        <p className="text-sm text-muted">
-          Firm-wide attention queue. Filters map to{" "}
-          <code className="text-xs">workflow.v_stalled_cases</code> flags.
+        <h1 className="text-2xl font-bold">Firm attention</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted">
+          Cases and flags that need a look across the firm — approvals, filing
+          deadlines, and stalled work. Click a client name to open the case.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Tile label="Active matters" value={tiles.active} />
-        <Tile
-          href="/owner/sol"
-          label="SOL < 120d"
-          value={tiles.solSoon}
-          tone={tiles.solSoon ? "crit" : undefined}
-        />
-        <Tile
-          href="/owner?flag=missing_level"
-          label="Missing Level"
-          value={tiles.missingLevel}
-          tone={tiles.missingLevel ? "warn" : undefined}
-          onClick={() => setFilter("missing_level")}
-        />
-        <Tile
-          label="Viability overdue"
-          value={tiles.viability}
-          tone={tiles.viability ? "warn" : undefined}
-          onClick={() => setFilter("viability")}
-        />
-        <Tile
-          href="/owner/approvals"
-          label="Pending approvals"
-          value={tiles.pendingApprovals}
-          tone={tiles.pendingApprovals ? "warn" : undefined}
-        />
-        <Tile
-          href="/owner/sol"
-          label="SOL mismatches"
-          value={tiles.solMismatches}
-          tone={tiles.solMismatches ? "crit" : undefined}
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {OWNER_FLAG_FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setFilter(f.key)}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
-              filter === f.key
-                ? "bg-accent-dk text-white"
-                : "border border-grid bg-surface text-ink hover:bg-surface-2"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-grid text-xs text-muted">
-              <th className="px-4 py-2.5 font-semibold">Client</th>
-              <th className="px-4 py-2.5 font-semibold">Stage</th>
-              <th className="px-4 py-2.5 font-semibold">Age / stage</th>
-              <th className="px-4 py-2.5 font-semibold">Level</th>
-              <th className="px-4 py-2.5 font-semibold">Flags</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-muted">
-                  No matters match this filter.
-                </td>
-              </tr>
-            ) : (
-              rows.map((r) => {
-                const flags = flagList(r);
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
+          Needs you now
+        </h2>
+        {needsNow.length === 0 ? (
+          <div className="rounded-panel border border-success/30 bg-success-bg/40 px-4 py-3 text-sm text-success">
+            Nothing urgent in the current practice data. Use the filters below
+            to browse the firm queue.
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {needsNow.map((item) => {
+              const className = `block rounded-panel border border-grid bg-surface px-4 py-3 text-left shadow-soft transition hover:bg-surface-2 ${
+                item.tone === "crit"
+                  ? "border-l-4 border-l-danger"
+                  : item.tone === "warn"
+                    ? "border-l-4 border-l-warning"
+                    : "border-l-4 border-l-accent-dk"
+              }`;
+              const body = (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm font-bold">{item.title}</div>
+                    <div className="text-2xl font-bold tabular-nums">
+                      {item.count}
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted">{item.detail}</p>
+                </>
+              );
+              if (item.href) {
                 return (
-                  <tr
-                    key={r.client_matter_id}
-                    className="border-b border-grid hover:bg-surface-2/60"
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={`${className} no-underline text-ink`}
                   >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={matterHref(
-                          r.current_stage_code,
-                          r.client_matter_id,
-                        )}
-                        className="font-semibold text-accent-dk no-underline hover:underline"
-                      >
-                        {r.display_name}
-                      </Link>
-                      {r.tbi_indicated && (
-                        <span className="ml-2 rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-bold text-danger">
-                          TBI
-                        </span>
-                      )}
-                      <div className="mt-0.5 text-xs text-muted">
-                        CM: {r.case_manager ?? (
-                          <span className="text-danger">UNASSIGNED</span>
-                        )}
-                      </div>
-                      {r.critical_note && (
-                        <div className="mt-1 max-w-md truncate text-xs text-warning">
-                          {r.critical_note}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {STAGE_LABEL[r.current_stage_code] ??
-                        r.current_stage_code}
-                      <div className="text-muted">
-                        since {formatDate(r.stage_entered_at)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {r.case_age_days != null ? `${r.case_age_days}d` : "—"}
-                      {" / "}
-                      {r.days_in_stage != null
-                        ? `${r.days_in_stage}d in stage`
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.approved_level != null ? (
-                        `L${r.approved_level}`
-                      ) : (
-                        <span className="font-semibold text-danger">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {flags.length === 0 ? (
-                          <span className="text-xs text-muted">—</span>
-                        ) : (
-                          flags.map((f) => (
-                            <span
-                              key={f}
-                              className="rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold text-danger"
-                            >
-                              {f}
-                            </span>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                    {body}
+                  </Link>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              }
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={className}
+                  onClick={() =>
+                    item.filterKey ? applyFilter(item.filterKey) : undefined
+                  }
+                >
+                  {body}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
+          At a glance
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <Tile label="Active matters" value={tiles.active} />
+          <Tile
+            href="/owner/sol"
+            label="Filing deadline soon"
+            sub="Within 120 days"
+            value={tiles.solSoon}
+            tone={tiles.solSoon ? "crit" : undefined}
+          />
+          <Tile
+            label="Missing case Level"
+            value={tiles.missingLevel}
+            tone={tiles.missingLevel ? "warn" : undefined}
+            onClick={() => applyFilter("missing_level")}
+          />
+          <Tile
+            label="7-day review overdue"
+            value={tiles.viability}
+            tone={tiles.viability ? "warn" : undefined}
+            onClick={() => applyFilter("viability")}
+          />
+          <Tile
+            href="/owner/approvals"
+            label="Pending approvals"
+            value={tiles.pendingApprovals}
+            tone={tiles.pendingApprovals ? "warn" : undefined}
+          />
+          <Tile
+            href="/owner/sol"
+            label="SOL mismatches"
+            value={tiles.solMismatches}
+            tone={tiles.solMismatches ? "crit" : undefined}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold">Cases needing attention</h2>
+            <p className="text-sm text-muted">
+              Showing {rows.length} of {stalled.length} flagged or active
+              matters in this view.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {OWNER_FLAG_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => applyFilter(f.key)}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                filter === f.key
+                  ? "bg-accent-dk text-white"
+                  : "border border-grid bg-surface text-ink hover:bg-surface-2"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-grid bg-surface-2/50 text-xs text-muted">
+                <th className="px-4 py-3 font-semibold">Client</th>
+                <th className="px-4 py-3 font-semibold">Stage</th>
+                <th className="px-4 py-3 font-semibold">Age / in stage</th>
+                <th className="px-4 py-3 font-semibold">Level</th>
+                <th className="px-4 py-3 font-semibold">Flags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center text-muted">
+                    No cases match this filter. Try{" "}
+                    <button
+                      type="button"
+                      className="font-semibold text-accent-dk underline"
+                      onClick={() => applyFilter("all")}
+                    >
+                      All cases
+                    </button>
+                    .
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => {
+                  const flags = flagList(r);
+                  return (
+                    <tr
+                      key={r.client_matter_id}
+                      className="border-b border-grid last:border-0 hover:bg-surface-2/60"
+                    >
+                      <td className="px-4 py-3.5 align-top">
+                        <Link
+                          href={matterHref(
+                            r.current_stage_code,
+                            r.client_matter_id,
+                          )}
+                          className="font-semibold text-accent-dk no-underline hover:underline"
+                        >
+                          {r.display_name}
+                        </Link>
+                        {r.tbi_indicated && (
+                          <span className="ml-2 rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-bold text-danger">
+                            TBI
+                          </span>
+                        )}
+                        <div className="mt-0.5 text-xs text-muted">
+                          Case manager:{" "}
+                          {r.case_manager ?? (
+                            <span className="font-semibold text-danger">
+                              Unassigned
+                            </span>
+                          )}
+                        </div>
+                        {r.critical_note && (
+                          <div className="mt-1 max-w-md text-xs text-warning">
+                            {r.critical_note}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 align-top">
+                        <span className="inline-block rounded-md bg-accent-lt px-2 py-0.5 text-xs font-semibold text-accent-dk">
+                          {STAGE_LABEL[r.current_stage_code] ??
+                            r.current_stage_code}
+                        </span>
+                        <div className="mt-1 text-xs text-muted">
+                          since {formatDate(r.stage_entered_at)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-top text-xs tabular-nums">
+                        {r.case_age_days != null ? `${r.case_age_days}d old` : "—"}
+                        <div className="text-muted">
+                          {r.days_in_stage != null
+                            ? `${r.days_in_stage}d in stage`
+                            : "—"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-top">
+                        {r.approved_level != null ? (
+                          <span className="font-semibold">
+                            L{r.approved_level}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-danger">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 align-top">
+                        <div className="flex flex-wrap gap-1">
+                          {flags.length === 0 ? (
+                            <span className="text-xs text-muted">—</span>
+                          ) : (
+                            flags.map((f) => {
+                              const shown = displayFlag(f);
+                              const tone = flagTone(f);
+                              return (
+                                <span
+                                  key={f}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${flagChipClass(tone)}`}
+                                >
+                                  {shown}
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {overrides.length > 0 && (
         <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">
           <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
-            Override patterns (90d)
+            Checklist overrides — last 90 days
           </h2>
-          <ul className="mt-3 space-y-2 text-sm">
+          <p className="mt-1 text-xs text-muted">
+            Staff marked a checklist item done with a reason instead of the
+            usual completion path — useful for spotting process drift.
+          </p>
+          <ul className="mt-3 space-y-2.5 text-sm">
             {overrides.slice(0, 8).map((o, i) => (
-              <li key={`${o.staff}-${o.title}-${i}`}>
+              <li
+                key={`${o.staff}-${o.title}-${i}`}
+                className="rounded-lg border border-grid bg-page/60 px-3 py-2"
+              >
                 <span className="font-semibold">{o.staff}</span>
                 {" — "}
                 {o.title}
@@ -221,7 +420,7 @@ export function OwnerDashboard({
                     : ""}
                 </span>
                 {o.recent_reasons?.[0] && (
-                  <div className="text-xs text-muted">
+                  <div className="mt-0.5 text-xs text-muted">
                     “{o.recent_reasons[0]}”
                   </div>
                 )}
@@ -237,28 +436,31 @@ export function OwnerDashboard({
 function Tile({
   label,
   value,
+  sub,
   tone,
   href,
   onClick,
 }: {
   label: string;
   value: number;
+  sub?: string;
   tone?: "warn" | "crit";
   href?: string;
   onClick?: () => void;
 }) {
   const className = `block rounded-panel border border-grid bg-surface px-4 py-3 text-left shadow-soft ${
     tone === "crit"
-      ? "border-danger/40"
+      ? "border-l-4 border-l-danger"
       : tone === "warn"
-        ? "border-warning/40"
+        ? "border-l-4 border-l-warning"
         : ""
   }`;
 
   const inner = (
     <>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-muted">{label}</div>
+      <div className="text-2xl font-bold tabular-nums">{value}</div>
+      <div className="text-xs font-semibold text-ink">{label}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-muted">{sub}</div>}
     </>
   );
 
