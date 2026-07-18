@@ -1,11 +1,31 @@
-export default function DemandsPage() {
+import { redirect } from "next/navigation";
+import { DemandQueueSkeleton } from "@/components/phase7/DemandQueueSkeleton";
+import {
+  listDemandReadiness,
+  type DemandReadinessRow,
+} from "@/lib/phase7/queries";
+import { getCurrentStaff } from "@/lib/staff-server";
+
+export default async function DemandsPage() {
+  const staff = await getCurrentStaff();
+  if (!staff) redirect("/login");
+
+  let rows: DemandReadinessRow[] = [];
+  let error: string | null = null;
+  try {
+    rows = await listDemandReadiness();
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load demand readiness";
+  }
+
   return (
-    <section className="rounded-panel border border-grid bg-surface p-6 shadow-soft">
-      <h1 className="text-2xl font-bold">Demand Writer</h1>
-      <p className="mt-2 text-muted">
-        Skeleton only (Phase 7). Present screen proposals to Michael before
-        detailing workflow.
-      </p>
-    </section>
+    <div className="space-y-3">
+      {error && (
+        <p className="rounded-panel border border-danger/40 bg-danger-bg px-4 py-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+      <DemandQueueSkeleton rows={rows} />
+    </div>
   );
 }

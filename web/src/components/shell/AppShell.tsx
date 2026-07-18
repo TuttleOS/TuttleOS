@@ -56,10 +56,13 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/owner", label: "Dashboard" },
     { href: "/owner/approvals", label: "Approvals" },
     { href: "/owner/sol", label: "SOL Watch" },
+    { href: "/demands", label: "Demand queue" },
+    { href: "/liens", label: "Lien worklist" },
+    { href: "/review", label: "Viability reviews" },
   ],
-  "/demands": [{ href: "/demands", label: "Demand queue (skeleton)" }],
-  "/liens": [{ href: "/liens", label: "Lien worklist (skeleton)" }],
-  "/review": [{ href: "/review", label: "Senior review (skeleton)" }],
+  "/demands": [{ href: "/demands", label: "Demand queue" }],
+  "/liens": [{ href: "/liens", label: "Lien worklist" }],
+  "/review": [{ href: "/review", label: "Viability reviews" }],
 };
 
 function navForPath(pathname: string): NavItem[] {

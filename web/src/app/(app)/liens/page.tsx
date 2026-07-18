@@ -1,10 +1,28 @@
-export default function LiensPage() {
+import { redirect } from "next/navigation";
+import { LienWorklistSkeleton } from "@/components/phase7/LienWorklistSkeleton";
+import { listLienWorklist, type LienWorklistRow } from "@/lib/phase7/queries";
+import { getCurrentStaff } from "@/lib/staff-server";
+
+export default async function LiensPage() {
+  const staff = await getCurrentStaff();
+  if (!staff) redirect("/login");
+
+  let rows: LienWorklistRow[] = [];
+  let error: string | null = null;
+  try {
+    rows = await listLienWorklist();
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load lien worklist";
+  }
+
   return (
-    <section className="rounded-panel border border-grid bg-surface p-6 shadow-soft">
-      <h1 className="text-2xl font-bold">Lien & Disbursement</h1>
-      <p className="mt-2 text-muted">
-        Skeleton only (Phase 7). Finance-tier RLS still applies.
-      </p>
-    </section>
+    <div className="space-y-3">
+      {error && (
+        <p className="rounded-panel border border-danger/40 bg-danger-bg px-4 py-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+      <LienWorklistSkeleton rows={rows} />
+    </div>
   );
 }

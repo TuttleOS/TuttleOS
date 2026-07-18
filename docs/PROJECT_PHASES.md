@@ -3,7 +3,8 @@
 **Purpose:** Confirm we are building the *right* product, in the *right* order.  
 **Sources of truth:** `MASTER_PROMPT.md`, `docs/ui-design-decisions.md`, `docs/COMPLIANCE_GATES.md`, `mockups/*.html`.  
 **Stack:** Next.js (App Router) + Tailwind + Supabase (Auth + Postgres + RLS). Schema lives in `sql/01`→`05`; do **not** invent workflow the DB does not support.  
-**Schema diagrams:** [`docs/SCHEMA_FLOW.md`](SCHEMA_FLOW.md) (spine, stages, engines, RLS).
+**Schema diagrams:** [`docs/SCHEMA_FLOW.md`](SCHEMA_FLOW.md) (spine, stages, engines, RLS).  
+**Phase 7 owner stop:** [`docs/PHASE7_SCREEN_PROPOSALS.md`](PHASE7_SCREEN_PROPOSALS.md).
 
 ---
 
@@ -121,8 +122,8 @@ flowchart TD
 | **3** | Case Manager workspace | **Done (MVP)** | Caseload, matter Focus, My Tasks — not every §6 card |
 | **4** | Litigation Paralegal workspace | **Done (MVP)** | Caseload, Deadline Horizon, tasks, matter Focus — **deferred:** pizza tracker, full discovery/mediation, RingCentral |
 | **5** | Owner dashboard | **Done (MVP)** | Stalled + Approvals + SOL + override strip — deferred: Conflicts / 7‑Day Reviews as own routes |
-| **6** | Cross-workspace switcher + companions + notifications | **In progress (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
-| **7** | Demand / Liens / Review | **Later** | Skeletons only until Michael signs screens |
+| **6** | Cross-workspace switcher + companions + notifications | **Done (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
+| **7** | Demand / Liens / Review | **Skeleton — awaiting owner** | Read-only queues + `docs/PHASE7_SCREEN_PROPOSALS.md` — **STOP** before detailing |
 | **8** | Documents + AI | **Blocked until owner** | Optional SQL; BAAs required before PHI OCR/AI |
 | **9** | Calendar ↔ deadlines | **Later** | |
 | **10** | CasePeer CSV load | **Owner-run** | CSVs stay out of git |
