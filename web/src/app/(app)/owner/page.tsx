@@ -28,7 +28,9 @@ export default async function OwnerPage({
     <OwnerDashboard
       stalled={stalled}
       tiles={ownerTiles(stalled, approvals, sol)}
+      approvals={approvals}
       overrides={overrides}
+      firstName={staff.person?.first_name || "there"}
       initialFilter={searchParams?.flag ?? "all"}
     />
   );

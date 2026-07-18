@@ -2,56 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens — Parchment (default) + Midnight. No hard-coded colors in components. */
+/* Design tokens — Parchment (default) + Midnight (UX handoff). */
 :root,
 [data-theme="parchment"] {
-  --page: #f4f3f0;
+  color-scheme: light;
+  --page: #f3f2ef;
   --surface: #ffffff;
-  --surface-2: #faf9f6;
-  --ink: #1f2328;
-  --muted: #6d7178;
-  --grid: #e3e1dc;
-  --accent: #3b82c4;
-  --accent-dk: #1c5cab;
-  --accent-lt: #e3eefa;
-  --sidebar: #ffffff;
-  --sidebar-ink: #1f2328;
+  --surface-2: #faf9f7;
+  --ink: #1c2430;
+  --muted: #6b7380;
+  --grid: #e4e2dc;
+  --accent: #3d7eb8;
+  --accent-dk: #1f5f9a;
+  --accent-lt: #e8f1f9;
+  --sidebar: #171e28;
+  --sidebar-ink: #e8eef5;
   --top: #ffffff;
-  --top-ink: #1f2328;
-  --danger: #c93a3a;
-  --danger-bg: #fff0ef;
-  --warning: #b66a08;
-  --warning-bg: #fff7e8;
-  --success: #278a61;
-  --success-bg: #edf9f3;
-  --info: #2f70bf;
-  --info-bg: #edf5ff;
-  --shadow: 0 10px 30px rgba(31, 35, 40, 0.06);
+  --top-ink: #1c2430;
+  --danger: #d13a45;
+  --danger-bg: #fdecee;
+  --warning: #b56b14;
+  --warning-bg: #fff5e4;
+  --success: #2a7d58;
+  --success-bg: #e8f6ef;
+  --info: #1f5f9a;
+  --info-bg: #e8f1f9;
+  --shadow: 0 1px 2px rgba(28, 36, 48, 0.04), 0 8px 24px rgba(28, 36, 48, 0.05);
 }
 
 [data-theme="midnight"] {
-  --page: #14171c;
-  --surface: #1d2128;
-  --surface-2: #181c22;
-  --ink: #e6e8ec;
-  --muted: #9aa0aa;
-  --grid: #2c313a;
-  --accent: #5b9bd9;
-  --accent-dk: #8bbcec;
-  --accent-lt: #24344a;
-  --sidebar: #1a1e25;
-  --sidebar-ink: #dfe3e9;
-  --top: #1a1e25;
-  --top-ink: #eceef2;
-  --danger: #ff7373;
-  --danger-bg: #3a2527;
-  --warning: #f4b55e;
-  --warning-bg: #3a3021;
-  --success: #6fd4a5;
-  --success-bg: #1f342b;
-  --info: #78b7ff;
-  --info-bg: #213149;
-  --shadow: none;
+  color-scheme: dark;
+  --page: #11161d;
+  --surface: #1a212a;
+  --surface-2: #151c24;
+  --ink: #e7ebf0;
+  --muted: #9aa4af;
+  --grid: #303946;
+  --accent: #6ea6d8;
+  --accent-dk: #93bde3;
+  --accent-lt: #20354a;
+  --sidebar: #0d131a;
+  --sidebar-ink: #dce4ec;
+  --top: #151c24;
+  --top-ink: #eff3f7;
+  --danger: #f07178;
+  --danger-bg: #42252a;
+  --warning: #e3ac57;
+  --warning-bg: #3c3020;
+  --success: #65ba8e;
+  --success-bg: #20382f;
+  --info: #93bde3;
+  --info-bg: #20354a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 @layer base {

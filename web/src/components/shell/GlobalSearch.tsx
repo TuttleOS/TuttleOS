@@ -89,11 +89,11 @@ export function GlobalSearch() {
           if (e.key === "Escape") setOpen(false);
         }}
         placeholder="Search clients, cases, phones, claim #…"
-        className="h-10 w-full rounded-lg border border-grid bg-surface px-3 text-ink outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
+        className="h-11 w-full rounded-full border border-grid/80 bg-surface px-5 pr-14 text-ink shadow-soft outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
         aria-label="Global search"
         autoComplete="off"
       />
-      <span className="pointer-events-none absolute right-3 top-2.5 rounded border border-grid bg-surface-2 px-1.5 text-[11px] text-muted">
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-md border border-grid bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-muted">
         ⌘K
       </span>
       {open && (

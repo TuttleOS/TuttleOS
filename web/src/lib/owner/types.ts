@@ -95,7 +95,9 @@ export const OWNER_FLAG_FILTERS: {
       r.flag_demand_response_overdue ||
       r.flag_records_not_ordered ||
       r.flag_disbursement_aging ||
-      r.flag_no_client_contact_30d,
+      r.flag_no_client_contact_30d ||
+      r.flag_provider_check_overdue ||
+      !r.case_manager,
   },
 ];
 
