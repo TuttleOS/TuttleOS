@@ -59,6 +59,7 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/owner/sol", label: "SOL Watch" },
     { href: "/owner/calendar", label: "Calendar sync" },
     { href: "/owner/migration", label: "Migration" },
+    { href: "/test", label: "Owner test notes" },
     { href: "/demands", label: "Demand queue" },
     { href: "/liens", label: "Lien worklist" },
     { href: "/review", label: "Viability reviews" },
@@ -69,6 +70,10 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
 };
 
 function navForPath(pathname: string): NavItem[] {
+  // /test is Owner walkthrough — same sidebar as /owner
+  if (pathname === "/test" || pathname.startsWith("/test/")) {
+    return NAV_BY_PREFIX["/owner"];
+  }
   const key = Object.keys(NAV_BY_PREFIX).find((p) => pathname.startsWith(p));
   return NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
 }

@@ -356,6 +356,8 @@ export async function convertLeadToMatterAction(
 
     revalidatePath("/intake");
     revalidatePath(`/intake/leads/${leadId}`);
+    revalidatePath("/cases");
+    revalidatePath(`/cases/${matter.client_matter_id}`);
     return {
       ok: true,
       id: matter.client_matter_id,

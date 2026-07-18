@@ -22,7 +22,7 @@ Read this entire file before writing any code. When this file, the mockups, and 
 - **Supabase**: Postgres (this schema), Auth (email + MFA), auto-generated REST via supabase-js, Realtime for live queue/task updates, Storage (Phase 8).
 - **TanStack Query** for server state; React Hook Form + Zod for forms (Zod schemas mirror DB constraints — generate types with `supabase gen types typescript`).
 - **Playwright** for e2e tests; **Vitest** for units.
-- Dates: **date-fns**. Display format everywhere: `MMM d, yyyy` (e.g., `Jul 14, 2026`) — day, month, AND year on every displayed date, timestamps as `Jul 14, 2026, 3:15 PM`. This is owner rule #16; no exceptions.
+- Dates: **date-fns**. Display format everywhere: `MM/DD/YYYY` (e.g., `07/14/2026`) — day, month, AND year on every displayed date; timestamps as `07/14/2026, 3:15 PM`. Entry fields use `MM/DD/YYYY` (not browser-locale `type=date`). Storage remains ISO `yyyy-MM-dd`. Owner rule #16 (year always present); US firm convention MM/DD/YYYY.
 - **Theming: design tokens only.** All colors/fonts/radii live in ONE theme file (CSS variables consumed by Tailwind config). Default theme = "Parchment" (extract the exact values from any mockup's `:root` block). Also implement "Midnight" dark mode from `mockups/theme-preview-mockup.html`. No hard-coded colors anywhere in components. Status semantics are theme-invariant: red = jurisdictional/overdue, amber = watch, green = done, blue = informational/court-order — always icon + label, never color alone.
 
 ## 2. DATABASE SETUP (do this first, in this exact order)

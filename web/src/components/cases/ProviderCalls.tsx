@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
+import { DateField } from "@/components/ui/DateField";
 import { logProviderCallAction } from "@/lib/cases/actions";
 import type { ProviderCallDue } from "@/lib/cases/types";
 
@@ -221,10 +222,9 @@ function LogCallForm({
           <label className="text-xs font-semibold text-muted">
             Next appointment
           </label>
-          <input
-            type="date"
+          <DateField
             value={nextAppt}
-            onChange={(e) => setNextAppt(e.target.value)}
+            onChange={setNextAppt}
             className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3"
           />
         </div>

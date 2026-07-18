@@ -23,7 +23,7 @@
 | Lien / Disbursement | Skeleton only (Phase 7) | `/liens` |
 | Senior Reviewer | Skeleton only (Phase 7) | `/review` |
 
-**Non‑negotiables (every phase):** soft delete · actor on every write · dates `MMM d, yyyy` · **ATTORNEY-VERIFY** on rule-computed legal dates · RLS is the real gate (UI lock is secondary) · no client-side “authoritative” deadline math.
+**Non‑negotiables (every phase):** soft delete · actor on every write · dates `MM/DD/YYYY` · **ATTORNEY-VERIFY** on rule-computed legal dates · RLS is the real gate (UI lock is secondary) · no client-side “authoritative” deadline math.
 
 ---
 

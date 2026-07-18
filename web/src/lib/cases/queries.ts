@@ -349,19 +349,53 @@ export async function listTreatmentEpisodes(
     .from("treatment_episode")
     .select(
       `treatment_episode_id, status, is_primary_pm, under_lop, approx_balance,
-       balance_as_of, first_visit_date, last_visit_date, provider_id,
-       provider:provider_id(provider_type, organization:organization_id(name))`,
+       balance_as_of, first_visit_date, last_visit_date, provider_id`,
     )
     .eq("client_matter_id", matterId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) return [];
+  if (!data?.length) return [];
 
-  return (data ?? []).map((e) => {
-    const provider = e.provider as unknown as {
-      provider_type?: string;
-      organization?: { name?: string } | null;
-    } | null;
+  const providerIds = Array.from(
+    new Set(data.map((e) => e.provider_id as string).filter(Boolean)),
+  );
+  const { data: providers } = await supabase
+    .schema("medical")
+    .from("provider")
+    .select("provider_id, provider_type, organization_id")
+    .in("provider_id", providerIds);
+
+  const orgIds = Array.from(
+    new Set(
+      (providers ?? [])
+        .map((p) => p.organization_id as string)
+        .filter(Boolean),
+    ),
+  );
+  const { data: orgs } = orgIds.length
+    ? await supabase
+        .schema("core")
+        .from("organization")
+        .select("organization_id, name")
+        .in("organization_id", orgIds)
+    : { data: [] as { organization_id: string; name: string }[] };
+
+  const orgName = new Map(
+    (orgs ?? []).map((o) => [o.organization_id, o.name] as const),
+  );
+  const provMap = new Map(
+    (providers ?? []).map((p) => [
+      p.provider_id as string,
+      {
+        type: p.provider_type as string,
+        name: orgName.get(p.organization_id as string) ?? null,
+      },
+    ]),
+  );
+
+  return data.map((e) => {
+    const p = provMap.get(e.provider_id as string);
     return {
       treatment_episode_id: e.treatment_episode_id as string,
       status: e.status as string,
@@ -373,8 +407,8 @@ export async function listTreatmentEpisodes(
       first_visit_date: (e.first_visit_date as string | null) ?? null,
       last_visit_date: (e.last_visit_date as string | null) ?? null,
       provider_id: e.provider_id as string,
-      provider_name: provider?.organization?.name ?? null,
-      provider_type: provider?.provider_type ?? null,
+      provider_name: p?.name ?? null,
+      provider_type: p?.type ?? null,
     };
   });
 }

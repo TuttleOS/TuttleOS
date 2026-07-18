@@ -1,5 +1,5 @@
 import { addYears, differenceInCalendarDays } from "date-fns";
-import { formatDate } from "@/lib/dates";
+import { formatDate, parseDateValue } from "@/lib/dates";
 
 /**
  * Intake est. SOL preview — DOI + 2 years (matches mockup).
@@ -12,8 +12,8 @@ export function estimateSolPreview(incidentDate: string | Date | null | undefine
   urgency: "far" | "near" | "crit";
 } | null {
   if (!incidentDate) return null;
-  const base = typeof incidentDate === "string" ? new Date(incidentDate + "T12:00:00") : incidentDate;
-  if (Number.isNaN(base.getTime())) return null;
+  const base = parseDateValue(incidentDate);
+  if (!base) return null;
   const solDate = addYears(base, 2);
   const days = differenceInCalendarDays(solDate, new Date());
   const urgency = days < 120 ? "crit" : days < 365 ? "near" : "far";
@@ -28,5 +28,8 @@ export function estimateSolPreview(incidentDate: string | Date | null | undefine
 export function estimateSolIso(incidentDate: string | null | undefined): string | null {
   const p = estimateSolPreview(incidentDate);
   if (!p) return null;
-  return p.solDate.toISOString().slice(0, 10);
+  const y = p.solDate.getFullYear();
+  const m = String(p.solDate.getMonth() + 1).padStart(2, "0");
+  const d = String(p.solDate.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }

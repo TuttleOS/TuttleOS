@@ -48,13 +48,28 @@ export function LeadDetail({
   const nelDue =
     lead.status === "rejected" && !lead.non_engagement_letter_sent_date;
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) {
+  function run(
+    fn: () => Promise<{
+      ok: boolean;
+      error?: string;
+      message?: string;
+      id?: string;
+    }>,
+    opts?: { goToMatter?: boolean },
+  ) {
     setMsg(null);
     setErr(null);
     start(async () => {
       const res = await fn();
       if (!res.ok) setErr(res.error ?? "Failed");
-      else setMsg(res.message ?? "Done");
+      else {
+        setMsg(res.message ?? "Done");
+        if (opts?.goToMatter && res.id) {
+          router.push(`/cases/${res.id}`);
+          router.refresh();
+          return;
+        }
+      }
       router.refresh();
     });
   }
@@ -245,10 +260,12 @@ export function LeadDetail({
                     type="button"
                     disabled={pending || !gate.ready}
                     onClick={() =>
-                      run(() =>
-                        convertLeadToMatterAction(lead.intake_lead_id, {
-                          in_person_signing: inPerson,
-                        }),
+                      run(
+                        () =>
+                          convertLeadToMatterAction(lead.intake_lead_id, {
+                            in_person_signing: inPerson,
+                          }),
+                        { goToMatter: true },
                       )
                     }
                     className="rounded-lg bg-success px-3 py-2 text-sm font-bold text-white disabled:opacity-50"

@@ -131,22 +131,52 @@ export async function listRecordRequests(
   const { data: episodes, error: eErr } = await supabase
     .schema("medical")
     .from("treatment_episode")
-    .select(
-      `treatment_episode_id,
-       provider:provider_id(organization:organization_id(name))`,
-    )
+    .select("treatment_episode_id, provider_id")
     .eq("client_matter_id", matterId)
     .is("deleted_at", null);
   if (eErr) throw new Error(eErr.message);
   if (!episodes?.length) return [];
 
-  const epIds = episodes.map((e) => e.treatment_episode_id);
+  const epIds = episodes.map((e) => e.treatment_episode_id as string);
+  const providerIds = Array.from(
+    new Set(episodes.map((e) => e.provider_id as string).filter(Boolean)),
+  );
+
+  const { data: providers } = await supabase
+    .schema("medical")
+    .from("provider")
+    .select("provider_id, organization_id")
+    .in("provider_id", providerIds);
+  const orgIds = Array.from(
+    new Set(
+      (providers ?? [])
+        .map((p) => p.organization_id as string)
+        .filter(Boolean),
+    ),
+  );
+  const { data: orgs } = orgIds.length
+    ? await supabase
+        .schema("core")
+        .from("organization")
+        .select("organization_id, name")
+        .in("organization_id", orgIds)
+    : { data: [] as { organization_id: string; name: string }[] };
+
+  const orgName = new Map(
+    (orgs ?? []).map((o) => [o.organization_id, o.name] as const),
+  );
+  const providerOrg = new Map(
+    (providers ?? []).map((p) => [
+      p.provider_id as string,
+      orgName.get(p.organization_id as string) ?? null,
+    ]),
+  );
   const nameByEp = new Map<string, string | null>();
   for (const e of episodes) {
-    const p = e.provider as unknown as {
-      organization?: { name?: string } | null;
-    } | null;
-    nameByEp.set(e.treatment_episode_id, p?.organization?.name ?? null);
+    nameByEp.set(
+      e.treatment_episode_id as string,
+      providerOrg.get(e.provider_id as string) ?? null,
+    );
   }
 
   const { data, error } = await supabase
@@ -233,21 +263,30 @@ export async function listProviderDirectory(): Promise<ProviderDirectoryRow[]> {
   const { data, error } = await supabase
     .schema("medical")
     .from("provider")
-    .select(
-      "provider_id, provider_type, accepts_lop, organization:organization_id(name)",
-    )
+    .select("provider_id, provider_type, accepts_lop, organization_id")
     .order("provider_id")
     .limit(200);
   if (error) return [];
-  return (data ?? []).map((p) => {
-    const org = p.organization as unknown as { name?: string } | null;
-    return {
-      provider_id: p.provider_id as string,
-      provider_type: p.provider_type as string,
-      name: org?.name ?? "Provider",
-      accepts_lop: (p.accepts_lop as boolean | null) ?? null,
-    };
-  });
+  if (!data?.length) return [];
+
+  const orgIds = Array.from(
+    new Set(data.map((p) => p.organization_id as string).filter(Boolean)),
+  );
+  const { data: orgs } = await supabase
+    .schema("core")
+    .from("organization")
+    .select("organization_id, name")
+    .in("organization_id", orgIds);
+  const orgName = new Map(
+    (orgs ?? []).map((o) => [o.organization_id, o.name] as const),
+  );
+
+  return data.map((p) => ({
+    provider_id: p.provider_id as string,
+    provider_type: p.provider_type as string,
+    name: orgName.get(p.organization_id as string) ?? "Provider",
+    accepts_lop: (p.accepts_lop as boolean | null) ?? null,
+  }));
 }
 
 export async function listCoverageNa(

@@ -6,7 +6,8 @@ export type WorkspaceKind = "cases" | "litigation" | "owner" | "intake" | "other
 export function workspaceFromPath(pathname: string): WorkspaceKind {
   if (pathname.startsWith("/cases")) return "cases";
   if (pathname.startsWith("/litigation")) return "litigation";
-  if (pathname.startsWith("/owner")) return "owner";
+  if (pathname.startsWith("/owner") || pathname === "/test" || pathname.startsWith("/test/"))
+    return "owner";
   if (pathname.startsWith("/intake")) return "intake";
   return "other";
 }

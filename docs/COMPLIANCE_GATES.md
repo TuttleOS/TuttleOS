@@ -55,7 +55,7 @@ Apply **every** workspace phase:
 | W.2 | All list queries filter `deleted_at IS NULL`; UI delete = soft delete | E | ☐ |
 | W.3 | Role-restricted screens verified via **RLS** (API), not UI-only | E | ☐ |
 | W.4 | Playwright: locked nav + denied API paths for restricted roles | E | ☐ |
-| W.5 | Dates always `MMM d, yyyy` (year present) | E | ☐ |
+| W.5 | Dates always `MM/DD/YYYY` (year present) | E | ☐ |
 | W.6 | No client-computed legal deadline stored as authoritative | E | ☐ |
 | W.7 | Conflicts: pending clearance blocks cross-matter copy (DB) | E | ☐ |
 | W.8 | Intake: rejection incomplete until non-engagement letter path | E | ☐ |

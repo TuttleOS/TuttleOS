@@ -33,7 +33,7 @@ We are **not** inventing workflows the schema does not support. Legal dates stay
 | Attorney / Admin / Senior PL | Owner `/owner` |
 | Demand Writer / Lien / Review | Queues only (skeletons) until you approve Phase 7 |
 
-**Non‑negotiables already in the build:** soft delete · actor on every write · RLS as the real gate · dates `MMM d, yyyy` · no client-side “authoritative” deadline math · fictional seeds only until CasePeer migration.
+**Non‑negotiables already in the build:** soft delete · actor on every write · RLS as the real gate · dates `MM/DD/YYYY` · no client-side “authoritative” deadline math · fictional seeds only until CasePeer migration.
 
 ---
 
@@ -102,6 +102,8 @@ Sign-off block is at the bottom of that doc (Approved / Notes / Rework per role)
 
 ## How to try it (demo)
 
+**Walkthrough checklist for Michael:** in-app **`/test`** (Owner → Owner test notes), or print `docs/TESTNOTES.md`.
+
 1. App: **http://127.0.0.1:3000** (run from `web/` with `npm run dev`)  
 2. Sign in as attorney (Michael) → Owner dashboard, Approvals, SOL Watch, Calendar sync, Migration status  
 3. CM ↔ Lit switcher on shared matters  
@@ -158,6 +160,7 @@ Signed: ____________________________
 
 | Doc | Use |
 |---|---|
+| `docs/TESTNOTES.md` | Owner click-through checklist |
 | `docs/PROJECT_PHASES.md` | Full phase flow + status |
 | `docs/PHASE7_SCREEN_PROPOSALS.md` | Kate / Emily / Daniel sign-off |
 | `docs/CASEPEER_MIGRATION.md` | How CasePeer load works (owner-run) |

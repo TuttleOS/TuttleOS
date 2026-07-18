@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
+import { DateField } from "@/components/ui/DateField";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import {
   addNoteAction,
@@ -367,11 +368,10 @@ export function MatterDetailView({
                 placeholder="What to do…"
                 className="h-10 min-w-[200px] flex-1 rounded-lg border border-grid bg-page px-3 text-sm"
               />
-              <input
-                type="date"
+              <DateField
                 value={followDue}
-                onChange={(e) => setFollowDue(e.target.value)}
-                className="h-10 rounded-lg border border-grid bg-page px-3 text-sm"
+                onChange={setFollowDue}
+                className="h-10 w-[9.5rem] rounded-lg border border-grid bg-page px-3 text-sm"
               />
               <button
                 type="button"

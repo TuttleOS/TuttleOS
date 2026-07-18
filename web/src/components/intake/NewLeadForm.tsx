@@ -11,6 +11,7 @@ import {
   type PhoneCountry,
 } from "@/lib/intake/phone";
 import { estimateSolPreview } from "@/lib/intake/sol";
+import { DateField } from "@/components/ui/DateField";
 
 export function NewLeadForm() {
   const router = useRouter();
@@ -175,13 +176,13 @@ export function NewLeadForm() {
           </select>
         </Field>
 
-        <Field label="Incident date" required>
-          <input
+        <Field label="Incident date" required hint="MM/DD/YYYY">
+          <DateField
             id="f-doi"
-            type="date"
             value={doi}
-            onChange={(e) => setDoi(e.target.value)}
+            onChange={setDoi}
             className={INPUT}
+            required
           />
         </Field>
 
