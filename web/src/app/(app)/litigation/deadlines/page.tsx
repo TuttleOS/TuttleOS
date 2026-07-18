@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
-import { LitCaseload } from "@/components/litigation/LitCaseload";
-import { listLitigationCaseload } from "@/lib/litigation/queries";
+import { DeadlineHorizon } from "@/components/litigation/DeadlineHorizon";
+import { listDeadlineHorizon } from "@/lib/litigation/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
 
-export default async function LitigationPage() {
+export default async function LitigationDeadlinesPage() {
   const staff = await getCurrentStaff();
   if (!staff) redirect("/login");
 
   const assignedOnly = staff.role_code === "litigation_paralegal";
-  const rows = await listLitigationCaseload({
+  const rows = await listDeadlineHorizon({
     staffId: staff.staff_id,
     assignedOnly,
   });
 
-  return <LitCaseload rows={rows} />;
+  return <DeadlineHorizon rows={rows} />;
 }
