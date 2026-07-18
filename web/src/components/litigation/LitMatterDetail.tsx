@@ -13,6 +13,9 @@ import {
   createLitFollowUpAction,
   reopenLitTaskAction,
 } from "@/lib/litigation/actions";
+import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
+import { canSwitchCmLit } from "@/lib/workspace";
+import type { StaffRoleCode } from "@/lib/staff";
 
 export function LitMatterDetail({
   matter,
@@ -23,6 +26,8 @@ export function LitMatterDetail({
   deadlines,
   tasks,
   notes,
+  viewerRole,
+  milestonesOnly = false,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -40,6 +45,8 @@ export function LitMatterDetail({
   }[];
   tasks: TaskRow[];
   notes: { note_id: string; body: string; pinned: boolean; created_at: string }[];
+  viewerRole?: StaffRoleCode | string;
+  milestonesOnly?: boolean;
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -77,12 +84,30 @@ export function LitMatterDetail({
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/litigation"
-        className="inline-block text-sm text-accent-dk no-underline hover:underline"
-      >
-        ← Back to cases
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link
+          href="/litigation"
+          className="inline-block text-sm text-accent-dk no-underline hover:underline"
+        >
+          ← Back to cases
+        </Link>
+        {viewerRole && canSwitchCmLit(viewerRole) && (
+          <MatterViewToggle
+            matterId={matter.client_matter_id}
+            active="litigation"
+          />
+        )}
+      </div>
+
+      {milestonesOnly && (
+        <div className="rounded-panel border border-warning/40 bg-warning-bg px-4 py-3 text-sm">
+          <p className="font-semibold">Milestones-only litigation view</p>
+          <p className="text-xs text-muted">
+            Case Managers see filing / deadline milestones here — not discovery
+            work product. Writes still audit under your name.
+          </p>
+        </div>
+      )}
 
       <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -194,6 +219,7 @@ export function LitMatterDetail({
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-4">
+          {!milestonesOnly && (
           <Card
             title="Client called — create follow-up"
             open={isOpen("card-followup", true)}
@@ -235,6 +261,7 @@ export function LitMatterDetail({
               </button>
             </div>
           </Card>
+          )}
 
           <Card
             title={`Court case · ${court?.cause_number ?? "not filed"}`}
@@ -350,7 +377,7 @@ export function LitMatterDetail({
                       type="checkbox"
                       className="mt-1"
                       checked={t.status === "done"}
-                      disabled={pending}
+                      disabled={pending || milestonesOnly}
                       onChange={() =>
                         run(() =>
                           t.status === "done"
@@ -410,30 +437,34 @@ export function LitMatterDetail({
                 </li>
               ))}
             </ul>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
-              placeholder="Add a note…"
-            />
-            <button
-              type="button"
-              disabled={pending || !note.trim()}
-              onClick={() =>
-                run(async () => {
-                  const res = await addLitNoteAction(
-                    matter.client_matter_id,
-                    note,
-                  );
-                  if (res.ok) setNote("");
-                  return res;
-                })
-              }
-              className="mt-2 rounded-lg border border-grid px-3 py-1.5 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
-            >
-              Save note
-            </button>
+            {!milestonesOnly && (
+              <>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
+                  placeholder="Add a note…"
+                />
+                <button
+                  type="button"
+                  disabled={pending || !note.trim()}
+                  onClick={() =>
+                    run(async () => {
+                      const res = await addLitNoteAction(
+                        matter.client_matter_id,
+                        note,
+                      );
+                      if (res.ok) setNote("");
+                      return res;
+                    })
+                  }
+                  className="mt-2 rounded-lg border border-grid px-3 py-1.5 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
+                >
+                  Save note
+                </button>
+              </>
+            )}
           </Card>
         </div>
       </div>

@@ -63,6 +63,7 @@ export default async function MatterPage({
         }[]
       }
       stalled={(stalled as StalledRow | null) ?? null}
+      viewerRole={staff.role_code}
     />
   );
 }

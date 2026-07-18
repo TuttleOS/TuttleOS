@@ -120,8 +120,8 @@ flowchart TD
 | **2** | Intake workspace | **Done (MVP)** | Mockup: `intake-workspace-mockup.html` |
 | **3** | Case Manager workspace | **Done (MVP)** | Caseload, matter Focus, My Tasks — not every §6 card |
 | **4** | Litigation Paralegal workspace | **Done (MVP)** | Caseload, Deadline Horizon, tasks, matter Focus — **deferred:** pizza tracker, full discovery/mediation, RingCentral |
-| **5** | Owner dashboard | **In progress (MVP)** | Stalled + Approvals + SOL + override strip — **deferred:** Conflicts / 7‑Day Reviews / full audit stream as own routes |
-| **6** | Cross-workspace switcher + companions + notifications | **Next after 5 locked** | |
+| **5** | Owner dashboard | **Done (MVP)** | Stalled + Approvals + SOL + override strip — deferred: Conflicts / 7‑Day Reviews as own routes |
+| **6** | Cross-workspace switcher + companions + notifications | **In progress (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
 | **7** | Demand / Liens / Review | **Later** | Skeletons only until Michael signs screens |
 | **8** | Documents + AI | **Blocked until owner** | Optional SQL; BAAs required before PHI OCR/AI |
 | **9** | Calendar ↔ deadlines | **Later** | |

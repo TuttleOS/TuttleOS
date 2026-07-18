@@ -13,6 +13,9 @@ import {
 } from "@/lib/cases/actions";
 import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember } from "@/lib/cases/types";
 import { flagList, type StalledRow } from "@/lib/cases/types";
+import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
+import { canSwitchCmLit } from "@/lib/workspace";
+import type { StaffRoleCode } from "@/lib/staff";
 
 const JUMP: Record<string, string> = {
   checklist: "card-checklist",
@@ -35,6 +38,7 @@ export function MatterDetailView({
   claims,
   companions,
   stalled,
+  viewerRole,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -51,6 +55,7 @@ export function MatterDetailView({
     person: { first_name: string; last_name: string } | null;
   }[];
   stalled: StalledRow | null;
+  viewerRole?: StaffRoleCode | string;
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -184,13 +189,21 @@ export function MatterDetailView({
               </div>
             </dl>
           </div>
-          <button
-            type="button"
-            onClick={() => setFocus((f) => !f)}
-            className="rounded-lg border border-grid px-3 py-2 text-sm font-semibold hover:bg-surface-2"
-          >
-            {focus ? "🗂 Full view" : "🎯 Focus view"}
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            {viewerRole && canSwitchCmLit(viewerRole) && (
+              <MatterViewToggle
+                matterId={matter.client_matter_id}
+                active="cases"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => setFocus((f) => !f)}
+              className="rounded-lg border border-grid px-3 py-2 text-sm font-semibold hover:bg-surface-2"
+            >
+              {focus ? "🗂 Full view" : "🎯 Focus view"}
+            </button>
+          </div>
         </div>
 
         {/* Contact strip */}

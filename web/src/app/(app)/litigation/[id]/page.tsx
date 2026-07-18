@@ -41,6 +41,8 @@ export default async function LitigationMatterPage({
       deadlines={deadlines}
       tasks={tasks}
       notes={notes}
+      viewerRole={staff.role_code}
+      milestonesOnly={staff.role_code === "case_manager"}
     />
   );
 }

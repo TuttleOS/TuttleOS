@@ -4,8 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GlobalSearch } from "./GlobalSearch";
+import { IdentityBanner } from "./IdentityBanner";
 import type { StaffProfile } from "@/lib/staff";
 import { displayName } from "@/lib/staff";
+import {
+  cmLitSwitchAction,
+  identityBannerCopy,
+} from "@/lib/workspace";
 
 type NavItem = {
   href: string;
@@ -73,6 +78,8 @@ export function AppShell({
   const router = useRouter();
   const nav = navForPath(pathname);
   const name = displayName(staff);
+  const switchAction = cmLitSwitchAction(staff, pathname);
+  const banner = identityBannerCopy(staff, pathname);
 
   async function signOut() {
     const supabase = createClient();
@@ -106,6 +113,15 @@ export function AppShell({
           <GlobalSearch />
         </div>
         <div className="flex items-center gap-3 px-5">
+          {switchAction && (
+            <Link
+              href={switchAction.href}
+              className="rounded-lg border border-grid bg-surface px-3 py-1.5 text-xs font-bold no-underline hover:bg-surface-2"
+              title="Switch workspace — audits stay under your name"
+            >
+              {switchAction.label}
+            </Link>
+          )}
           <button
             type="button"
             onClick={toggleTheme}
@@ -116,7 +132,9 @@ export function AppShell({
           </button>
           <div className="text-right leading-tight">
             <div className="font-semibold">{name}</div>
-            <div className="text-xs text-muted">{staff.role_code.replaceAll("_", " ")}</div>
+            <div className="text-xs text-muted">
+              {staff.role_code.replaceAll("_", " ")}
+            </div>
           </div>
           <button
             type="button"
@@ -164,7 +182,17 @@ export function AppShell({
         </nav>
       </aside>
 
-      <main className="min-w-0 bg-page p-5">{children}</main>
+      <div className="flex min-w-0 flex-col bg-page">
+        {banner && (
+          <IdentityBanner
+            title={banner.title}
+            detail={banner.detail}
+            backHref={banner.backHref}
+            backLabel={banner.backLabel}
+          />
+        )}
+        <main className="min-w-0 flex-1 p-5">{children}</main>
+      </div>
     </div>
   );
 }
