@@ -1,7 +1,9 @@
 # Tuttle OS — Michael’s walkthrough checklist
 
-**Prefer the in-app version:** sign in → left menu **Owner test notes** → `/test`  
+**Prefer the in-app version:** sign in → left **Firm menu** → amber **Walkthrough** → `/test`  
 (That page has the same steps with **Looks good / Problem / Skip for now** buttons.)
+
+**New case onboarding:** Firm menu → **Intake** → **New lead**.
 
 This markdown copy is for printing or email if needed.
 

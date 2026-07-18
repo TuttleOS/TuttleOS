@@ -19,7 +19,35 @@ type NavItem = {
   lockReason?: string;
   /** Call-out styling (e.g. Michael’s walkthrough) */
   featured?: boolean;
+  /** Group heading in the sidebar */
+  section?: string;
 };
+
+/** Full firm menu for attorney / admin / senior PL (Michael’s view). */
+const FIRM_WIDE_NAV: NavItem[] = [
+  { href: "/owner", label: "Dashboard", section: "Owner" },
+  { href: "/owner/approvals", label: "Approvals", section: "Owner" },
+  { href: "/owner/sol", label: "SOL Watch", section: "Owner" },
+  { href: "/owner/calendar", label: "Calendar sync", section: "Owner" },
+  { href: "/owner/migration", label: "Migration", section: "Owner" },
+  { href: "/intake", label: "Lead queue", section: "Intake" },
+  { href: "/intake/new", label: "New lead", section: "Intake" },
+  { href: "/intake/activity", label: "Intake activity", section: "Intake" },
+  { href: "/cases", label: "Case list", section: "Case Manager" },
+  { href: "/cases/calls", label: "Provider Calls", section: "Case Manager" },
+  { href: "/cases/tasks", label: "Case tasks", section: "Case Manager" },
+  { href: "/litigation", label: "Lit cases", section: "Litigation" },
+  { href: "/litigation/tasks", label: "Lit tasks", section: "Litigation" },
+  {
+    href: "/litigation/deadlines",
+    label: "Deadline Horizon",
+    section: "Litigation",
+  },
+  { href: "/demands", label: "Demand queue", section: "Specialty queues" },
+  { href: "/liens", label: "Lien worklist", section: "Specialty queues" },
+  { href: "/review", label: "Viability reviews", section: "Specialty queues" },
+  { href: "/test", label: "Walkthrough", featured: true },
+];
 
 const NAV_BY_PREFIX: Record<string, NavItem[]> = {
   "/intake": [
@@ -55,29 +83,37 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/litigation/tasks", label: "My Tasks" },
     { href: "/litigation/deadlines", label: "Deadline Horizon" },
   ],
-  "/owner": [
-    { href: "/owner", label: "Dashboard" },
-    { href: "/owner/approvals", label: "Approvals" },
-    { href: "/owner/sol", label: "SOL Watch" },
-    { href: "/owner/calendar", label: "Calendar sync" },
-    { href: "/owner/migration", label: "Migration" },
-    { href: "/demands", label: "Demand queue" },
-    { href: "/liens", label: "Lien worklist" },
-    { href: "/review", label: "Viability reviews" },
-    { href: "/test", label: "Walkthrough", featured: true },
-  ],
+  "/owner": FIRM_WIDE_NAV,
   "/demands": [{ href: "/demands", label: "Demand queue" }],
   "/liens": [{ href: "/liens", label: "Lien worklist" }],
   "/review": [{ href: "/review", label: "Viability reviews" }],
 };
 
-function navForPath(pathname: string): NavItem[] {
-  // /test is Owner walkthrough — same sidebar as /owner
+function usesFirmWideNav(staff: StaffProfile): boolean {
+  return (
+    staff.is_attorney ||
+    staff.role_code === "admin" ||
+    staff.role_code === "senior_paralegal"
+  );
+}
+
+function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
+  if (usesFirmWideNav(staff)) {
+    return FIRM_WIDE_NAV;
+  }
   if (pathname === "/test" || pathname.startsWith("/test/")) {
     return NAV_BY_PREFIX["/owner"];
   }
   const key = Object.keys(NAV_BY_PREFIX).find((p) => pathname.startsWith(p));
   return NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
+}
+
+function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/owner") return pathname === "/owner";
+  if (href === "/cases") return pathname === "/cases";
+  if (href === "/litigation") return pathname === "/litigation";
+  if (href === "/intake") return pathname === "/intake";
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function AppShell({
@@ -89,10 +125,11 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const nav = navForPath(pathname);
+  const nav = navForPath(pathname, staff);
   const name = displayName(staff);
   const switchAction = cmLitSwitchAction(staff, pathname);
   const banner = identityBannerCopy(staff, pathname);
+  const firmWide = usesFirmWideNav(staff);
 
   async function signOut() {
     const supabase = createClient();
@@ -161,51 +198,69 @@ export function AppShell({
 
       <aside className="sticky top-[68px] h-[calc(100vh-68px)] overflow-auto border-r border-grid bg-sidebar p-4 text-sidebar-ink">
         <div className="mb-3 px-2 text-[11px] font-bold uppercase tracking-wide text-muted">
-          Workspace
+          {firmWide ? "Firm menu" : "Workspace"}
         </div>
         <nav className="grid gap-1">
-          {nav.map((item) => {
-            const active = pathname === item.href;
+          {nav.map((item, index) => {
+            const active = isNavActive(pathname, item.href);
+            const prevSection = index > 0 ? nav[index - 1]?.section : undefined;
+            const showSection =
+              item.section && item.section !== prevSection
+                ? item.section
+                : null;
+
+            const sectionEl = showSection ? (
+              <div className="mb-1 mt-3 px-2 text-[10px] font-bold uppercase tracking-wide text-muted first:mt-0">
+                {showSection}
+              </div>
+            ) : null;
+
             if (item.locked) {
               return (
-                <span
-                  key={item.href}
-                  title={item.lockReason}
-                  className="flex cursor-not-allowed items-center justify-between rounded-lg px-3 py-2.5 opacity-70"
-                >
-                  <span>{item.label}</span>
-                  <span aria-hidden>🔒</span>
-                </span>
+                <div key={item.href}>
+                  {sectionEl}
+                  <span
+                    title={item.lockReason}
+                    className="flex cursor-not-allowed items-center justify-between rounded-lg px-3 py-2.5 opacity-70"
+                  >
+                    <span>{item.label}</span>
+                    <span aria-hidden>🔒</span>
+                  </span>
+                </div>
               );
             }
             if (item.featured) {
               return (
+                <div key={item.href}>
+                  {sectionEl}
+                  <Link
+                    href={item.href}
+                    title="Guided tour for Michael — start here"
+                    className={`mt-3 block rounded-lg border-2 px-3 py-2.5 font-bold no-underline ${
+                      active
+                        ? "border-warning bg-warning text-white"
+                        : "border-warning bg-warning-bg text-warning hover:bg-warning hover:text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </div>
+              );
+            }
+            return (
+              <div key={item.href}>
+                {sectionEl}
                 <Link
-                  key={item.href}
                   href={item.href}
-                  title="Guided tour for Michael — start here"
-                  className={`mt-3 rounded-lg border-2 px-3 py-2.5 font-bold no-underline ${
+                  className={`block rounded-lg px-3 py-2.5 no-underline ${
                     active
-                      ? "border-warning bg-warning text-white"
-                      : "border-warning bg-warning-bg text-warning hover:bg-warning hover:text-white"
+                      ? "bg-accent-lt font-bold text-accent-dk"
+                      : "text-sidebar-ink hover:bg-accent-lt hover:text-accent-dk"
                   }`}
                 >
                   {item.label}
                 </Link>
-              );
-            }
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-lg px-3 py-2.5 no-underline ${
-                  active
-                    ? "bg-accent-lt font-bold text-accent-dk"
-                    : "text-sidebar-ink hover:bg-accent-lt hover:text-accent-dk"
-                }`}
-              >
-                {item.label}
-              </Link>
+              </div>
             );
           })}
         </nav>
