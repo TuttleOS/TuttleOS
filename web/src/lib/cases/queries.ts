@@ -229,6 +229,51 @@ export async function getMatterTeam(matterId: string): Promise<TeamMember[]> {
   });
 }
 
+export type AssignableStaff = {
+  staff_id: string;
+  name: string;
+  role_code: string;
+};
+
+/** Active staff who can be assigned as case manager on a matter. */
+export async function listAssignableCaseManagers(): Promise<AssignableStaff[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .schema("core")
+    .from("staff")
+    .select(
+      "staff_id, role_code, email, person:person_id(first_name, last_name)",
+    )
+    .eq("active", true)
+    .is("deleted_at", null)
+    .is("separated_date", null)
+    .in("role_code", [
+      "case_manager",
+      "attorney",
+      "admin",
+      "senior_paralegal",
+    ])
+    .order("email");
+  if (error) throw new Error(error.message);
+
+  return (data ?? [])
+    .map((s) => {
+      const person = s.person as unknown as {
+        first_name: string;
+        last_name: string;
+      } | null;
+      const name = person
+        ? `${person.first_name} ${person.last_name}`.trim()
+        : (s.email ?? "Staff");
+      return {
+        staff_id: s.staff_id as string,
+        name,
+        role_code: s.role_code as string,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function getPersonContacts(personId: string) {
   const supabase = createClient();
   const { data, error } = await supabase

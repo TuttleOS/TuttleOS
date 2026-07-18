@@ -9,6 +9,7 @@ import {
   listMatterTasks,
   listPinnedNotes,
 } from "@/lib/litigation/queries";
+import { listAssignableCaseManagers } from "@/lib/cases/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
 
 export default async function LitigationMatterPage({
@@ -22,14 +23,16 @@ export default async function LitigationMatterPage({
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
-  const [team, contacts, court, deadlines, tasks, notes] = await Promise.all([
-    getMatterTeam(matter.client_matter_id),
-    getPersonContacts(matter.client_person_id),
-    getCourtCase(matter.client_matter_id),
-    listMatterDeadlines(matter.client_matter_id),
-    listMatterTasks(matter.client_matter_id),
-    listPinnedNotes(matter.client_matter_id),
-  ]);
+  const [team, contacts, court, deadlines, tasks, notes, cmCandidates] =
+    await Promise.all([
+      getMatterTeam(matter.client_matter_id),
+      getPersonContacts(matter.client_person_id),
+      getCourtCase(matter.client_matter_id),
+      listMatterDeadlines(matter.client_matter_id),
+      listMatterTasks(matter.client_matter_id),
+      listPinnedNotes(matter.client_matter_id),
+      listAssignableCaseManagers(),
+    ]);
 
   return (
     <LitMatterDetail
@@ -42,6 +45,8 @@ export default async function LitigationMatterPage({
       tasks={tasks}
       notes={notes}
       viewerRole={staff.role_code}
+      viewerIsAttorney={staff.is_attorney}
+      cmCandidates={cmCandidates}
       milestonesOnly={staff.role_code === "case_manager"}
     />
   );

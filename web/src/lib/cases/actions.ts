@@ -608,3 +608,98 @@ export async function logNegotiationAction(input: {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
 }
+
+function canAssignCaseManager(staff: {
+  is_attorney: boolean;
+  role_code: string;
+}): boolean {
+  return (
+    staff.is_attorney ||
+    staff.role_code === "admin" ||
+    staff.role_code === "senior_paralegal" ||
+    staff.role_code === "case_manager"
+  );
+}
+
+/**
+ * Assign (or clear) the active case_manager on a matter.
+ * Ends any open CM assignment first (history preserved), then inserts the new one.
+ */
+export async function assignCaseManagerAction(
+  matterId: string,
+  newStaffId: string | null,
+): Promise<ActionResult> {
+  try {
+    const staff = await requireStaff();
+    if (!canAssignCaseManager(staff)) {
+      return {
+        ok: false,
+        error: "You do not have permission to assign a case manager",
+      };
+    }
+    if (!matterId) return { ok: false, error: "Matter required" };
+
+    const supabase = createClient();
+
+    if (newStaffId) {
+      const { data: target, error: targetErr } = await supabase
+        .schema("core")
+        .from("staff")
+        .select("staff_id, active, role_code")
+        .eq("staff_id", newStaffId)
+        .maybeSingle();
+      if (targetErr) return { ok: false, error: targetErr.message };
+      if (!target?.active) {
+        return { ok: false, error: "Selected staff is not active" };
+      }
+    }
+
+    const { data: current, error: curErr } = await supabase
+      .schema("core")
+      .from("staff_assignment")
+      .select("staff_assignment_id, staff_id")
+      .eq("client_matter_id", matterId)
+      .eq("assignment_role", "case_manager")
+      .is("ended_at", null)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (curErr) return { ok: false, error: curErr.message };
+
+    if (current && current.staff_id === newStaffId) {
+      return { ok: true, message: "Case manager unchanged" };
+    }
+
+    if (current) {
+      const { error: endErr } = await supabase
+        .schema("core")
+        .from("staff_assignment")
+        .update({ ended_at: new Date().toISOString() })
+        .eq("staff_assignment_id", current.staff_assignment_id);
+      if (endErr) return { ok: false, error: endErr.message };
+    }
+
+    if (newStaffId) {
+      const { error: insErr } = await supabase
+        .schema("core")
+        .from("staff_assignment")
+        .insert({
+          client_matter_id: matterId,
+          staff_id: newStaffId,
+          assignment_role: "case_manager",
+          assigned_by: staff.staff_id,
+        });
+      if (insErr) return { ok: false, error: insErr.message };
+    }
+
+    revalidatePath(`/cases/${matterId}`);
+    revalidatePath(`/litigation/${matterId}`);
+    revalidatePath("/cases");
+    revalidatePath("/owner");
+    return {
+      ok: true,
+      message: newStaffId ? "Case manager assigned" : "Case manager cleared",
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}

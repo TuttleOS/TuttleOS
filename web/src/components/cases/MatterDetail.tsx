@@ -30,8 +30,20 @@ import type {
   RecordRequestRow,
 } from "@/lib/cases/matterExtras";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
+import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
+import type { AssignableStaff } from "@/lib/cases/queries";
+
+function canAssignCm(role?: StaffRoleCode | string, isAttorney?: boolean) {
+  if (isAttorney) return true;
+  return (
+    role === "attorney" ||
+    role === "admin" ||
+    role === "senior_paralegal" ||
+    role === "case_manager"
+  );
+}
 
 const JUMP: Record<string, string> = {
   checklist: "card-checklist",
@@ -65,6 +77,8 @@ export function MatterDetailView({
   demands,
   negotiations,
   providerDirectory,
+  cmCandidates = [],
+  viewerIsAttorney = false,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -82,12 +96,14 @@ export function MatterDetailView({
   }[];
   stalled: StalledRow | null;
   viewerRole?: StaffRoleCode | string;
+  viewerIsAttorney?: boolean;
   pdClaims: PdClaimRow[];
   coverageBoxes: CoverageBoxState[];
   recordRequests: RecordRequestRow[];
   demands: DemandRow[];
   negotiations: NegotiationRow[];
   providerDirectory: ProviderDirectoryRow[];
+  cmCandidates?: AssignableStaff[];
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -211,9 +227,14 @@ export function MatterDetailView({
               </div>
               <div>
                 <span className="text-muted">Team — </span>
-                CM: {cm?.name ?? (
-                  <span className="text-danger">UNASSIGNED</span>
-                )}{" "}
+                CM:{" "}
+                <AssignCaseManagerSelect
+                  matterId={matter.client_matter_id}
+                  currentStaffId={cm?.staff_id ?? null}
+                  currentName={cm?.name}
+                  options={cmCandidates}
+                  canAssign={canAssignCm(viewerRole, viewerIsAttorney)}
+                />{" "}
                 · PL: {pl?.name ?? (
                   <span className="text-warning">UNASSIGNED</span>
                 )}{" "}

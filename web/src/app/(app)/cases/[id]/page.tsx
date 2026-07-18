@@ -4,6 +4,7 @@ import {
   getMatter,
   getMatterTeam,
   getPersonContacts,
+  listAssignableCaseManagers,
   listClaims,
   listCompanionMatters,
   listMatterTasks,
@@ -48,6 +49,7 @@ export default async function MatterPage({
     demands,
     negotiations,
     providerDirectory,
+    cmCandidates,
   ] = await Promise.all([
     getMatterTeam(matter.client_matter_id),
     getPersonContacts(matter.client_person_id),
@@ -62,6 +64,7 @@ export default async function MatterPage({
     listDemands(matter.client_matter_id),
     listNegotiations(matter.client_matter_id),
     listProviderDirectory(),
+    listAssignableCaseManagers(),
   ]);
 
   const coverageBoxes = buildCoverageBoxes(episodes, naCats);
@@ -94,12 +97,14 @@ export default async function MatterPage({
       }
       stalled={(stalled as StalledRow | null) ?? null}
       viewerRole={staff.role_code}
+      viewerIsAttorney={staff.is_attorney}
       pdClaims={pdClaims}
       coverageBoxes={coverageBoxes}
       recordRequests={recordRequests}
       demands={demands}
       negotiations={negotiations}
       providerDirectory={providerDirectory}
+      cmCandidates={cmCandidates}
     />
   );
 }

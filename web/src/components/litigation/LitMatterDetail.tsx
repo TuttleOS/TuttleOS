@@ -16,8 +16,20 @@ import {
   reopenLitTaskAction,
 } from "@/lib/litigation/actions";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
+import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
+import type { AssignableStaff } from "@/lib/cases/queries";
+
+function canAssignCm(role?: StaffRoleCode | string, isAttorney?: boolean) {
+  if (isAttorney) return true;
+  return (
+    role === "attorney" ||
+    role === "admin" ||
+    role === "senior_paralegal" ||
+    role === "case_manager"
+  );
+}
 
 export function LitMatterDetail({
   matter,
@@ -29,6 +41,8 @@ export function LitMatterDetail({
   tasks,
   notes,
   viewerRole,
+  viewerIsAttorney = false,
+  cmCandidates = [],
   milestonesOnly = false,
 }: {
   matter: MatterDetail;
@@ -48,6 +62,8 @@ export function LitMatterDetail({
   tasks: TaskRow[];
   notes: { note_id: string; body: string; pinned: boolean; created_at: string }[];
   viewerRole?: StaffRoleCode | string;
+  viewerIsAttorney?: boolean;
+  cmCandidates?: AssignableStaff[];
   milestonesOnly?: boolean;
 }) {
   const router = useRouter();
@@ -152,9 +168,14 @@ export function LitMatterDetail({
               </div>
               <div>
                 <span className="text-muted">Team — </span>
-                CM: {cm?.name ?? (
-                  <span className="text-danger">UNASSIGNED</span>
-                )}{" "}
+                CM:{" "}
+                <AssignCaseManagerSelect
+                  matterId={matter.client_matter_id}
+                  currentStaffId={cm?.staff_id ?? null}
+                  currentName={cm?.name}
+                  options={cmCandidates}
+                  canAssign={canAssignCm(viewerRole, viewerIsAttorney)}
+                />{" "}
                 · PL: {pl?.name ?? (
                   <span className="text-warning">UNASSIGNED</span>
                 )}
