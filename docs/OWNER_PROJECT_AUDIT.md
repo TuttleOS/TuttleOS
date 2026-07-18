@@ -102,7 +102,7 @@ Sign-off block is at the bottom of that doc (Approved / Notes / Rework per role)
 
 ## How to try it (demo)
 
-**Walkthrough checklist for Michael:** in-app **`/test`** (Owner → Owner test notes), or print `docs/TESTNOTES.md`.
+**Walkthrough checklist for Michael:** in-app **`/test`** (Owner → **Walkthrough**), or print `docs/TESTNOTES.md`.
 
 1. App: **http://127.0.0.1:3000** (run from `web/` with `npm run dev`)  
 2. Sign in as attorney (Michael) → Owner dashboard, Approvals, SOL Watch, Calendar sync, Migration status  

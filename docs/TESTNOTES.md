@@ -1,166 +1,143 @@
-# Tuttle OS — Owner test notes (Michael)
+# Tuttle OS — Michael’s walkthrough checklist
 
-**Purpose:** Walk through the demo app once, check boxes, jot notes. Bring this back with `OWNER_PROJECT_AUDIT.md` and `PHASE7_SCREEN_PROPOSALS.md`.
+**Prefer the in-app version:** sign in → left menu **Owner test notes** → `/test`  
+(That page has the same steps with **Looks good / Problem / Skip for now** buttons.)
 
-**In-app checklist (preferred):** sign in as attorney → **Owner → Owner test notes** → http://127.0.0.1:3000/test  
-(Pass / Fail / Skip + notes save in your browser only.)
+This markdown copy is for printing or email if needed.
 
-**App:** http://127.0.0.1:3000  
-**Login (attorney / Owner home):** `michael@tuttlelawfirm.com`  
-*(Password: use the one Brett set in Supabase Auth — not stored in this repo.)*
+---
 
-**Data:** Fictional seeds only (e.g. Rosa Delgado, Chinedu Okafor). No real client PHI.
+## How to use this
 
-**How to use:** For each step — ☐ Pass · ☐ Fail · ☐ Skip — and a short note if Fail/Skip.
+1. Ask Brett for the website link and your password (`michael@tuttlelawfirm.com`).
+2. Work **top to bottom**. Keep this checklist open in one tab; open screens in another.
+3. For each step mark: **Looks good** · **Problem** · **Skip for now**.
+4. If something is wrong, write: which screen, what you clicked, what you saw.
+5. Practice / fake data only (e.g. Rosa Delgado). Do not enter real client info.
+6. About **45–60 minutes**. You can stop and come back.
+
+**Not bugs (on purpose):** no DocuSign yet · no AI on medicals · no live Outlook/Google calendar · CasePeer load later after privacy paperwork.
 
 ---
 
 ## Before you start
 
-| Check | ☐ |
-|---|---|
-| Brett confirmed `npm run dev` is running from `web/` and the URL above loads | ☐ |
-| You can sign in with your attorney account | ☐ |
-| After login you land on **Owner** (`/owner`) | ☐ |
-
-**Notes:** _______________________________________________
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Website opens | Open the link Brett gave you | Login or app appears — not a blank error |
+| Sign in | Use your email + password | You get into the app |
+| Owner home | After login, check the left menu | You see Owner items (Dashboard, Approvals, SOL Watch, …) |
 
 ---
 
-## 1. Shell & basics (~5 min)
+## 1. Getting around (~5 min)
 
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 1.1 | Top nav: Owner, Cases, Litigation, Intake (and Demands / Liens / Review if shown) | ☐ | ☐ | ☐ | |
-| 1.2 | Theme toggle (Parchment / Midnight) if available | ☐ | ☐ | ☐ | |
-| 1.3 | Global search — type a demo name (e.g. Delgado) | ☐ | ☐ | ☐ | |
-| 1.4 | Dates on screen look like **MM/DD/YYYY** (not day-first) | ☐ | ☐ | ☐ | |
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Left menu | Click Owner, Cases, Litigation, Intake | Each area opens; nothing crashes |
+| Light/dark (optional) | Top right ◐ button | Look switches; either is fine |
+| Search | Type Delgado in the top search | You find that practice client |
+| Dates | Glance at any dates on screen | Month/day/year like 07/18/2026 |
 
-**Overall shell:** ☐ Looks good · ☐ Needs rework: _______________
+**Overall:** _______________________________________________
 
 ---
 
-## 2. Owner dashboard (~10 min)
+## 2. Your Owner screens (~10 min)
 
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 2.1 | `/owner` — stalled / attention areas make sense at a glance | ☐ | ☐ | ☐ | |
-| 2.2 | `/owner/approvals` — opens without error | ☐ | ☐ | ☐ | |
-| 2.3 | `/owner/sol` — SOL Watch loads | ☐ | ☐ | ☐ | |
-| 2.4 | `/owner/calendar` — **scaffold only**; no live Outlook/Google (expected) | ☐ | ☐ | ☐ | |
-| 2.5 | `/owner/migration` — CasePeer status page loads (read-only) | ☐ | ☐ | ☐ | |
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Dashboard | Left → Dashboard | Firm overview feels useful at a glance |
+| Approvals | Left → Approvals | Page opens (empty list OK) |
+| SOL Watch | Left → SOL Watch | Filing-deadline watch list opens |
+| Calendar sync | Left → Calendar sync | Settings page only — **not** connected to real Outlook/Google yet |
+| Migration | Left → Migration | CasePeer status page — look only, don’t run anything |
 
-**Owner overall:** ☐ Approved · ☐ Notes: _______________
+**Overall:** _______________________________________________
 
 ---
 
 ## 3. Case Manager (~15 min)
 
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 3.1 | `/cases` — caseload lists demo matters | ☐ | ☐ | ☐ | |
-| 3.2 | Open **Rosa Delgado** (or another seeded matter) | ☐ | ☐ | ☐ | |
-| 3.3 | Matter page: stage / tasks / follow-up feel usable | ☐ | ☐ | ☐ | |
-| 3.4 | Coverage / PD / records / demand cards show demo data where seeded | ☐ | ☐ | ☐ | |
-| 3.5 | `/cases/calls` — Provider Calls page loads; add or view a log if comfortable | ☐ | ☐ | ☐ | |
-| 3.6 | `/cases/tasks` — task list loads | ☐ | ☐ | ☐ | |
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Case list | Open Cases / My Caseload | Practice cases list appears |
+| Open a case | Click Rosa Delgado (or any name) | Full case page opens |
+| Usable layout | Scroll stage, tasks, follow-up | You can tell where the case is |
+| Coverage / PD / records / demand | Look for those sections on the case | Not broken/confusing (partial data OK) |
+| Provider Calls | Cases menu → Provider Calls | Page opens |
+| My Tasks | Cases menu → My Tasks | Task list opens |
 
-**CM overall:** ☐ Direction right · ☐ Missing for daily use: _______________
+**Overall:** _______________________________________________
 
 ---
 
-## 4. Litigation + CM↔Lit switcher (~10 min)
+## 4. Litigation + switching views (~10 min)
 
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 4.1 | `/litigation` — lit caseload loads | ☐ | ☐ | ☐ | |
-| 4.2 | Open a lit matter (Delgado / Okafor if present) | ☐ | ☐ | ☐ | |
-| 4.3 | Deadlines / tasks areas load (`/litigation/deadlines`, `/litigation/tasks`) | ☐ | ☐ | ☐ | |
-| 4.4 | On a shared matter: use **CM ↔ Litigation** switcher — lands on the other workspace for same client | ☐ | ☐ | ☐ | |
-| 4.5 | Identity banner (who you are / role) still clear after switch | ☐ | ☐ | ☐ | |
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Lit list | Open Litigation | Lawsuit-side list opens |
+| Open a lit case | Click Delgado / Okafor / any | Litigation case page opens |
+| Deadlines & tasks | Open Deadline Horizon and My Tasks | Both open (lists may be empty) |
+| Switch views | Top-right Case Manager ↔ Litigation button | Same client, other view |
+| Still you | Check name/role banner after switch | Still signed in as Michael |
 
-**Lit overall:** ☐ Direction right · ☐ Needs: _______________
+**Overall:** _______________________________________________
 
 ---
 
 ## 5. Intake (~10 min)
 
-**Note:** “Mark contract sent” does **not** email or e-sign yet — status stub only. Real electronic send is a later vendor decision.
+**Important:** “Mark contract sent” does **not** email or DocuSign the client. It only changes status inside the app.
 
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 5.1 | `/intake` — lead queue loads | ☐ | ☐ | ☐ | |
-| 5.2 | `/intake/new` — create a test lead (fake name/phone/DOI) | ☐ | ☐ | ☐ | |
-| 5.3 | Open the lead → **Mark contract sent** → status updates | ☐ | ☐ | ☐ | |
-| 5.4 | **Mark signed** → status updates | ☐ | ☐ | ☐ | |
-| 5.5 | **Open matter** → you land on `/cases/[id]` for that matter | ☐ | ☐ | ☐ | |
-| 5.6 | Optional: open a seed lead (if listed) and skim contact attempts | ☐ | ☐ | ☐ | |
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Lead list | Open Intake | Leads appear |
+| New lead | New Lead → fake name/phone/date → save | Lead is created |
+| Contract sent | On the lead → mark contract sent | Status updates |
+| Signed | Mark signed | Status updates |
+| Open matter | Open matter | You land on that client’s Case Manager page |
+| Optional | Open an older practice lead | Contact history readable |
 
-**Intake overall:** ☐ Usable for rehearsal · ☐ Blockers: _______________
-
----
-
-## 6. Phase 7 queues — look only (~5 min)
-
-Skeletons only. **Do not expect** Kate/Emily/Daniel action buttons yet — those wait on your screen sign-off in `PHASE7_SCREEN_PROPOSALS.md`.
-
-| # | Try this | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| 6.1 | `/demands` loads (empty list is OK) | ☐ | ☐ | ☐ | |
-| 6.2 | `/liens` loads (empty list is OK) | ☐ | ☐ | ☐ | |
-| 6.3 | `/review` loads (empty list is OK) | ☐ | ☐ | ☐ | |
-| 6.4 | Read `docs/PHASE7_SCREEN_PROPOSALS.md` and mark Approved / Notes / Rework there | ☐ | ☐ | ☐ | |
+**Overall:** _______________________________________________
 
 ---
 
-## 7. Explicitly out of scope (do not treat as bugs)
+## 6. Demand / Liens / Review — look only (~5 min)
 
-| Item | Status |
-|---|---|
-| Live e-sign / DocuSign send from Intake | Not built — stub status only |
-| AI / OCR on medicals | Deferred (your decision) |
-| Live Outlook / Google calendar sync | Deferred (your decision) |
-| Full mockup parity (every card / pizza tracker / discovery) | Incremental after this review |
-| Real CasePeer client load | Owner-run later; needs BAA |
+Early drafts for Kate / Emily / Daniel. **Empty lists are normal.** Full buttons wait until you approve those screen ideas with Brett.
+
+| Step | What to do | Looks good when… |
+|---|---|---|
+| Demands | Open Demand queue | Page opens |
+| Liens | Open Lien worklist | Page opens |
+| Reviews | Open Viability reviews | Page opens |
+| Screen ideas | Tell Brett Approved / Notes / Rework for each role | Brett knows whether to build those screens |
 
 ---
 
-## Your verdict (copy into audit or return this page)
+## Your overall verdict
 
 ```
-Tester: Michael Tuttle
 Date: ________
-App build / URL used: http://127.0.0.1:3000
 
-Overall direction (phases 0–10 as demoed)
-  ☐ Approved   ☐ Approved with notes   ☐ Pause / rework
+Keep building this direction?
+  ☐ Yes — looks good
+  ☐ Yes — with notes
+  ☐ Pause / rework first
 
 Biggest gap for daily firm use:
 ________________________________________________
 
-Next priority (pick one)
-  ☐ Deepen Case Manager / Litigation
-  ☐ Phase 7 actions after screen sign-off
-  ☐ CasePeer rehearsal (after BAA)
-  ☐ Other: _______________
+What should Brett work on next?
+  ☐ More Case Manager / Litigation detail
+  ☐ Demand / Liens / Review after I approve screens
+  ☐ Practice CasePeer load (after privacy paperwork)
+  ☐ Something else: _______________
 
-Bugs / UX notes (bullet freely):
+Problems / confusing spots (screen + what you clicked + what happened):
 -
 -
--
-
-Signed: ____________________________
 ```
 
----
-
-## Related docs
-
-| Doc | When |
-|---|---|
-| `docs/OWNER_PROJECT_AUDIT.md` | Formal approval checkboxes |
-| `docs/PHASE7_SCREEN_PROPOSALS.md` | Kate / Emily / Daniel screens |
-| `docs/PROJECT_PHASES.md` | Full phase map |
-| `mockups/*.html` | Clickable “ideal” behavior (aspirational vs MVP) |
-
-*If something fails, note the URL + what you clicked + what you saw. Screenshots help.*
+Email or call Brett when done — no formal signature needed.

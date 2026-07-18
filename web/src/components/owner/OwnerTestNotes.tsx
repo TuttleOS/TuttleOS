@@ -35,16 +35,16 @@ function ResultRadios({
   onChange: (v: StepResult) => void;
 }) {
   const opts: { v: StepResult; label: string }[] = [
-    { v: "pass", label: "Pass" },
-    { v: "fail", label: "Fail" },
-    { v: "skip", label: "Skip" },
+    { v: "pass", label: "Looks good" },
+    { v: "fail", label: "Problem" },
+    { v: "skip", label: "Skip for now" },
   ];
   return (
     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={name}>
       {opts.map((o) => (
         <label
           key={o.v}
-          className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+          className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
             value === o.v
               ? o.v === "pass"
                 ? "border-success bg-success-bg text-success"
@@ -82,21 +82,35 @@ function StepRow({
   onNote: (n: string) => void;
 }) {
   return (
-    <li className="rounded-lg border border-grid bg-surface px-3 py-3">
+    <li className="rounded-lg border border-grid bg-surface px-4 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-xs font-bold uppercase tracking-wide text-muted">
-            {step.id}
+        <div className="min-w-0 flex-1 space-y-2">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wide text-muted">
+              Step {step.id}
+            </div>
+            <h3 className="mt-0.5 text-base font-bold">{step.label}</h3>
           </div>
-          <p className="mt-0.5 text-sm">{step.label}</p>
+          {step.how && (
+            <p className="text-sm">
+              <span className="font-semibold text-accent-dk">What to do: </span>
+              {step.how}
+            </p>
+          )}
+          {step.expect && (
+            <p className="text-sm text-muted">
+              <span className="font-semibold">What you should see: </span>
+              {step.expect}
+            </p>
+          )}
           {step.href && (
             <Link
               href={step.href}
-              className="mt-1 inline-block text-xs font-semibold text-accent-dk no-underline hover:underline"
+              className="mt-1 inline-flex rounded-lg border border-accent-dk/30 bg-accent-lt px-3 py-1.5 text-xs font-bold text-accent-dk no-underline hover:bg-accent-lt/80"
               target="_blank"
               rel="noreferrer"
             >
-              Open {step.href} ↗
+              {step.linkLabel ?? "Open this screen"} ↗
             </Link>
           )}
         </div>
@@ -111,8 +125,12 @@ function StepRow({
           type="text"
           value={note}
           onChange={(e) => onNote(e.target.value)}
-          placeholder="Note (required for Fail / helpful for Skip)"
-          className="mt-2 w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
+          placeholder={
+            result === "fail"
+              ? "What went wrong? (page name + what you clicked)"
+              : "Optional note"
+          }
+          className="mt-3 w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
         />
       )}
     </li>
@@ -149,7 +167,10 @@ export function OwnerTestNotes() {
     return { done, total: allStepIds.length };
   }, [allStepIds, state.steps]);
 
-  function setStep(id: string, patch: Partial<{ result: StepResult; note: string }>) {
+  function setStep(
+    id: string,
+    patch: Partial<{ result: StepResult; note: string }>,
+  ) {
     setState((prev) => {
       const cur = prev.steps[id] ?? { result: "" as StepResult, note: "" };
       return {
@@ -160,7 +181,12 @@ export function OwnerTestNotes() {
   }
 
   function reset() {
-    if (!confirm("Clear all checkboxes and notes on this device?")) return;
+    if (
+      !confirm(
+        "Clear all your answers and notes on this computer? This cannot be undone.",
+      )
+    )
+      return;
     setState(emptyTestNotesState());
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -171,51 +197,51 @@ export function OwnerTestNotes() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <div>
+      <div className="space-y-3">
         <p className="text-[11px] font-bold uppercase tracking-wide text-accent-dk">
-          Owner walkthrough
+          For Michael · guided tour
         </p>
         <h1 className="text-2xl font-bold">{TEST_NOTES_META.title}</h1>
-        <p className="mt-1 text-sm text-muted">{TEST_NOTES_META.purpose}</p>
-        <ul className="mt-3 space-y-1 text-sm text-muted">
-          <li>
-            <span className="font-semibold">App:</span>{" "}
-            {TEST_NOTES_META.appUrl}
-          </li>
-          <li>
-            <span className="font-semibold">Login:</span>{" "}
+        <p className="text-sm leading-relaxed">{TEST_NOTES_META.purpose}</p>
+        <div className="rounded-lg border border-grid bg-surface-2 px-4 py-3 text-sm leading-relaxed space-y-2">
+          <p>
+            <span className="font-semibold">How long:</span>{" "}
+            {TEST_NOTES_META.howLong}
+          </p>
+          <p>
+            <span className="font-semibold">Sign in as:</span>{" "}
             {TEST_NOTES_META.loginHint}
-          </li>
-          <li>
-            <span className="font-semibold">Data:</span>{" "}
+          </p>
+          <p>
+            <span className="font-semibold">Practice data only:</span>{" "}
             {TEST_NOTES_META.dataNote}
-          </li>
-          <li>
-            <span className="font-semibold">Source:</span>{" "}
-            {TEST_NOTES_META.sourceDoc}
-          </li>
-        </ul>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+          </p>
+          <p>
+            <span className="font-semibold">Tip:</span> {TEST_NOTES_META.tip}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm font-semibold">
-            Progress: {progress.done} / {progress.total}
+            Progress: {progress.done} of {progress.total} steps answered
           </p>
           <button
             type="button"
             onClick={reset}
             className="rounded-lg border border-grid px-3 py-1.5 text-xs font-semibold hover:bg-surface-2"
           >
-            Reset on this device
+            Start over
           </button>
           <p className="text-xs text-muted">
-            Answers stay in your browser (localStorage) — not saved to the
-            server.
+            Your answers stay on this computer only. They are not emailed
+            automatically — when finished, tell Brett or send a screenshot of
+            Your verdict below.
           </p>
         </div>
       </div>
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Before you start</h2>
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {TEST_PREFLIGHT.map((step) => {
             const s = stepOf(step.id);
             return (
@@ -244,10 +270,12 @@ export function OwnerTestNotes() {
               ) : null}
             </h2>
             {sec.intro && (
-              <p className="mt-1 text-sm text-muted">{sec.intro}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">
+                {sec.intro}
+              </p>
             )}
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {sec.steps.map((step) => {
               const s = stepOf(step.id);
               return (
@@ -277,7 +305,7 @@ export function OwnerTestNotes() {
                     },
                   }))
                 }
-                placeholder="Approved / notes / rework…"
+                placeholder="A sentence or two is enough"
                 className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
               />
             </label>
@@ -287,29 +315,33 @@ export function OwnerTestNotes() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold">
-          7. Explicitly out of scope (not bugs)
+          7. Things that are NOT bugs (on purpose)
         </h2>
+        <p className="text-sm text-muted">
+          If something below is missing, that is expected for this review —
+          please do not mark it as broken.
+        </p>
         <ul className="divide-y divide-grid rounded-lg border border-grid bg-surface">
           {OUT_OF_SCOPE.map((row) => (
             <li
               key={row.item}
-              className="flex flex-wrap justify-between gap-2 px-3 py-2.5 text-sm"
+              className="flex flex-col gap-0.5 px-3 py-2.5 text-sm sm:flex-row sm:justify-between sm:gap-4"
             >
-              <span>{row.item}</span>
-              <span className="text-muted">{row.status}</span>
+              <span className="font-medium">{row.item}</span>
+              <span className="text-muted sm:text-right">{row.status}</span>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="space-y-4 rounded-lg border border-grid bg-surface p-4">
-        <h2 className="text-lg font-bold">Your verdict</h2>
-        <p className="text-xs text-muted">
-          Copy this into OWNER_PROJECT_AUDIT or email Brett / return a
-          screenshot.
+        <h2 className="text-lg font-bold">Your overall verdict</h2>
+        <p className="text-sm text-muted">
+          When you finish, email Brett or send a screenshot of this section.
+          Verbal feedback is fine too.
         </p>
         <label className="block text-sm">
-          <span className="font-semibold">Date</span>
+          <span className="font-semibold">Today&apos;s date</span>
           <input
             type="text"
             value={state.verdict.date}
@@ -319,20 +351,20 @@ export function OwnerTestNotes() {
                 verdict: { ...prev.verdict, date: e.target.value },
               }))
             }
-            placeholder="MM/DD/YYYY"
+            placeholder="Example: 07/18/2026"
             className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
           />
         </label>
         <fieldset>
           <legend className="text-sm font-semibold">
-            Overall direction (phases 0–10 as demoed)
+            Overall — keep building in this direction?
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {(
               [
-                ["approved", "Approved"],
-                ["approved_notes", "Approved with notes"],
-                ["pause", "Pause / rework"],
+                ["approved", "Yes — looks good"],
+                ["approved_notes", "Yes — with notes below"],
+                ["pause", "Pause / needs rework first"],
               ] as const
             ).map(([v, label]) => (
               <label
@@ -361,7 +393,9 @@ export function OwnerTestNotes() {
           </div>
         </fieldset>
         <label className="block text-sm">
-          <span className="font-semibold">Biggest gap for daily firm use</span>
+          <span className="font-semibold">
+            Biggest gap for daily firm use right now
+          </span>
           <textarea
             value={state.verdict.biggestGap}
             onChange={(e) =>
@@ -371,18 +405,21 @@ export function OwnerTestNotes() {
               }))
             }
             rows={2}
+            placeholder="What is missing that would block real use?"
             className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
           />
         </label>
         <fieldset>
-          <legend className="text-sm font-semibold">Next priority</legend>
+          <legend className="text-sm font-semibold">
+            What should Brett work on next?
+          </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {(
               [
-                ["deepen", "Deepen CM / Lit"],
-                ["phase7", "Phase 7 after screen sign-off"],
-                ["casepeer", "CasePeer rehearsal (after BAA)"],
-                ["other", "Other"],
+                ["deepen", "More Case Manager / Litigation detail"],
+                ["phase7", "Demand / Liens / Review after I approve screens"],
+                ["casepeer", "Practice load from CasePeer (after privacy paperwork)"],
+                ["other", "Something else"],
               ] as const
             ).map(([v, label]) => (
               <label
@@ -419,13 +456,13 @@ export function OwnerTestNotes() {
                   verdict: { ...prev.verdict, nextOther: e.target.value },
                 }))
               }
-              placeholder="Describe other priority"
+              placeholder="What should come next?"
               className="mt-2 w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
             />
           )}
         </fieldset>
         <label className="block text-sm">
-          <span className="font-semibold">Bugs / UX notes</span>
+          <span className="font-semibold">Problems or confusing spots</span>
           <textarea
             value={state.verdict.bugs}
             onChange={(e) =>
@@ -435,12 +472,15 @@ export function OwnerTestNotes() {
               }))
             }
             rows={4}
-            placeholder={"URL + what you clicked + what you saw\n- …"}
+            placeholder={
+              "Write freely. Helpful format:\n- Which screen\n- What you clicked\n- What happened (or what you expected)"
+            }
             className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
           />
         </label>
         <p className="text-xs text-muted">
-          Tester: Michael Tuttle · Signed verbally / email is fine.
+          Tester: Michael Tuttle — no formal signature needed; email or a call
+          is enough.
         </p>
       </section>
     </div>
