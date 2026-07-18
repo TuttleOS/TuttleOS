@@ -88,7 +88,8 @@ Local has **no** Supabase Auth/RLS JWT bridge until you add Supabase local (need
 | `05_upgrade_v2.5_naming.sql` | Naming-standard renames |
 | `tests/test_v2.5_battery.sql` | 14 behavior asserts — must PASS |
 
-**Skip for now:** `optional/06`, `optional/07`, CasePeer `migration/` (owner + real CSVs).
+**Skip for now:** `optional/06`, `optional/07`.  
+**CasePeer load (Phase 10):** owner-run only — see [`CASEPEER_MIGRATION.md`](CASEPEER_MIGRATION.md). Never put export CSVs in this kit.
 
 ---
 

@@ -4,7 +4,8 @@
 **Sources of truth:** `MASTER_PROMPT.md`, `docs/ui-design-decisions.md`, `docs/COMPLIANCE_GATES.md`, `mockups/*.html`.  
 **Stack:** Next.js (App Router) + Tailwind + Supabase (Auth + Postgres + RLS). Schema lives in `sql/01`→`05`; do **not** invent workflow the DB does not support.  
 **Schema diagrams:** [`docs/SCHEMA_FLOW.md`](SCHEMA_FLOW.md) (spine, stages, engines, RLS).  
-**Phase 7 owner stop:** [`docs/PHASE7_SCREEN_PROPOSALS.md`](PHASE7_SCREEN_PROPOSALS.md).
+**Phase 7 owner stop:** [`docs/PHASE7_SCREEN_PROPOSALS.md`](PHASE7_SCREEN_PROPOSALS.md).  
+**Phase 10 runbook:** [`docs/CASEPEER_MIGRATION.md`](CASEPEER_MIGRATION.md).
 
 ---
 
@@ -75,10 +76,10 @@ flowchart TD
   style P7 fill:#f8f9fa
   style P8 fill:#f8d7da
   style P9 fill:#f8f9fa
-  style P10 fill:#f8f9fa
+  style P10 fill:#fff3cd
 ```
 
-**Legend:** green = MVP shipped · yellow = finishing · red = blocked on owner/BAA · gray = not started
+**Legend:** green = MVP shipped · yellow = finishing / owner-run · red = blocked on owner/BAA · gray = not started
 
 ### How a matter moves through the firm (product flow)
 
@@ -119,14 +120,14 @@ flowchart TD
 | **0** | Schema on Supabase; battery green | **Done (eng)** | Owner still owns BAA before real PHI |
 | **1** | Auth, shell, role routing, search, theme | **Done (MVP)** | MFA enforcement / firm password manager = owner ops |
 | **2** | Intake workspace | **Done (MVP)** | Mockup: `intake-workspace-mockup.html` |
-| **3** | Case Manager workspace | **Done (MVP)** | Caseload, matter Focus, My Tasks — not every §6 card |
+| **3** | Case Manager workspace | **Done (MVP)+** | Caseload, Focus, Tasks, Provider Calls, **PD / coverage / records / demand+negotiation / add-provider** |
 | **4** | Litigation Paralegal workspace | **Done (MVP)** | Caseload, Deadline Horizon, tasks, matter Focus — **deferred:** pizza tracker, full discovery/mediation, RingCentral |
 | **5** | Owner dashboard | **Done (MVP)** | Stalled + Approvals + SOL + override strip — deferred: Conflicts / 7‑Day Reviews as own routes |
 | **6** | Cross-workspace switcher + companions + notifications | **Done (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
 | **7** | Demand / Liens / Review | **Skeleton — awaiting owner** | Read-only queues + `docs/PHASE7_SCREEN_PROPOSALS.md` — **STOP** before detailing |
 | **8** | Documents + AI | **Deferred — no AI yet** | Owner: do **not** adopt OCR/Claude/AI until explicitly reopened; Storage docs still optional |
 | **9** | Calendar ↔ deadlines | **Scaffold only — no live calendar** | Dry-run adapters + `/owner/calendar`; owner: do **not** connect Graph/Google until reopened |
-| **10** | CasePeer CSV load | **Owner-run** | CSVs stay out of git |
+| **10** | CasePeer CSV load | **Scaffold — owner-run** | Runbook + hardened migrate + `/owner/migration`; CSVs stay in Dropbox |
 
 “MVP” here means **schema-backed vertical slices** that match AppShell nav and mockup *jobs*, not pixel-perfect full mockups.
 
@@ -152,8 +153,11 @@ flowchart TD
 
 ### Phase 3 — Case Manager
 - Mockup: `mockups/case-manager-workspace-mockup.html`.
-- `/cases`, `/cases/[id]`, `/cases/tasks`; stalled flags via `workflow.v_stalled_cases`.
-- Full mockup has many cards (treatment, PD, demands, financials) — ship incrementally; **do not invent** finance workflows behind RLS.
+- `/cases`, `/cases/[id]`, `/cases/tasks`, `/cases/calls`.
+- Matter cards: checklist, treatment, **coverage boxes** (+ add provider / N/A via `medical.coverage_na`), **PD**, **records**, **demand & negotiation**, insurance, notes.
+- SQL: `sql/09_upgrade_v2.8_coverage_na.sql` for N/A declarations.
+- Still lighter than full mockup: full 3-address provider intake, PD DINSCO/PINSCO routing, adjuster roster, clinical-event checkboxes — incremental.
+- **Do not invent** finance workflows behind RLS.
 
 ### Phase 4 — Litigation Paralegal
 - Mockup: `mockups/litigation-paralegal-workspace-mockup.html`.
@@ -188,7 +192,11 @@ flowchart TD
 - **Owner decision (2026-07-18):** do **not** connect a live calendar yet — leave mode `dry_run`, no OAuth/DPA wiring until explicitly reopened. Live push still requires gate 9.1 when that happens.
 
 ### Phase 10 — CasePeer migration
-- `sql/migration/migrate_v2.5.sql`; CSVs in firm Dropbox only; owner-controlled run; Dropbox remains frozen archive.
+- **Runbook:** [`docs/CASEPEER_MIGRATION.md`](CASEPEER_MIGRATION.md).
+- **Pipeline:** `sql/migration/load_staging.py` → `migrate_v2.5.sql` → `post_load_checks.sql` via `./scripts/run_casepeer_migrate.sh` (type `MIGRATE` to confirm).
+- **App:** read-only `/owner/migration` (counts + recent CasePeer matters) — no CSV upload in the UI.
+- CSVs in firm Dropbox only; owner-controlled run; Dropbox remains frozen archive (gates 10.1–10.4).
+- **Do not run** against production until Supabase BAA is signed and Michael confirms the export.
 
 ---
 

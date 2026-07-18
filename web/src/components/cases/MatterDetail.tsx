@@ -11,8 +11,22 @@ import {
   createFollowUpTaskAction,
   reopenTaskAction,
 } from "@/lib/cases/actions";
-import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember } from "@/lib/cases/types";
+import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember, type TreatmentEpisodeRow } from "@/lib/cases/types";
 import { flagList, type StalledRow } from "@/lib/cases/types";
+import {
+  CoverageBoxesCard,
+  DemandNegotiationCard,
+  PropertyDamageCard,
+  RecordsTrackingCard,
+} from "@/components/cases/MatterDeepenCards";
+import type {
+  CoverageBoxState,
+  DemandRow,
+  NegotiationRow,
+  PdClaimRow,
+  ProviderDirectoryRow,
+  RecordRequestRow,
+} from "@/lib/cases/matterExtras";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
@@ -20,6 +34,10 @@ import type { StaffRoleCode } from "@/lib/staff";
 const JUMP: Record<string, string> = {
   checklist: "card-checklist",
   treatment: "card-treatment",
+  coverage: "card-coverage",
+  pd: "card-pd",
+  records: "card-records",
+  demand: "card-demand",
   insurance: "card-insurance",
   notes: "card-notes",
   actions: "card-actions",
@@ -39,6 +57,12 @@ export function MatterDetailView({
   companions,
   stalled,
   viewerRole,
+  pdClaims,
+  coverageBoxes,
+  recordRequests,
+  demands,
+  negotiations,
+  providerDirectory,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -46,7 +70,7 @@ export function MatterDetailView({
   email: string | null;
   tasks: TaskRow[];
   notes: { note_id: string; body: string; pinned: boolean; created_at: string }[];
-  episodes: { treatment_episode_id: string; status: string; is_primary_pm: boolean; approx_balance: number | null }[];
+  episodes: TreatmentEpisodeRow[];
   claims: { claim_id: string; claim_number: string | null; claim_role: string; status: string | null }[];
   companions: {
     client_matter_id: string;
@@ -56,6 +80,12 @@ export function MatterDetailView({
   }[];
   stalled: StalledRow | null;
   viewerRole?: StaffRoleCode | string;
+  pdClaims: PdClaimRow[];
+  coverageBoxes: CoverageBoxState[];
+  recordRequests: RecordRequestRow[];
+  demands: DemandRow[];
+  negotiations: NegotiationRow[];
+  providerDirectory: ProviderDirectoryRow[];
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -257,6 +287,32 @@ export function MatterDetailView({
             onClick={() => jump("treatment")}
           />
           <StatusLink
+            label="Coverage"
+            ok={coverageBoxes.every((b) => b.status !== "unanswered")}
+            onClick={() => jump("coverage")}
+          />
+          <StatusLink
+            label="PD"
+            ok={
+              pdClaims.length === 0 ||
+              pdClaims.every((p) => p.status === "resolved" || p.status === "n_a")
+            }
+            onClick={() => jump("pd")}
+          />
+          <StatusLink
+            label="Records"
+            ok={
+              recordRequests.length === 0 ||
+              recordRequests.every((r) => r.status === "received")
+            }
+            onClick={() => jump("records")}
+          />
+          <StatusLink
+            label="Demand"
+            ok={demands.some((d) => d.sent_date)}
+            onClick={() => jump("demand")}
+          />
+          <StatusLink
             label="Insurance"
             ok={claims.length > 0}
             onClick={() => jump("insurance")}
@@ -423,29 +479,142 @@ export function MatterDetailView({
                 No treatment episodes yet. Add providers as care starts.
               </p>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-xs text-muted">
-                    <th className="py-1 font-semibold">Status</th>
-                    <th className="py-1 font-semibold">Primary PM</th>
-                    <th className="py-1 font-semibold">Balance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {episodes.map((e) => (
-                    <tr key={e.treatment_episode_id} className="border-t border-grid">
-                      <td className="py-2">{e.status}</td>
-                      <td className="py-2">{e.is_primary_pm ? "Yes" : "—"}</td>
-                      <td className="py-2">
-                        {e.approx_balance != null
-                          ? `$${Number(e.approx_balance).toLocaleString()}`
-                          : "—"}
-                      </td>
+              <>
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-xs text-muted">
+                      <th className="py-1 font-semibold">Provider</th>
+                      <th className="py-1 font-semibold">Status</th>
+                      <th className="py-1 font-semibold">Visits</th>
+                      <th className="py-1 font-semibold">Balance</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {episodes.map((e) => (
+                      <tr
+                        key={e.treatment_episode_id}
+                        className="border-t border-grid"
+                      >
+                        <td className="py-2">
+                          <div className="font-semibold">
+                            {e.provider_name ?? "Provider"}
+                          </div>
+                          <div className="text-xs text-muted">
+                            {e.provider_type ?? "—"}
+                            {e.is_primary_pm ? " · Primary PM" : ""}
+                            {e.under_lop ? " · LOP" : ""}
+                          </div>
+                        </td>
+                        <td className="py-2">{e.status}</td>
+                        <td className="py-2 text-xs text-muted">
+                          {formatDate(e.first_visit_date)}
+                          {e.last_visit_date
+                            ? ` → ${formatDate(e.last_visit_date)}`
+                            : ""}
+                        </td>
+                        <td className="py-2">
+                          {e.approx_balance != null
+                            ? `$${Number(e.approx_balance).toLocaleString()}`
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {episodes.some((e) => e.is_primary_pm) && (
+                  <p className="mt-3 text-xs text-muted">
+                    Primary PM bi-weekly checks live on{" "}
+                    <Link
+                      href="/cases/calls"
+                      className="font-semibold text-accent-dk hover:underline"
+                    >
+                      Provider Calls
+                    </Link>
+                    .
+                  </p>
+                )}
+              </>
             )}
+          </Card>
+
+          <Card
+            id="card-coverage"
+            title={`Coverage boxes · ${coverageBoxes.filter((b) => b.status === "unanswered").length} open`}
+            open={isOpen(
+              "card-coverage",
+              coverageBoxes.some((b) => b.status === "unanswered"),
+            )}
+            onToggle={() => toggle("card-coverage")}
+          >
+            <CoverageBoxesCard
+              matterId={matter.client_matter_id}
+              boxes={coverageBoxes}
+              episodes={episodes}
+              directory={providerDirectory}
+              pending={pending}
+              run={run}
+            />
+          </Card>
+
+          <Card
+            id="card-pd"
+            title={`Property damage · ${pdClaims.length}`}
+            open={isOpen(
+              "card-pd",
+              Boolean(stalled?.flag_pd_unresolved) ||
+                pdClaims.some((p) => p.status === "in_progress"),
+            )}
+            onToggle={() => toggle("card-pd")}
+          >
+            <PropertyDamageCard
+              matterId={matter.client_matter_id}
+              incidentGroupId={matter.incident_group_id}
+              rows={pdClaims}
+              pending={pending}
+              run={run}
+            />
+          </Card>
+
+          <Card
+            id="card-records"
+            title={`Records & bills · ${recordRequests.length}`}
+            open={isOpen(
+              "card-records",
+              Boolean(stalled?.flag_records_not_ordered) ||
+                recordRequests.some((r) =>
+                  ["sent", "partial", "problem"].includes(r.status),
+                ),
+            )}
+            onToggle={() => toggle("card-records")}
+          >
+            <RecordsTrackingCard
+              matterId={matter.client_matter_id}
+              episodes={episodes}
+              rows={recordRequests}
+              pending={pending}
+              run={run}
+            />
+          </Card>
+
+          <Card
+            id="card-demand"
+            title={`Demand & negotiation · ${demands.length} demand${demands.length === 1 ? "" : "s"}`}
+            open={isOpen(
+              "card-demand",
+              Boolean(stalled?.flag_demand_response_overdue) ||
+                ["demand", "negotiation", "records"].includes(
+                  matter.current_stage_code,
+                ),
+            )}
+            onToggle={() => toggle("card-demand")}
+          >
+            <DemandNegotiationCard
+              matterId={matter.client_matter_id}
+              demands={demands}
+              negotiations={negotiations}
+              pending={pending}
+              run={run}
+            />
           </Card>
 
           <Card

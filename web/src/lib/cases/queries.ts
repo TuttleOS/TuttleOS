@@ -2,9 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   CaseloadRow,
   MatterDetail,
+  ProviderCallDue,
   StalledRow,
   TaskRow,
   TeamMember,
+  TreatmentEpisodeRow,
 } from "./types";
 import { STAGE_LABEL } from "./types";
 
@@ -338,19 +340,69 @@ export async function listPinnedNotes(matterId: string) {
   return data ?? [];
 }
 
-export async function listTreatmentEpisodes(matterId: string) {
+export async function listTreatmentEpisodes(
+  matterId: string,
+): Promise<TreatmentEpisodeRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("medical")
     .from("treatment_episode")
     .select(
-      "treatment_episode_id, status, is_primary_pm, approx_balance, first_visit, last_visit, provider_id",
+      `treatment_episode_id, status, is_primary_pm, under_lop, approx_balance,
+       balance_as_of, first_visit_date, last_visit_date, provider_id,
+       provider:provider_id(provider_type, organization:organization_id(name))`,
     )
     .eq("client_matter_id", matterId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) return [];
-  return data ?? [];
+
+  return (data ?? []).map((e) => {
+    const provider = e.provider as unknown as {
+      provider_type?: string;
+      organization?: { name?: string } | null;
+    } | null;
+    return {
+      treatment_episode_id: e.treatment_episode_id as string,
+      status: e.status as string,
+      is_primary_pm: Boolean(e.is_primary_pm),
+      under_lop: Boolean(e.under_lop),
+      approx_balance:
+        e.approx_balance != null ? Number(e.approx_balance) : null,
+      balance_as_of: (e.balance_as_of as string | null) ?? null,
+      first_visit_date: (e.first_visit_date as string | null) ?? null,
+      last_visit_date: (e.last_visit_date as string | null) ?? null,
+      provider_id: e.provider_id as string,
+      provider_name: provider?.organization?.name ?? null,
+      provider_type: provider?.provider_type ?? null,
+    };
+  });
+}
+
+export async function listProviderCallsDue(opts?: {
+  staffId?: string;
+  ownedOnly?: boolean;
+}): Promise<ProviderCallDue[]> {
+  const supabase = createClient();
+  let q = supabase.schema("medical").from("v_provider_calls_due").select("*");
+  if (opts?.ownedOnly && opts.staffId) {
+    q = q.eq("owner_staff_id", opts.staffId);
+  }
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    task_id: r.task_id as string,
+    client_matter_id: r.client_matter_id as string,
+    display_name: r.display_name as string,
+    due_date: (r.due_date as string | null) ?? null,
+    owner_staff_id: (r.owner_staff_id as string | null) ?? null,
+    treatment_episode_id: r.treatment_episode_id as string,
+    provider_name: r.provider_name as string,
+    approx_balance:
+      r.approx_balance != null ? Number(r.approx_balance) : null,
+    balance_as_of: (r.balance_as_of as string | null) ?? null,
+    episode_status: r.episode_status as string,
+  }));
 }
 
 export async function listClaims(matterId: string) {

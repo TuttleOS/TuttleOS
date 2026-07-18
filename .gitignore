@@ -4,6 +4,14 @@
 .env.*.local
 !.env.example
 
+# CasePeer real-client exports (Phase 10) — Dropbox only, never git
+**/CasePeer*/**
+**/CasePeer exported reports/**
+*ClientsReport*.csv
+*OpenCasesReport*.csv
+*NotesReport*.csv
+sql/migration/data/
+
 # OS / editor
 .DS_Store
 *.swp
@@ -25,3 +33,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+
+# Python
+__pycache__/
+*.py[cod]

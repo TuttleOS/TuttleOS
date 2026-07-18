@@ -32,6 +32,7 @@ export function Caseload({ rows }: { rows: CaseloadRow[] }) {
           label="Provider calls due"
           value={tiles.provider}
           tone={tiles.provider ? "warn" : undefined}
+          href="/cases/calls"
         />
         <Tile label="Open checklist items" value={tiles.checklist} />
         <Tile
@@ -168,25 +169,35 @@ function Tile({
   label,
   value,
   tone,
+  href,
 }: {
   label: string;
   value: number;
   tone?: "warn" | "crit";
+  href?: string;
 }) {
-  return (
-    <div
-      className={`rounded-panel border border-grid bg-surface px-4 py-3 shadow-soft ${
-        tone === "crit"
-          ? "border-danger/40"
-          : tone === "warn"
-            ? "border-warning/40"
-            : ""
-      }`}
-    >
+  const inner = (
+    <>
       <div className="text-2xl font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
-    </div>
+    </>
   );
+  const cls = `rounded-panel border border-grid bg-surface px-4 py-3 shadow-soft ${
+    tone === "crit"
+      ? "border-danger/40"
+      : tone === "warn"
+        ? "border-warning/40"
+        : ""
+  } ${href ? "block no-underline transition hover:bg-surface-2/60" : ""}`;
+
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={cls}>{inner}</div>;
 }
 
 function Badge({

@@ -32,10 +32,11 @@ sql/                      ← APPLIED schema, in order (01 → 05)
     test_v2.4_18001.sql         historical (pre-rename names)
   migration/
     migrate_v2.5.sql            CasePeer staging → schema transform (current)
-    migrate.sql                 historical pre-rename version
-    load_staging_v21.py         CSV → staging loader
-    NOTE: the CasePeer export CSVs are NOT in this kit (real client data).
-          They live in the firm's Dropbox under "0 Tuttle OS/CasePeer exported reports".
+    load_staging.py             CSV → staging (Dropbox path via CASEPEER_CSV_DIR)
+    post_load_checks.sql        gate 10.3 spot checks
+    migrate.sql / load_staging_v21.py   historical
+    NOTE: CSVs are NOT in this kit — see docs/CASEPEER_MIGRATION.md
+  scripts/run_casepeer_migrate.sh       owner-run Phase 10 orchestration
 
 docs/
   ui-design-decisions.md        THE RULEBOOK — every owner decision, numbered

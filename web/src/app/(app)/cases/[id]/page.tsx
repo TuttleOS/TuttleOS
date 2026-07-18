@@ -10,6 +10,15 @@ import {
   listPinnedNotes,
   listTreatmentEpisodes,
 } from "@/lib/cases/queries";
+import {
+  buildCoverageBoxes,
+  listCoverageNa,
+  listDemands,
+  listNegotiations,
+  listPdClaimsForIncident,
+  listProviderDirectory,
+  listRecordRequests,
+} from "@/lib/cases/matterExtras";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { createClient } from "@/lib/supabase/server";
 import type { StalledRow } from "@/lib/cases/types";
@@ -25,16 +34,37 @@ export default async function MatterPage({
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
-  const [team, contacts, tasks, notes, episodes, claims, companions] =
-    await Promise.all([
-      getMatterTeam(matter.client_matter_id),
-      getPersonContacts(matter.client_person_id),
-      listMatterTasks(matter.client_matter_id),
-      listPinnedNotes(matter.client_matter_id),
-      listTreatmentEpisodes(matter.client_matter_id),
-      listClaims(matter.client_matter_id),
-      listCompanionMatters(matter.incident_group_id, matter.client_matter_id),
-    ]);
+  const [
+    team,
+    contacts,
+    tasks,
+    notes,
+    episodes,
+    claims,
+    companions,
+    pdClaims,
+    naCats,
+    recordRequests,
+    demands,
+    negotiations,
+    providerDirectory,
+  ] = await Promise.all([
+    getMatterTeam(matter.client_matter_id),
+    getPersonContacts(matter.client_person_id),
+    listMatterTasks(matter.client_matter_id),
+    listPinnedNotes(matter.client_matter_id),
+    listTreatmentEpisodes(matter.client_matter_id),
+    listClaims(matter.client_matter_id),
+    listCompanionMatters(matter.incident_group_id, matter.client_matter_id),
+    listPdClaimsForIncident(matter.incident_group_id),
+    listCoverageNa(matter.client_matter_id),
+    listRecordRequests(matter.client_matter_id),
+    listDemands(matter.client_matter_id),
+    listNegotiations(matter.client_matter_id),
+    listProviderDirectory(),
+  ]);
+
+  const coverageBoxes = buildCoverageBoxes(episodes, naCats);
 
   const supabase = createClient();
   const { data: stalled } = await supabase
@@ -64,6 +94,12 @@ export default async function MatterPage({
       }
       stalled={(stalled as StalledRow | null) ?? null}
       viewerRole={staff.role_code}
+      pdClaims={pdClaims}
+      coverageBoxes={coverageBoxes}
+      recordRequests={recordRequests}
+      demands={demands}
+      negotiations={negotiations}
+      providerDirectory={providerDirectory}
     />
   );
 }

@@ -1,16 +1,95 @@
 -- ============================================================
--- CasePeer -> Tuttle OS migration transform (dry run)
+-- CasePeer -> Tuttle OS migration transform
 -- Idempotent: deletes prior migrated rows first (matched by casepeer ids)
+-- Prerequisites: staging.clients / open_cases / notes loaded (see load_staging.py)
+-- Owner runbook: docs/CASEPEER_MIGRATION.md
+-- Override expected open-case count:
+--   psql -v expected_cases=770 -f sql/migration/migrate_v2.5.sql
 -- ============================================================
 \set ON_ERROR_STOP on
+\if :{?expected_cases}
+\else
+\set expected_cases 770
+\endif
 BEGIN;
 
 -- Migration actor: fixed UUID so audit rows written during the load are
--- attributed to a dedicated, identifiable actor (MF-04 resolution).
+-- attributed to a dedicated, identifiable actor (MF-04 resolution / gate 10.2).
 SELECT set_config('app.staff_id', '00000000-0000-0000-0000-00000000c0de', false);
 
 -- ------------------------------------------------------------
--- 0. Link table: pair client rows to open_case rows
+-- 0a. Remove prior CasePeer-migrated rows (by casepeer_case_id)
+-- ------------------------------------------------------------
+CREATE TEMP TABLE _mig_prior ON COMMIT DROP AS
+SELECT client_matter_id, incident_group_id, client_person_id, casepeer_case_id
+FROM core.client_matter
+WHERE casepeer_case_id IS NOT NULL
+  AND deleted_at IS NULL;
+
+DELETE FROM workflow.communication_log
+WHERE client_matter_id IN (SELECT client_matter_id FROM _mig_prior);
+
+DELETE FROM core.limitations_analysis
+WHERE client_matter_id IN (SELECT client_matter_id FROM _mig_prior);
+
+DELETE FROM core.staff_assignment
+WHERE client_matter_id IN (SELECT client_matter_id FROM _mig_prior);
+
+DELETE FROM workflow.note
+WHERE entity_id IN (SELECT client_matter_id FROM _mig_prior);
+
+UPDATE core.intake_lead il
+SET resulting_matter_id = NULL
+WHERE resulting_matter_id IN (SELECT client_matter_id FROM _mig_prior);
+
+DELETE FROM core.intake_lead il
+WHERE il.resulting_matter_id IS NULL
+  AND il.status = 'signed'
+  AND il.person_id IN (SELECT client_person_id FROM _mig_prior)
+  AND NOT EXISTS (
+    SELECT 1 FROM core.client_matter m
+    WHERE m.client_person_id = il.person_id
+      AND m.casepeer_case_id IS NULL
+      AND m.deleted_at IS NULL
+  );
+
+DELETE FROM core.client_matter
+WHERE client_matter_id IN (SELECT client_matter_id FROM _mig_prior);
+
+DELETE FROM core.incident_group ig
+WHERE ig.incident_group_id IN (SELECT DISTINCT incident_group_id FROM _mig_prior)
+  AND NOT EXISTS (
+    SELECT 1 FROM core.client_matter m
+    WHERE m.incident_group_id = ig.incident_group_id
+  );
+
+-- Drop orphaned client persons from a prior migration pass (never staff).
+DELETE FROM core.contact_point cp
+WHERE cp.person_id IN (SELECT DISTINCT client_person_id FROM _mig_prior)
+  AND NOT EXISTS (
+    SELECT 1 FROM core.client_matter m WHERE m.client_person_id = cp.person_id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM core.intake_lead il WHERE il.person_id = cp.person_id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM core.staff s WHERE s.person_id = cp.person_id
+  );
+
+DELETE FROM core.person p
+WHERE p.person_id IN (SELECT DISTINCT client_person_id FROM _mig_prior)
+  AND NOT EXISTS (
+    SELECT 1 FROM core.client_matter m WHERE m.client_person_id = p.person_id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM core.intake_lead il WHERE il.person_id = p.person_id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM core.staff s WHERE s.person_id = p.person_id
+  );
+
+-- ------------------------------------------------------------
+-- 0b. Link table: pair client rows to open_case rows
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS staging.case_link;
 CREATE TABLE staging.case_link AS
@@ -55,13 +134,14 @@ SELECT o.case_id,
 FROM o
 JOIN c ON c."case" = o."case" AND c.intake_date = o.intake AND c.rn = o.rn;
 
--- sanity: must be exactly 770 with unique case_id
+-- sanity: expected unique case_id count (default 770 for the known Dropbox export)
 DO $$
-DECLARE n int; u int;
+DECLARE n int; u int; expected int := :expected_cases;
 BEGIN
   SELECT count(*), count(DISTINCT case_id) INTO n, u FROM staging.case_link;
-  IF n <> 770 OR u <> 770 THEN
-    RAISE EXCEPTION 'case_link expected 770 unique rows, got % rows / % unique', n, u;
+  IF n <> expected OR u <> expected THEN
+    RAISE EXCEPTION 'case_link expected % unique rows, got % rows / % unique (override: -v expected_cases=N)',
+      expected, n, u;
   END IF;
 END $$;
 
@@ -136,19 +216,60 @@ INSERT INTO staging.staff_map (cp_name, first_name, last_name, role_code, is_att
  ('Christina Calderon','Christina','Calderon','case_manager',false,false),
  ('CasePeer Migration','CasePeer','Migration','admin',false,false);
 
-UPDATE staging.staff_map m SET person_id = gen_random_uuid(), staff_id = gen_random_uuid();
-UPDATE staging.staff_map SET staff_id = '00000000-0000-0000-0000-00000000c0de'
- WHERE cp_name = 'CasePeer Migration';
+-- Prefer existing staff already seeded / linked to Auth (match by person name).
+UPDATE staging.staff_map m
+SET person_id = s.person_id,
+    staff_id = s.staff_id
+FROM core.staff s
+JOIN core.person p ON p.person_id = s.person_id
+WHERE m.cp_name <> 'CasePeer Migration'
+  AND lower(p.first_name) = lower(m.first_name)
+  AND lower(p.last_name) = lower(m.last_name)
+  AND s.active;
 
+-- Migration actor = fixed UUID …c0de (same as battery System Actor / MF-04).
 INSERT INTO core.person (person_id, first_name, last_name, preferred_language)
-SELECT person_id, first_name, last_name, 'en' FROM staging.staff_map;
+SELECT '00000000-0000-0000-0000-00000000c0d1', 'System', 'Actor', 'en'
+WHERE NOT EXISTS (
+  SELECT 1 FROM core.person WHERE person_id = '00000000-0000-0000-0000-00000000c0d1'
+);
 
 INSERT INTO core.staff (staff_id, person_id, role_code, is_attorney, can_approve_level,
                         can_clear_conflicts, active)
-SELECT staff_id, person_id, role_code, is_attorney, can_approve,
-       can_approve,   -- workflow §2/§8: Level approvers (Michael, Daniel) also clear conflicts
-       cp_name <> 'CasePeer Migration'
-FROM staging.staff_map;
+SELECT '00000000-0000-0000-0000-00000000c0de',
+       '00000000-0000-0000-0000-00000000c0d1',
+       'admin', false, false, false, false
+WHERE NOT EXISTS (
+  SELECT 1 FROM core.staff WHERE staff_id = '00000000-0000-0000-0000-00000000c0de'
+);
+
+UPDATE staging.staff_map
+SET person_id = (SELECT person_id FROM core.staff
+                 WHERE staff_id = '00000000-0000-0000-0000-00000000c0de'),
+    staff_id = '00000000-0000-0000-0000-00000000c0de'
+WHERE cp_name = 'CasePeer Migration';
+
+-- New staff only (unmatched names) get fresh ids.
+UPDATE staging.staff_map m
+SET person_id = gen_random_uuid(),
+    staff_id = gen_random_uuid()
+WHERE m.person_id IS NULL
+  AND m.cp_name <> 'CasePeer Migration';
+
+INSERT INTO core.person (person_id, first_name, last_name, preferred_language)
+SELECT m.person_id, m.first_name, m.last_name, 'en'
+FROM staging.staff_map m
+WHERE m.cp_name <> 'CasePeer Migration'
+  AND NOT EXISTS (SELECT 1 FROM core.person p WHERE p.person_id = m.person_id);
+
+INSERT INTO core.staff (staff_id, person_id, role_code, is_attorney, can_approve_level,
+                        can_clear_conflicts, active)
+SELECT m.staff_id, m.person_id, m.role_code, m.is_attorney, m.can_approve,
+       m.can_approve,   -- workflow §2/§8: Level approvers also clear conflicts
+       true
+FROM staging.staff_map m
+WHERE m.cp_name <> 'CasePeer Migration'
+  AND NOT EXISTS (SELECT 1 FROM core.staff s WHERE s.staff_id = m.staff_id);
 
 -- ------------------------------------------------------------
 -- 3. Client persons (dedup by first+last+dob)

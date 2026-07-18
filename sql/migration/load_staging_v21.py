@@ -1,3 +1,5 @@
+# HISTORICAL — hardcoded Claude/Postgres paths from the original rehearsal.
+# Current loader: load_staging.py (+ docs/CASEPEER_MIGRATION.md).
 import csv, psycopg2, re
 conn = psycopg2.connect("dbname=tuttle_v21 user=claude host=/var/run/postgresql")
 cur = conn.cursor()

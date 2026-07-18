@@ -39,6 +39,7 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
   ],
   "/cases": [
     { href: "/cases", label: "My Caseload" },
+    { href: "/cases/calls", label: "Provider Calls" },
     { href: "/cases/tasks", label: "My Tasks" },
     {
       href: "/cases/financials",
@@ -57,6 +58,7 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/owner/approvals", label: "Approvals" },
     { href: "/owner/sol", label: "SOL Watch" },
     { href: "/owner/calendar", label: "Calendar sync" },
+    { href: "/owner/migration", label: "Migration" },
     { href: "/demands", label: "Demand queue" },
     { href: "/liens", label: "Lien worklist" },
     { href: "/review", label: "Viability reviews" },

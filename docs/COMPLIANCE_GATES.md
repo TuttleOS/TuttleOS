@@ -131,6 +131,8 @@ Apply **every** workspace phase:
 
 ## Phase 10 — CasePeer migration
 
+Runbook: [CASEPEER_MIGRATION.md](CASEPEER_MIGRATION.md). Engineering scaffold ships the script + hardened SQL; **gates stay open until the owner runs a real load**.
+
 | # | Gate | Owner | Done |
 |---|---|---|---|
 | 10.1 | CSVs remain outside git (Dropbox only) | O | ☐ |

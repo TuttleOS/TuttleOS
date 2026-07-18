@@ -120,6 +120,33 @@ export type TaskRow = {
   matter_label?: string | null;
 };
 
+export type ProviderCallDue = {
+  task_id: string;
+  client_matter_id: string;
+  display_name: string;
+  due_date: string | null;
+  owner_staff_id: string | null;
+  treatment_episode_id: string;
+  provider_name: string;
+  approx_balance: number | null;
+  balance_as_of: string | null;
+  episode_status: string;
+};
+
+export type TreatmentEpisodeRow = {
+  treatment_episode_id: string;
+  status: string;
+  is_primary_pm: boolean;
+  under_lop: boolean;
+  approx_balance: number | null;
+  balance_as_of: string | null;
+  first_visit_date: string | null;
+  last_visit_date: string | null;
+  provider_id: string;
+  provider_name: string | null;
+  provider_type: string | null;
+};
+
 export function flagList(row: StalledRow): string[] {
   const flags: string[] = [];
   if (row.flag_missing_level) flags.push("Missing Level");
