@@ -58,7 +58,7 @@ Live skeletons (empty until matching stage/data exists):
 ## 4. Explicitly out of scope until signed
 
 - Inventing email/SMS cadences  
-- Fake “AI draft demand” without Phase 8 + BAAs  
+- Fake “AI draft demand” (owner: **no AI in the project yet** — Phase 8 AI deferred)  
 - Hard-coding dropdowns outside `ref.*`  
 - Finance UI beyond what RLS already allows  
 

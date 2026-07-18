@@ -124,7 +124,7 @@ flowchart TD
 | **5** | Owner dashboard | **Done (MVP)** | Stalled + Approvals + SOL + override strip — deferred: Conflicts / 7‑Day Reviews as own routes |
 | **6** | Cross-workspace switcher + companions + notifications | **Done (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
 | **7** | Demand / Liens / Review | **Skeleton — awaiting owner** | Read-only queues + `docs/PHASE7_SCREEN_PROPOSALS.md` — **STOP** before detailing |
-| **8** | Documents + AI | **Blocked until owner** | Optional SQL; BAAs required before PHI OCR/AI |
+| **8** | Documents + AI | **Deferred — no AI yet** | Owner: do **not** adopt OCR/Claude/AI until explicitly reopened; Storage docs still optional |
 | **9** | Calendar ↔ deadlines | **Later** | |
 | **10** | CasePeer CSV load | **Owner-run** | CSVs stay out of git |
 
@@ -178,6 +178,7 @@ flowchart TD
 - Apply `sql/optional/06` then `07` only after owner approval.
 - Private Storage bucket; AI feature flag **off** by default.
 - **Hard stop:** OCR + Claude BAAs before real medical records.
+- **Owner decision (2026-07-18):** firm is **not using AI in the project yet** — skip AI/OCR work; do not apply `07` or enable summarize/extract. Document storage (`06`) may still open later without AI.
 
 ### Phase 9 — Calendar sync
 - Microsoft Graph **and** Google adapters; every `workflow.deadline` add/move/vacatur pushes.
