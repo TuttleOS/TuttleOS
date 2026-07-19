@@ -6,13 +6,12 @@ import {
   type DocumentRow,
 } from "./types";
 
+/** Flat select only — PostgREST cannot embed cross-schema FKs (ref/core). */
 const DOC_SELECT = `
-  document_id, client_matter_id, doc_type_code, title, status,
+  document_id, client_matter_id, doc_type_code, title, status, notes,
   received_date, executed_date, dropbox_path, storage_path, mime_type,
   byte_size, original_filename, uploaded_at, uploaded_by,
-  supersedes_document_id, notes, bates_prefix, bates_start, bates_end, created_at,
-  doc_type:doc_type_code(label, category),
-  uploader:uploaded_by(person:person_id(first_name, last_name))
+  supersedes_document_id, bates_prefix, bates_start, bates_end, created_at
 `;
 
 export async function listMatterDocuments(
@@ -27,7 +26,6 @@ export async function listMatterDocuments(
       .select(DOC_SELECT)
       .eq("client_matter_id", matterId)
       .is("deleted_at", null)
-      .order("uploaded_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -35,38 +33,80 @@ export async function listMatterDocuments(
       return [];
     }
 
-    const rows = (data ?? []) as unknown as Array<
-      Record<string, unknown> & {
-        document_id: string;
-        supersedes_document_id: string | null;
-        doc_type?: { label?: string; category?: string } | null;
-        uploader?: {
-          person?: { first_name?: string; last_name?: string } | null;
-        } | null;
+    const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+    if (rows.length === 0) return [];
+
+    const typeCodes = [
+      ...new Set(rows.map((r) => r.doc_type_code as string).filter(Boolean)),
+    ];
+    const uploaderIds = [
+      ...new Set(
+        rows
+          .map((r) => r.uploaded_by as string | null)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    const typeByCode = new Map<string, { label: string; category: string }>();
+    if (typeCodes.length > 0) {
+      const { data: types } = await supabase
+        .schema("ref")
+        .from("document_type")
+        .select("code, label, category")
+        .in("code", typeCodes);
+      for (const t of types ?? []) {
+        typeByCode.set(t.code as string, {
+          label: t.label as string,
+          category: (t.category as string) ?? "",
+        });
       }
-    >;
+    }
+
+    const nameByStaff = new Map<string, string>();
+    if (uploaderIds.length > 0) {
+      const { data: staffRows } = await supabase
+        .schema("core")
+        .from("staff")
+        .select("staff_id, person:person_id(first_name, last_name)")
+        .in("staff_id", uploaderIds);
+      for (const s of staffRows ?? []) {
+        const person = s.person as {
+          first_name?: string;
+          last_name?: string;
+        } | null;
+        const name = person
+          ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim()
+          : "";
+        if (name) nameByStaff.set(s.staff_id as string, name);
+      }
+    }
 
     const supersededIds = new Set(
       rows
-        .map((r) => r.supersedes_document_id)
+        .map((r) => r.supersedes_document_id as string | null)
         .filter((id): id is string => Boolean(id)),
     );
+    const titleById = new Map(
+      rows.map((r) => [r.document_id as string, r.title as string]),
+    );
 
-    const byId = new Map(rows.map((r) => [r.document_id, r]));
+    // Prefer uploaded_at ordering in memory (nulls last)
+    rows.sort((a, b) => {
+      const ta = (a.uploaded_at as string | null) ?? (a.created_at as string);
+      const tb = (b.uploaded_at as string | null) ?? (b.created_at as string);
+      return tb.localeCompare(ta);
+    });
 
     return rows.map((r) => {
-      const cat = r.doc_type?.category ?? null;
-      const person = r.uploader?.person;
-      const uploader_name = person
-        ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim() || null
-        : null;
-      const supersedes = r.supersedes_document_id
-        ? byId.get(r.supersedes_document_id)
-        : null;
+      const code = r.doc_type_code as string;
+      const meta = typeByCode.get(code);
+      const cat = meta?.category ?? null;
+      const sid = r.uploaded_by as string | null;
+      const supersedesId = r.supersedes_document_id as string | null;
       return {
-        document_id: r.document_id,
+        document_id: r.document_id as string,
         client_matter_id: (r.client_matter_id as string | null) ?? null,
-        doc_type_code: r.doc_type_code as string,
+        doc_type_code: code,
         title: r.title as string,
         status: r.status as string,
         received_date: (r.received_date as string | null) ?? null,
@@ -77,18 +117,20 @@ export async function listMatterDocuments(
         byte_size: (r.byte_size as number | null) ?? null,
         original_filename: (r.original_filename as string | null) ?? null,
         uploaded_at: (r.uploaded_at as string | null) ?? null,
-        uploaded_by: (r.uploaded_by as string | null) ?? null,
-        supersedes_document_id: r.supersedes_document_id,
+        uploaded_by: sid,
+        supersedes_document_id: supersedesId,
         notes: (r.notes as string | null) ?? null,
         bates_prefix: (r.bates_prefix as string | null) ?? null,
         bates_start: (r.bates_start as string | null) ?? null,
         bates_end: (r.bates_end as string | null) ?? null,
         created_at: r.created_at as string,
-        type_label: r.doc_type?.label ?? null,
+        type_label: meta?.label ?? code,
         type_category: cat,
-        uploader_name,
-        supersedes_title: supersedes ? (supersedes.title as string) : null,
-        is_superseded: supersededIds.has(r.document_id),
+        uploader_name: sid ? (nameByStaff.get(sid) ?? null) : null,
+        supersedes_title: supersedesId
+          ? (titleById.get(supersedesId) ?? null)
+          : null,
+        is_superseded: supersededIds.has(r.document_id as string),
         restricted: isRestrictedCategory(cat),
       };
     });
@@ -126,10 +168,7 @@ export async function listMatterAccessLog(
     const { data, error } = await supabase
       .schema("workflow")
       .from("document_access_log")
-      .select(
-        `access_id, document_id, staff_id, action, accessed_at,
-         staff:staff_id(person:person_id(first_name, last_name))`,
-      )
+      .select("access_id, document_id, staff_id, action, accessed_at")
       .in("document_id", docIds)
       .order("accessed_at", { ascending: false })
       .limit(limit);
@@ -139,24 +178,41 @@ export async function listMatterAccessLog(
       return [];
     }
 
-    return (data ?? []).map((r) => {
-      const staff = r.staff as {
-        person?: { first_name?: string; last_name?: string } | null;
-      } | null;
-      const person = staff?.person;
-      const staff_name = person
-        ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim() || null
-        : null;
-      return {
-        access_id: r.access_id as number,
-        document_id: r.document_id as string,
-        staff_id: r.staff_id as string,
-        action: r.action as string,
-        accessed_at: r.accessed_at as string,
-        document_title: titleById.get(r.document_id as string) ?? null,
-        staff_name,
-      };
-    });
+    const staffIds = [
+      ...new Set(
+        (data ?? [])
+          .map((r) => r.staff_id as string)
+          .filter(Boolean),
+      ),
+    ];
+    const nameByStaff = new Map<string, string>();
+    if (staffIds.length > 0) {
+      const { data: staffRows } = await supabase
+        .schema("core")
+        .from("staff")
+        .select("staff_id, person:person_id(first_name, last_name)")
+        .in("staff_id", staffIds);
+      for (const s of staffRows ?? []) {
+        const person = s.person as {
+          first_name?: string;
+          last_name?: string;
+        } | null;
+        const name = person
+          ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim()
+          : "";
+        if (name) nameByStaff.set(s.staff_id as string, name);
+      }
+    }
+
+    return (data ?? []).map((r) => ({
+      access_id: r.access_id as number,
+      document_id: r.document_id as string,
+      staff_id: r.staff_id as string,
+      action: r.action as string,
+      accessed_at: r.accessed_at as string,
+      document_title: titleById.get(r.document_id as string) ?? null,
+      staff_name: nameByStaff.get(r.staff_id as string) ?? null,
+    }));
   } catch (e) {
     console.error("listMatterAccessLog:", e);
     return [];
