@@ -36,16 +36,16 @@ export async function listMatterDocuments(
     const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
     if (rows.length === 0) return [];
 
-    const typeCodes = [
-      ...new Set(rows.map((r) => r.doc_type_code as string).filter(Boolean)),
-    ];
-    const uploaderIds = [
-      ...new Set(
+    const typeCodes = Array.from(
+      new Set(rows.map((r) => r.doc_type_code as string).filter(Boolean)),
+    );
+    const uploaderIds = Array.from(
+      new Set(
         rows
           .map((r) => r.uploaded_by as string | null)
           .filter((id): id is string => Boolean(id)),
       ),
-    ];
+    );
 
     const typeByCode = new Map<string, { label: string; category: string }>();
     if (typeCodes.length > 0) {
@@ -178,13 +178,13 @@ export async function listMatterAccessLog(
       return [];
     }
 
-    const staffIds = [
-      ...new Set(
+    const staffIds = Array.from(
+      new Set(
         (data ?? [])
           .map((r) => r.staff_id as string)
           .filter(Boolean),
       ),
-    ];
+    );
     const nameByStaff = new Map<string, string>();
     if (staffIds.length > 0) {
       const { data: staffRows } = await supabase
