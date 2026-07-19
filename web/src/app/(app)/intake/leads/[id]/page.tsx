@@ -6,6 +6,10 @@ import {
   listLeadAttempts,
 } from "@/lib/intake/queries";
 import { listContactHistory } from "@/lib/cases/queries";
+import {
+  getActivePackageForLead,
+  listCompanionLeadOptions,
+} from "@/lib/contracts/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { leadDisplayName } from "@/lib/intake/display";
 
@@ -33,7 +37,12 @@ export default async function LeadDetailPage({
       listContactHistory(lead.person_id, "email"),
     ]);
   }
-  const attempts = await listLeadAttempts(lead.intake_lead_id);
+
+  const [attempts, contractPackage, companionOptions] = await Promise.all([
+    listLeadAttempts(lead.intake_lead_id),
+    getActivePackageForLead(lead.intake_lead_id),
+    listCompanionLeadOptions(lead.intake_lead_id),
+  ]);
 
   const canSoftDelete =
     !!staff && (staff.is_attorney || staff.role_code === "admin");
@@ -42,6 +51,13 @@ export default async function LeadDetailPage({
     lead.person?.last_name ||
     leadDisplayName(lead).trim().split(/\s+/).filter(Boolean).at(-1) ||
     "LASTNAME";
+
+  const locationGuess =
+    (lead.description ?? "")
+      .split("\n")
+      .filter((l) => !l.startsWith("[in-person"))
+      .join(" ")
+      .trim() || "San Antonio";
 
   return (
     <LeadDetail
@@ -53,6 +69,9 @@ export default async function LeadDetailPage({
       emailHistory={emailHistory as never}
       canSoftDelete={canSoftDelete}
       deleteConfirmHint={confirmHint}
+      contractPackage={contractPackage}
+      companionOptions={companionOptions}
+      locationGuess={locationGuess}
     />
   );
 }

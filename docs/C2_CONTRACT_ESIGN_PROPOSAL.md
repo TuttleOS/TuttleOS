@@ -14,7 +14,7 @@
 |---|---|---|
 | D-C2-1 | **Multi-party companions on one document** | Companions share the **same public link** and sign **within the same contract packet**. PDF is **filed only after every required party has signed**. |
 | D-C2-2 | **Typo stays for now** | Keep verbatim *“seize to pay expenses”* until Michael explicitly approves a wording change. Do **not** auto-correct in code. |
-| D-C2-3 | **Welcome email later** | **C3** (post-signature welcome + reminders) is **out of C2 scope** — park until a later decision. |
+| D-C2-4 | **Drawn + typed e-sign** | Client must **draw** a signature (mouse/finger) **and** type legal name. Drawn PNG is stored and embedded in the filed PDF. |
 
 Still open for Michael: fee tiers, who may send, TTL/OTP, auto-open matter vs staff click (§10).
 

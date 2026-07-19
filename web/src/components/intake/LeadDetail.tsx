@@ -17,12 +17,14 @@ import { estimateSolPreview } from "@/lib/intake/sol";
 import { LEAD_STATUS_META, type LeadRow } from "@/lib/intake/types";
 import { CopyContact } from "@/components/ui/CopyContact";
 import { LeadTemperatureSelect } from "./LeadTemperatureSelect";
+import { ContractPanel } from "./ContractPanel";
 import {
   EditableContact,
   type ContactHistoryRow,
 } from "@/components/ui/EditableContact";
 import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { softDeleteLeadAction } from "@/lib/contacts/actions";
+import type { ContractPackage, ContractSigner } from "@/lib/contracts/types";
 
 type Attempt = {
   communication_log_id: string;
@@ -30,6 +32,15 @@ type Attempt = {
   direction: string;
   summary: string | null;
   occurred_at: string;
+};
+
+type CompanionOption = {
+  intake_lead_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  person_id: string | null;
+  status: string;
 };
 
 export function LeadDetail({
@@ -41,6 +52,9 @@ export function LeadDetail({
   emailHistory = [],
   canSoftDelete = false,
   deleteConfirmHint = "LASTNAME",
+  contractPackage = null,
+  companionOptions = [],
+  locationGuess = "San Antonio",
 }: {
   lead: LeadRow;
   phone: string | null;
@@ -50,6 +64,9 @@ export function LeadDetail({
   emailHistory?: ContactHistoryRow[];
   canSoftDelete?: boolean;
   deleteConfirmHint?: string;
+  contractPackage?: (ContractPackage & { signers: ContractSigner[] }) | null;
+  companionOptions?: CompanionOption[];
+  locationGuess?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -282,39 +299,19 @@ export function LeadDetail({
         </div>
 
         <aside className="space-y-4">
+          <ContractPanel
+            lead={lead}
+            locationGuess={locationGuess}
+            activePackage={contractPackage}
+            companionOptions={companionOptions}
+            gateReady={gate.ready}
+          />
+
           <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">
             <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
-              Actions
+              Matter actions
             </h2>
             <div className="mt-3 flex flex-col gap-2">
-              {lead.status === "open" && (
-                <button
-                  type="button"
-                  disabled={pending || !gate.ready}
-                  onClick={() =>
-                    run(() =>
-                      updateLeadStatusAction(lead.intake_lead_id, "contract_sent"),
-                    )
-                  }
-                  className="rounded-lg bg-accent-dk px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-                >
-                  Mark contract sent
-                </button>
-              )}
-              {(lead.status === "open" || lead.status === "contract_sent") && (
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    run(() =>
-                      updateLeadStatusAction(lead.intake_lead_id, "signed"),
-                    )
-                  }
-                  className="rounded-lg border border-grid px-3 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
-                >
-                  Mark contract signed
-                </button>
-              )}
               {lead.status === "signed" && !lead.resulting_matter_id && (
                   <button
                     type="button"
