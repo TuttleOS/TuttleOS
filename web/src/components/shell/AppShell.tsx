@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GlobalSearch } from "./GlobalSearch";
 import { IdentityBanner } from "./IdentityBanner";
+import { WhatsNewModal } from "./WhatsNewModal";
 import type { StaffProfile } from "@/lib/staff";
 import { displayName } from "@/lib/staff";
 import {
@@ -293,6 +294,7 @@ export function AppShell({
         )}
         <main className="min-w-0 flex-1 p-6 md:p-8">{children}</main>
       </div>
+      <WhatsNewModal />
     </div>
   );
 }
