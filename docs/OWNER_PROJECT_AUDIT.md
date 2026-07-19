@@ -49,7 +49,7 @@ We are **not** inventing workflows the schema does not support. Legal dates stay
 | **5** | Owner dashboard (stalled, approvals, SOL) | **Done (MVP)** |
 | **6** | CM ↔ Litigation switcher + identity banner | **Done (MVP)** |
 | **7** | Demand / Liens / Review | **Skeleton** — **awaiting your screen sign-off** |
-| **8** | Documents + AI | **Deferred** — you said **no AI yet**; Storage optional later |
+| **8** | Documents + AI | **Storage UI shipping** — apply `sql/16`; AI still deferred |
 | **9** | Calendar ↔ deadlines | **Scaffold** — dry-run only; **no live Graph/Google** per you |
 | **10** | CasePeer CSV → Tuttle OS | **Scaffold** — owner-run script; CSVs stay in Dropbox |
 

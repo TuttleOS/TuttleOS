@@ -21,6 +21,11 @@ import {
   listProviderDirectory,
   listRecordRequests,
 } from "@/lib/cases/matterExtras";
+import {
+  listMatterAccessLog,
+  listMatterDocuments,
+} from "@/lib/documents/queries";
+import { documentsEnabled } from "@/lib/documents/enabled";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { createClient } from "@/lib/supabase/server";
 import type { StalledRow } from "@/lib/cases/types";
@@ -35,6 +40,8 @@ export default async function MatterPage({
 
   const matter = await getMatter(params.id);
   if (!matter) notFound();
+
+  const showDocuments = documentsEnabled();
 
   const [
     team,
@@ -53,6 +60,8 @@ export default async function MatterPage({
     negotiations,
     providerDirectory,
     cmCandidates,
+    documents,
+    documentAccessLog,
   ] = await Promise.all([
     getMatterTeam(matter.client_matter_id),
     getPersonContacts(matter.client_person_id),
@@ -70,6 +79,12 @@ export default async function MatterPage({
     listNegotiations(matter.client_matter_id),
     listProviderDirectory(),
     listAssignableCaseManagers(),
+    showDocuments
+      ? listMatterDocuments(matter.client_matter_id)
+      : Promise.resolve([]),
+    showDocuments
+      ? listMatterAccessLog(matter.client_matter_id)
+      : Promise.resolve([]),
   ]);
 
   const coverageBoxes = buildCoverageBoxes(episodes, naCats);
@@ -116,6 +131,9 @@ export default async function MatterPage({
       negotiations={negotiations}
       providerDirectory={providerDirectory}
       cmCandidates={cmCandidates}
+      showDocuments={showDocuments}
+      documents={documents}
+      documentAccessLog={documentAccessLog}
     />
   );
 }

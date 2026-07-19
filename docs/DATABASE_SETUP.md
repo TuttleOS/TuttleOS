@@ -88,7 +88,14 @@ Local has **no** Supabase Auth/RLS JWT bridge until you add Supabase local (need
 | `05_upgrade_v2.5_naming.sql` | Naming-standard renames |
 | `tests/test_v2.5_battery.sql` | 14 behavior asserts — must PASS |
 
-**Skip for now:** `optional/06`, `optional/07`.  
+**Later numbered upgrades** (apply in order on existing projects that already ran 01–05):
+
+| File | Purpose |
+|---|---|
+| `08`–`15` | Calendar, coverage N/A, intake temperature, notes, contact audit, contracts, incident group |
+| **`16_upgrade_v2.15_documents.sql`** | Storage-only case documents (file columns + access log). **No AI.** Then create `case-documents` bucket in Supabase (see script comments). |
+
+**Skip until owner reopens AI:** `optional/07` (and keep `NEXT_PUBLIC_FEATURE_DOCUMENT_AI=false`).  
 **CasePeer load (Phase 10):** owner-run only — see [`CASEPEER_MIGRATION.md`](CASEPEER_MIGRATION.md). Never put export CSVs in this kit.
 
 ---

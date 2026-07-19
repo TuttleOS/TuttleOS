@@ -24,6 +24,7 @@ import {
   PropertyDamageCard,
   RecordsTrackingCard,
 } from "@/components/cases/MatterDeepenCards";
+import { DocumentsPanel } from "@/components/cases/DocumentsPanel";
 import type {
   CoverageBoxState,
   DemandRow,
@@ -32,6 +33,7 @@ import type {
   ProviderDirectoryRow,
   RecordRequestRow,
 } from "@/lib/cases/matterExtras";
+import type { AccessLogRow, DocumentRow } from "@/lib/documents/types";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
 import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
 import { canSwitchCmLit } from "@/lib/workspace";
@@ -54,6 +56,7 @@ const JUMP: Record<string, string> = {
   coverage: "card-coverage",
   pd: "card-pd",
   records: "card-records",
+  documents: "card-documents",
   demand: "card-demand",
   insurance: "card-insurance",
   notes: "card-notes",
@@ -85,6 +88,9 @@ export function MatterDetailView({
   phoneHistory = [],
   emailHistory = [],
   canSoftDelete = false,
+  showDocuments = true,
+  documents = [],
+  documentAccessLog = [],
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -114,6 +120,9 @@ export function MatterDetailView({
   phoneHistory?: ContactHistoryRow[];
   emailHistory?: ContactHistoryRow[];
   canSoftDelete?: boolean;
+  showDocuments?: boolean;
+  documents?: DocumentRow[];
+  documentAccessLog?: AccessLogRow[];
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -365,6 +374,13 @@ export function MatterDetailView({
             }
             onClick={() => jump("records")}
           />
+          {showDocuments ? (
+            <StatusLink
+              label="Documents"
+              ok={documents.length > 0}
+              onClick={() => jump("documents")}
+            />
+          ) : null}
           <StatusLink
             label="Demand"
             ok={demands.some((d) => d.sent_date)}
@@ -653,6 +669,21 @@ export function MatterDetailView({
               run={run}
             />
           </Card>
+
+          {showDocuments ? (
+            <Card
+              id="card-documents"
+              title={`Case documents · ${documents.length}`}
+              open={isOpen("card-documents", true)}
+              onToggle={() => toggle("card-documents")}
+            >
+              <DocumentsPanel
+                matterId={matter.client_matter_id}
+                documents={documents}
+                accessLog={documentAccessLog}
+              />
+            </Card>
+          ) : null}
 
           <Card
             id="card-demand"

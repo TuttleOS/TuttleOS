@@ -1,34 +1,23 @@
 -- ================================================================================
--- TUTTLE OS — v2.2 OPTIONAL UPGRADE: NATIVE FILE STORAGE FOR CASE DOCUMENTS
--- Status: PROMOTED to sql/16_upgrade_v2.15_documents.sql (storage only, no AI).
--- Prefer applying sql/16 on existing databases. This optional file remains for history.
-
+-- TUTTLE OS — v2.15 STORAGE-ONLY CASE DOCUMENTS
+-- Promoted from sql/optional/06_upgrade_v2.2_documents.sql (no AI / do not apply 07).
 --
--- What this adds (ADDITIVE ONLY — nothing in v2.0/v2.1 is modified in place):
---   A. File-storage columns on workflow.document (the table already tracks every
---      document type: medicals, petitions, answers, photos, contracts, etc.).
---      File BYTES live in Supabase Storage; the database stores the pointer.
---   B. app.can_view_doc_type(code) — category-aware visibility helper: intake
---      is blocked from document METADATA in restricted categories (medical,
---      litigation, liens, resolution, claims, damages, investigation), matching
---      the v2.1 intake data tiers.
---   C. Tightened SELECT policy on workflow.document using (B). v2.1's policy let
---      ALL active staff read every document row — including medical-records
---      metadata; this closes that gap while we're here.
---   D. workflow.document_access_log — who viewed/downloaded which file, when
---      (HIPAA posture: every signed-URL issuance gets a row).
---   E. Supabase Storage buckets + policies (COMMENTED — run in Supabase only;
---      storage.objects does not exist in a bare Postgres).
+-- Adds:
+--   A. File-storage columns on workflow.document
+--   B. app.can_view_doc_type(code) — intake blocked from restricted categories
+--   C. Tightened SELECT policy on workflow.document
+--   D. workflow.document_access_log
+--   E. Two general doc types used by the upload UI (correspondence, other)
 --
--- BACKING OUT: run rollback_v2.2_documents.sql — it removes everything this
--- script created and restores the v2.1 policy verbatim. Files already uploaded
--- to Storage buckets are NOT deleted by the rollback (remove them in Supabase
--- if desired); dropping the columns discards any pointers stored in them.
+-- After apply (Supabase SQL editor — storage schema only exists there):
+--   See comments at bottom for case-documents bucket + storage.objects policies.
+--
+-- BACKING OUT: sql/rollbacks/rollback_v2.2_documents.sql
+--   (also DELETE correspondence / other from ref.document_type if desired)
 -- ================================================================================
 
 BEGIN;
 
--- audit actor for this migration (v2.1 requires a loud actor on every write)
 SELECT set_config('app.staff_id', '00000000-0000-0000-0000-00000000c0de', true);
 
 -- ------------------------------------------------------------------
@@ -48,9 +37,9 @@ ALTER TABLE workflow.document
   ADD CONSTRAINT document_byte_size_check CHECK (byte_size IS NULL OR byte_size >= 0);
 
 COMMENT ON COLUMN workflow.document.storage_path IS
-  'v2.2: object key in Supabase Storage (bucket case-documents). NULL = metadata-only row (e.g. legacy Dropbox file — see dropbox_path).';
+  'v2.15: object key in Supabase Storage (bucket case-documents). NULL = metadata-only / Dropbox.';
 COMMENT ON COLUMN workflow.document.supersedes_document_id IS
-  'v2.2: points at the version this file replaces (amended petition, corrected affidavit). Old row stays for the record.';
+  'v2.15: points at the version this file replaces. Old row stays for the record.';
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_document_storage_path
   ON workflow.document(storage_path) WHERE storage_path IS NOT NULL;
@@ -71,21 +60,21 @@ AS $$
     WHEN (SELECT dt.category FROM ref.document_type dt WHERE dt.code = p_code)
          IN ('medical','litigation','liens','resolution','claims','damages','investigation')
       THEN NOT app.is_intake_only()
-    ELSE true   -- intake/general categories stay visible to all active staff
+    ELSE true
   END;
 $$;
 REVOKE ALL ON FUNCTION app.can_view_doc_type(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION app.can_view_doc_type(text) TO app_staff;
 
 -- ------------------------------------------------------------------
--- C. tighten workflow.document read policy (was: any active staff)
+-- C. tighten workflow.document read policy
 -- ------------------------------------------------------------------
 DROP POLICY IF EXISTS p_read ON workflow.document;
 CREATE POLICY p_read ON workflow.document
   FOR SELECT USING (app.can_view_doc_type(doc_type_code));
 
 -- ------------------------------------------------------------------
--- D. access log — one row per view/download/upload of a stored file
+-- D. access log
 -- ------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS workflow.document_access_log (
   access_id   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -104,23 +93,26 @@ CREATE POLICY p_read ON workflow.document_access_log
 DROP POLICY IF EXISTS p_ins ON workflow.document_access_log;
 CREATE POLICY p_ins ON workflow.document_access_log
   FOR INSERT WITH CHECK (staff_id = app.current_staff_id());
--- no UPDATE / DELETE policies: the log is append-only for everyone.
 
 GRANT SELECT, INSERT ON workflow.document_access_log TO app_staff;
+
+-- ------------------------------------------------------------------
+-- E. upload UI general types (mockup: correspondence, other)
+-- ------------------------------------------------------------------
+INSERT INTO ref.document_type (code, label, category) VALUES
+  ('correspondence', 'Correspondence', 'intake'),
+  ('other', 'Other', 'intake')
+ON CONFLICT (code) DO NOTHING;
 
 COMMIT;
 
 -- ================================================================================
--- E. SUPABASE-ONLY SECTION — run in the Supabase SQL editor AFTER deployment.
---    (storage.objects does not exist in a bare Postgres; kept commented so this
---    file remains runnable and testable locally.)
+-- SUPABASE-ONLY — run in the Supabase SQL editor after this migration:
 -- --------------------------------------------------------------------------------
--- -- one private bucket; per-file authorization comes from the document row
 -- insert into storage.buckets (id, name, public, file_size_limit)
 -- values ('case-documents', 'case-documents', false, 524288000)  -- 500 MB/file
 -- on conflict (id) do nothing;
 --
--- -- READ a file only if you may see its document row (same tiers as the data)
 -- create policy "doc_read" on storage.objects for select using (
 --   bucket_id = 'case-documents' and exists (
 --     select 1 from workflow.document d
@@ -129,11 +121,12 @@ COMMIT;
 --       and app.can_view_doc_type(d.doc_type_code))
 -- );
 --
--- -- UPLOAD only as yourself, only as active staff
 -- create policy "doc_insert" on storage.objects for insert with check (
 --   bucket_id = 'case-documents' and app.is_active_staff()
 -- );
 --
--- -- no update/delete policies: files are immutable; corrections go through
--- -- supersedes_document_id (new version), never overwrite. Soft-delete the row.
+-- (No update/delete policies — files are immutable; corrections use supersedes.)
+--
+-- App uploads use service-role signed upload URLs, so bucket must exist even if
+-- you defer the storage.objects policies until later.
 -- ================================================================================

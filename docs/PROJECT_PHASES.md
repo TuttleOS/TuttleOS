@@ -125,7 +125,7 @@ flowchart TD
 | **5** | Owner dashboard | **Done (MVP)** | Stalled + Approvals + SOL + override strip — deferred: Conflicts / 7‑Day Reviews as own routes |
 | **6** | Cross-workspace switcher + companions + notifications | **Done (MVP)** | Top-bar CM↔Lit switch + identity banner + matter toggle; companions/notifications defer |
 | **7** | Demand / Liens / Review | **Skeleton — awaiting owner** | Read-only queues + `docs/PHASE7_SCREEN_PROPOSALS.md` — **STOP** before detailing |
-| **8** | Documents + AI | **Deferred — no AI yet** | Owner: do **not** adopt OCR/Claude/AI until explicitly reopened; Storage docs still optional |
+| **8** | Documents + AI | **Storage-only shipping** | Apply `sql/16`; flag `NEXT_PUBLIC_FEATURE_DOCUMENTS`; **no AI/07** |
 | **9** | Calendar ↔ deadlines | **Scaffold only — no live calendar** | Dry-run adapters + `/owner/calendar`; owner: do **not** connect Graph/Google until reopened |
 | **10** | CasePeer CSV load | **Scaffold — owner-run** | Runbook + hardened migrate + `/owner/migration`; CSVs stay in Dropbox |
 
@@ -179,10 +179,11 @@ flowchart TD
 - **Build skeletons → STOP → Michael reviews screen proposals.** Do not invent Kate/Emily/Daniel workflows.
 
 ### Phase 8 — Documents + AI (owner-gated)
-- Apply `sql/optional/06` then `07` only after owner approval.
-- Private Storage bucket; AI feature flag **off** by default.
-- **Hard stop:** OCR + Claude BAAs before real medical records.
-- **Owner decision (2026-07-18):** firm is **not using AI in the project yet** — skip AI/OCR work; do not apply `07` or enable summarize/extract. Document storage (`06`) may still open later without AI.
+- Apply `sql/16_upgrade_v2.15_documents.sql` (promoted from optional `06`) for Storage pointers + access log.
+- Create private Supabase bucket `case-documents` (SQL comments at bottom of `16`).
+- App: Case Manager matter card **Case documents** when `NEXT_PUBLIC_FEATURE_DOCUMENTS=true`.
+- **Do not** apply `optional/07` or set `NEXT_PUBLIC_FEATURE_DOCUMENT_AI=true` until Michael reopens AI + BAAs.
+- **Owner decision (2026-07-18):** no AI/OCR yet — storage-only is allowed.
 
 ### Phase 9 — Calendar sync
 - Adapter interface: Microsoft Graph **and** Google Calendar; org-configurable.

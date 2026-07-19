@@ -1,8 +1,3 @@
-/** Bump `id` when you want everyone to see What’s New again after login. */
-export const WHATS_NEW_ID = "2026-07-19-c2-esign";
-
-export const WHATS_NEW_STORAGE_KEY = `tuttleos.whatsNew.dismissed.${WHATS_NEW_ID}`;
-
 export type WhatsNewItem = {
   title: string;
   body: string;
@@ -20,6 +15,25 @@ export type VersionUpdate = {
 
 /** Newest first — used by What’s New modal (current) and /updates history. */
 export const VERSION_UPDATES: VersionUpdate[] = [
+  {
+    id: "2026-07-19-documents-storage",
+    dateLabel: "07/19/2026",
+    title: "Case document upload (storage only)",
+    summary:
+      "Upload and version case files on the Case Manager matter page. No AI/OCR.",
+    items: [
+      {
+        title: "Case documents panel",
+        body: "On a matter under Case Manager, open Case documents to upload files, view/download, supersede with a new version, and soft-delete. Access log records who opened which file.",
+        href: "/cases",
+        hrefLabel: "Open Cases",
+      },
+      {
+        title: "No AI yet",
+        body: "OCR, summarize, and extract stay off. This is Storage + workflow.document metadata only.",
+      },
+    ],
+  },
   {
     id: "2026-07-19-c2-esign",
     dateLabel: "07/19/2026",
@@ -50,6 +64,12 @@ export const VERSION_UPDATES: VersionUpdate[] = [
     ],
   },
 ];
+
+/** Bump when you want everyone to see What’s New again after login. */
+export const WHATS_NEW_ID =
+  VERSION_UPDATES[0]?.id ?? "2026-07-19-documents-storage";
+
+export const WHATS_NEW_STORAGE_KEY = `tuttleos.whatsNew.dismissed.${WHATS_NEW_ID}`;
 
 export const WHATS_NEW_ITEMS: WhatsNewItem[] =
   VERSION_UPDATES[0]?.items ?? [];

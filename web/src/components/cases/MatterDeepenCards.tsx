@@ -28,6 +28,7 @@ import type {
   RecordRequestRow,
 } from "@/lib/cases/matterExtras";
 import type { TreatmentEpisodeRow } from "@/lib/cases/types";
+import { SectionDocumentUpload } from "@/components/cases/SectionDocumentUpload";
 
 type RunFn = (
   fn: () => Promise<{ ok: boolean; error?: string; message?: string }>,
@@ -54,6 +55,11 @@ export function PropertyDamageCard({
 
   return (
     <div className="space-y-4 text-sm">
+      <SectionDocumentUpload
+        matterId={matterId}
+        defaultDocType="photos_video"
+        hint="Photos, estimates, repair bills — saved under Case documents."
+      />
       {rows.length === 0 ? (
         <p className="text-muted">
           No PD claim yet. Vehicle location is required — tow yards start the
@@ -469,6 +475,11 @@ export function RecordsTrackingCard({
 
   return (
     <div className="space-y-3 text-sm">
+      <SectionDocumentUpload
+        matterId={matterId}
+        defaultDocType="medical_records"
+        hint="Medical records / bills PDF — also appears in Case documents."
+      />
       {rows.length === 0 ? (
         <p className="text-muted">No records / bills requests yet.</p>
       ) : (
@@ -622,6 +633,11 @@ export function DemandNegotiationCard({
 
   return (
     <div className="space-y-4 text-sm">
+      <SectionDocumentUpload
+        matterId={matterId}
+        defaultDocType="demand_letter"
+        hint="Demand letter / attachments — saved under Case documents."
+      />
       <div>
         <p className="text-xs font-bold uppercase text-muted">Demands</p>
         {demands.length === 0 ? (
