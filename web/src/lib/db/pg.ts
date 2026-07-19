@@ -7,16 +7,42 @@ function needsSsl(url: string): boolean {
   return true;
 }
 
+/**
+ * pg treats sslmode=require as verify-full (fails on Supabase's chain).
+ * Strip query sslmode and set ssl explicitly for serverless.
+ */
+function normalizeDatabaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("uselibpqcompat");
+    // URL() turns postgres:// into http-like; rebuild with original protocol.
+    const protocol = url.startsWith("postgres://")
+      ? "postgres:"
+      : "postgresql:";
+    return `${protocol}//${u.username}:${u.password}@${u.host}${u.pathname}${
+      u.searchParams.toString() ? `?${u.searchParams}` : ""
+    }`;
+  } catch {
+    return url
+      .replace(/([?&])sslmode=[^&]*/g, "$1")
+      .replace(/[?&]$/, "")
+      .replace(/\?&/, "?");
+  }
+}
+
 /** Shared pool for public signing + PDF probes. Returns null if DATABASE_URL unset. */
 export function getPgPool(): Pool | null {
-  const url = process.env.DATABASE_URL?.trim();
-  if (!url) return null;
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return null;
   if (!pool) {
+    const connectionString = normalizeDatabaseUrl(raw);
     pool = new Pool({
-      connectionString: url,
+      connectionString,
       max: 3,
-      // Supabase requires TLS; rejectUnauthorized false matches common serverless setups.
-      ssl: needsSsl(url) ? { rejectUnauthorized: false } : undefined,
+      ssl: needsSsl(connectionString)
+        ? { rejectUnauthorized: false }
+        : undefined,
       connectionTimeoutMillis: 8_000,
     });
     pool.on("error", (err) => {
