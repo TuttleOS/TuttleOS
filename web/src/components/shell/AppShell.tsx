@@ -24,6 +24,15 @@ type NavItem = {
   section?: string;
 };
 
+const HELP_NAV_ALL: NavItem[] = [
+  { href: "/updates", label: "Version updates" },
+];
+
+const HELP_NAV_OWNER: NavItem[] = [
+  { href: "/test", label: "Walkthrough", featured: true },
+  ...HELP_NAV_ALL,
+];
+
 /** Full firm menu for attorney / admin / senior PL (Michael’s view). */
 const FIRM_WIDE_NAV: NavItem[] = [
   { href: "/owner", label: "Dashboard", section: "Owner" },
@@ -47,7 +56,7 @@ const FIRM_WIDE_NAV: NavItem[] = [
   { href: "/demands", label: "Demands", section: "Specialty" },
   { href: "/liens", label: "Liens", section: "Specialty" },
   { href: "/review", label: "Viability", section: "Specialty" },
-  { href: "/test", label: "Walkthrough", featured: true },
+  ...HELP_NAV_OWNER,
 ];
 
 const NAV_BY_PREFIX: Record<string, NavItem[]> = {
@@ -115,22 +124,38 @@ function usesFirmWideNav(staff: StaffProfile): boolean {
   );
 }
 
+function helpNavFor(staff: StaffProfile): NavItem[] {
+  if (staff.is_attorney || staff.role_code === "admin") {
+    return HELP_NAV_OWNER;
+  }
+  // Walkthrough is attorney/admin-only; everyone still gets release notes.
+  return HELP_NAV_ALL.map((item) =>
+    item.href === "/updates" ? { ...item, featured: true } : item,
+  );
+}
+
 function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
+  const help = helpNavFor(staff);
   if (usesFirmWideNav(staff)) {
     return FIRM_WIDE_NAV;
   }
-  if (pathname === "/test" || pathname.startsWith("/test/")) {
-    return NAV_BY_PREFIX["/owner"];
+  if (
+    pathname === "/test" ||
+    pathname.startsWith("/test/") ||
+    pathname === "/updates" ||
+    pathname.startsWith("/updates/")
+  ) {
+    return FIRM_WIDE_NAV;
   }
   if (
     pathname.startsWith("/litigation") &&
     !canOpenFullLitigationWorkspace(staff.role_code)
   ) {
-    return LIT_MILESTONES_NAV;
+    return [...LIT_MILESTONES_NAV, ...help];
   }
-  // PL in CM workspace gets the full CM nav (B1)
   const key = Object.keys(NAV_BY_PREFIX).find((p) => pathname.startsWith(p));
-  return NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
+  const base = NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
+  return [...base, ...help];
 }
 
 function isNavActive(pathname: string, href: string): boolean {
@@ -248,15 +273,43 @@ export function AppShell({
               );
             }
             if (item.featured) {
+              const isWalkthrough = item.href === "/test";
               return (
-                <div key={item.href} className="mt-6 border-t border-white/8 pt-4">
+                <div
+                  key={item.href}
+                  className="mt-6 border-t border-white/8 pt-4"
+                >
                   <Link
                     href={item.href}
-                    title="Guided tour — start here"
+                    title={
+                      isWalkthrough
+                        ? "Guided tour — start here"
+                        : "Release notes"
+                    }
                     className={`block rounded-lg border px-2.5 py-2 text-[13px] font-semibold no-underline transition ${
                       active
-                        ? "!border-warning !bg-warning !text-white"
-                        : "!border-warning/60 !bg-warning/15 !text-warning hover:!bg-warning hover:!text-white"
+                        ? isWalkthrough
+                          ? "!border-warning !bg-warning !text-white"
+                          : "!border-white/30 !bg-white/12 !text-white"
+                        : isWalkthrough
+                          ? "!border-warning/60 !bg-warning/15 !text-warning hover:!bg-warning hover:!text-white"
+                          : "!border-white/15 !bg-white/5 !text-white/80 hover:!bg-white/10 hover:!text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </div>
+              );
+            }
+            if (item.href === "/updates") {
+              return (
+                <div key={item.href} className="mt-1 px-0.5">
+                  <Link
+                    href={item.href}
+                    className={`block rounded-lg px-2.5 py-1.5 text-[13px] no-underline transition ${
+                      active
+                        ? "!bg-white/12 !font-semibold !text-white"
+                        : "!text-white/70 hover:!bg-white/8 hover:!text-white"
                     }`}
                   >
                     {item.label}
