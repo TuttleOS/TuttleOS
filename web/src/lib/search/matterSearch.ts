@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatDate } from "@/lib/dates";
 
 export type MatterSearchHit = {
@@ -12,7 +13,7 @@ export type MatterSearchHit = {
 export function searchTermParts(raw: string): string[] {
   const t = raw.trim();
   if (!t) return [];
-  const cleaned = t.replace(/[%,]/g, " ").replace(/\s+/g, " ").trim();
+  const cleaned = t.replace(/[%,']/g, " ").replace(/\s+/g, " ").trim();
   const parts = cleaned.split(" ").filter(Boolean);
   return parts.length ? parts : [cleaned];
 }
@@ -36,16 +37,12 @@ type PersonRow = {
   last_name: string;
 };
 
-// Minimal query client shape (browser or server Supabase client)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = { schema: (s: string) => any };
-
 /**
  * Case-first search: match people by first/last substring,
  * return their matters (client + DOI → /cases/[id]).
  */
 export async function searchMattersByQuery(
-  supabase: AnyClient,
+  supabase: SupabaseClient,
   q: string,
   limit = 12,
 ): Promise<MatterSearchHit[]> {
