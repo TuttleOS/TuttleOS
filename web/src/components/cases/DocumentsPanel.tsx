@@ -20,6 +20,10 @@ import {
   type AccessLogRow,
   type DocumentRow,
 } from "@/lib/documents/types";
+import {
+  DocumentPreviewModal,
+  EyeIcon,
+} from "@/components/cases/DocumentPreviewModal";
 
 function todayIso(): string {
   const d = new Date();
@@ -49,6 +53,7 @@ export function DocumentsPanel({
   const [batesStart, setBatesStart] = useState("");
   const [batesEnd, setBatesEnd] = useState("");
   const [supersedeId, setSupersedeId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -400,15 +405,17 @@ export function DocumentsPanel({
                             {formatBytes(d.byte_size)}
                           </div>
                           {!d.is_superseded ? (
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              <a
-                                className="font-semibold text-accent-dk hover:underline"
-                                href={`/api/documents/${d.document_id}/download?action=view`}
-                                target="_blank"
-                                rel="noreferrer"
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                title="Preview"
+                                aria-label={`Preview ${d.title}`}
+                                className="inline-flex items-center gap-1 rounded-md border border-grid px-1.5 py-0.5 font-semibold text-accent-dk hover:bg-page"
+                                onClick={() => setPreviewDoc(d)}
                               >
-                                View
-                              </a>
+                                <EyeIcon className="h-3.5 w-3.5" />
+                                <span className="sr-only">Preview</span>
+                              </button>
                               <a
                                 className="font-semibold text-accent-dk hover:underline"
                                 href={`/api/documents/${d.document_id}/download`}
@@ -524,6 +531,14 @@ export function DocumentsPanel({
           </div>
         )}
       </div>
+
+      {previewDoc ? (
+        <DocumentPreviewModal
+          documentId={previewDoc.document_id}
+          fallbackTitle={previewDoc.title}
+          onClose={() => setPreviewDoc(null)}
+        />
+      ) : null}
     </div>
   );
 }
