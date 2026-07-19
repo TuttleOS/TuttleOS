@@ -39,12 +39,20 @@ export async function getActivePackageForLead(
   let has_pdf = false;
   const pool = getPgPool();
   if (pool) {
-    const { rows } = await pool.query(
-      `SELECT coalesce(length(artifact_pdf_base64), 0) > 100 AS has_pdf
-       FROM workflow.contract_package WHERE contract_package_id = $1`,
-      [data.contract_package_id],
-    );
-    has_pdf = Boolean(rows[0]?.has_pdf);
+    try {
+      const { rows } = await pool.query(
+        `SELECT coalesce(length(artifact_pdf_base64), 0) > 100 AS has_pdf
+         FROM workflow.contract_package WHERE contract_package_id = $1`,
+        [data.contract_package_id],
+      );
+      has_pdf = Boolean(rows[0]?.has_pdf);
+    } catch (e) {
+      // Lead detail must not 500 if DATABASE_URL is unreachable from Vercel.
+      console.error(
+        "[contracts] has_pdf probe failed",
+        e instanceof Error ? e.message : e,
+      );
+    }
   }
 
   return {
@@ -124,12 +132,19 @@ export async function getContractPackageForStaffView(packageId: string): Promise
   let has_pdf = false;
   const pool = getPgPool();
   if (pool) {
-    const { rows } = await pool.query(
-      `SELECT coalesce(length(artifact_pdf_base64), 0) > 100 AS has_pdf
-       FROM workflow.contract_package WHERE contract_package_id = $1`,
-      [packageId],
-    );
-    has_pdf = Boolean(rows[0]?.has_pdf);
+    try {
+      const { rows } = await pool.query(
+        `SELECT coalesce(length(artifact_pdf_base64), 0) > 100 AS has_pdf
+         FROM workflow.contract_package WHERE contract_package_id = $1`,
+        [packageId],
+      );
+      has_pdf = Boolean(rows[0]?.has_pdf);
+    } catch (e) {
+      console.error(
+        "[contracts] staff has_pdf probe failed",
+        e instanceof Error ? e.message : e,
+      );
+    }
   }
 
   return {

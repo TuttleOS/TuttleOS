@@ -20,7 +20,12 @@ export function formatPhoneDisplay(country: PhoneCountry, digits: string): strin
 }
 
 export function isPhoneComplete(digits: string): boolean {
-  return digitsOnly(digits).length === 10;
+  const d = digits.replace(/\D/g, "");
+  // 10 national digits, or US/MX E.164 (+1 / +52).
+  if (d.length === 10) return true;
+  if (d.length === 11 && d.startsWith("1")) return true;
+  if (d.length === 12 && d.startsWith("52")) return true;
+  return false;
 }
 
 /** Value stored on contact_point.phone — trigger normalizes to phone_e164. */

@@ -134,8 +134,8 @@ export function LeadQueue({
                 rows.map((l) => {
                   const meta = LEAD_STATUS_META[l.status];
                   const gate = gateFromLead(l, {
-                    phone: l.raw_phone,
-                    email: l.raw_email,
+                    phone: l.primary_phone ?? l.raw_phone,
+                    email: l.primary_email ?? l.raw_email,
                     inPerson: /in-person signing/i.test(l.description ?? ""),
                   });
                   const sol = estimateSolPreview(l.incident_date);

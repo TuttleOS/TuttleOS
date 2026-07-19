@@ -69,6 +69,10 @@ export type LeadRow = {
   updated_at: string;
   deleted_at: string | null;
   person?: LeadPerson | null;
+  /** Live primary phone from contact_point (preferred over raw_phone for gate/UI). */
+  primary_phone?: string | null;
+  /** Live primary email from contact_point (preferred over raw_email for gate/UI). */
+  primary_email?: string | null;
 };
 
 export type CompanionFormInput = {

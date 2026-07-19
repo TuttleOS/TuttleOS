@@ -24,7 +24,53 @@ export async function listLeads(status?: LeadStatus | "all"): Promise<LeadRow[]>
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as LeadRow[];
+  return enrichLeadsWithContacts((data ?? []) as unknown as LeadRow[]);
+}
+
+/** Overlay primary phone/email from contact_point so queue gate matches lead detail. */
+async function enrichLeadsWithContacts(leads: LeadRow[]): Promise<LeadRow[]> {
+  const personIds = Array.from(
+    new Set(
+      leads
+        .map((l) => l.person_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+  if (personIds.length === 0) return leads;
+
+  const supabase = createClient();
+  const { data: points, error } = await supabase
+    .schema("core")
+    .from("contact_point")
+    .select("person_id, kind, phone, phone_e164, email, is_primary")
+    .in("person_id", personIds)
+    .in("kind", ["phone", "email"])
+    .is("deleted_at", null)
+    .order("is_primary", { ascending: false });
+  if (error || !points?.length) return leads;
+
+  const byPerson = new Map<string, { phone?: string; email?: string }>();
+  for (const p of points) {
+    const cur = byPerson.get(p.person_id) ?? {};
+    if (p.kind === "phone" && !cur.phone) {
+      cur.phone = (p.phone_e164 ?? p.phone ?? undefined) || undefined;
+    }
+    if (p.kind === "email" && !cur.email) {
+      cur.email = p.email ?? undefined;
+    }
+    byPerson.set(p.person_id, cur);
+  }
+
+  return leads.map((l) => {
+    if (!l.person_id) return l;
+    const c = byPerson.get(l.person_id);
+    if (!c) return l;
+    return {
+      ...l,
+      primary_phone: c.phone ?? null,
+      primary_email: c.email ?? null,
+    };
+  });
 }
 
 export async function getLead(id: string): Promise<LeadRow | null> {

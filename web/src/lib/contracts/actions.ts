@@ -424,42 +424,60 @@ export async function firmCountersignContractAction(input: {
 /** Public package load via DATABASE_URL (bypasses RLS; token is the auth). */
 export async function getPublicContractByToken(token: string) {
   const pool = getPgPool();
-  if (!pool) return { ok: false as const, error: "Signing unavailable" };
-
-  const { rows } = await pool.query(
-    `SELECT * FROM workflow.contract_package
-     WHERE public_token = $1 AND deleted_at IS NULL`,
-    [token],
-  );
-  const pkg = rows[0];
-  if (!pkg) return { ok: false as const, error: "Link not found" };
-  if (pkg.status === "void") {
-    return { ok: false as const, error: "This link has been voided" };
-  }
-  if (pkg.expires_at && new Date(pkg.expires_at) < new Date()) {
-    return { ok: false as const, error: "This link has expired" };
+  if (!pool) {
+    return {
+      ok: false as const,
+      error:
+        "Signing unavailable — DATABASE_URL is not configured on this server",
+    };
   }
 
-  const signers = await pool.query(
-    `SELECT contract_signer_id, full_name, email, status, signed_at,
-            signature_typed_name, sort_order, intake_lead_id
-     FROM workflow.contract_signer
-     WHERE contract_package_id = $1 AND deleted_at IS NULL
-     ORDER BY sort_order`,
-    [pkg.contract_package_id],
-  );
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM workflow.contract_package
+       WHERE public_token = $1 AND deleted_at IS NULL`,
+      [token],
+    );
+    const pkg = rows[0];
+    if (!pkg) return { ok: false as const, error: "Link not found" };
+    if (pkg.status === "void") {
+      return { ok: false as const, error: "This link has been voided" };
+    }
+    if (pkg.expires_at && new Date(pkg.expires_at) < new Date()) {
+      return { ok: false as const, error: "This link has expired" };
+    }
 
-  return {
-    ok: true as const,
-    package: {
-      ...pkg,
-      fee_pre_suit: Number(pkg.fee_pre_suit),
-      fee_post_filing: Number(pkg.fee_post_filing),
-      fee_appeal: Number(pkg.fee_appeal),
-      body_hash: bodyHash(pkg.rendered_body ?? ""),
-    },
-    signers: signers.rows,
-  };
+    const signers = await pool.query(
+      `SELECT contract_signer_id, full_name, email, status, signed_at,
+              signature_typed_name, sort_order, intake_lead_id
+       FROM workflow.contract_signer
+       WHERE contract_package_id = $1 AND deleted_at IS NULL
+       ORDER BY sort_order`,
+      [pkg.contract_package_id],
+    );
+
+    return {
+      ok: true as const,
+      package: {
+        ...pkg,
+        fee_pre_suit: Number(pkg.fee_pre_suit),
+        fee_post_filing: Number(pkg.fee_post_filing),
+        fee_appeal: Number(pkg.fee_appeal),
+        body_hash: bodyHash(pkg.rendered_body ?? ""),
+      },
+      signers: signers.rows,
+    };
+  } catch (e) {
+    console.error(
+      "[contracts] public load failed",
+      e instanceof Error ? e.message : e,
+    );
+    return {
+      ok: false as const,
+      error:
+        "Signing unavailable — database connection failed (check DATABASE_URL / SSL / pooler)",
+    };
+  }
 }
 
 export async function signContractAsPartyAction(input: {
