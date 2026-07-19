@@ -536,6 +536,8 @@ export function DocumentsPanel({
         <DocumentPreviewModal
           documentId={previewDoc.document_id}
           fallbackTitle={previewDoc.title}
+          mimeType={previewDoc.mime_type}
+          filename={previewDoc.original_filename}
           onClose={() => setPreviewDoc(null)}
         />
       ) : null}
