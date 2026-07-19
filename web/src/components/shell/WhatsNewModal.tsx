@@ -33,7 +33,7 @@ export function WhatsNewModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/30 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="whats-new-title"
