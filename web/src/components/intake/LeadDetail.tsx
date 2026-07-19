@@ -22,6 +22,11 @@ import {
   EditableContact,
   type ContactHistoryRow,
 } from "@/components/ui/EditableContact";
+import {
+  EditableAddress,
+  type AddressHistoryRow,
+  type AddressValue,
+} from "@/components/ui/EditableAddress";
 import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { softDeleteLeadAction } from "@/lib/contacts/actions";
 import type { ContractPackage, ContractSigner } from "@/lib/contracts/types";
@@ -47,9 +52,11 @@ export function LeadDetail({
   lead,
   phone,
   email,
+  address = null,
   attempts,
   phoneHistory = [],
   emailHistory = [],
+  addressHistory = [],
   canSoftDelete = false,
   deleteConfirmHint = "LASTNAME",
   contractPackage = null,
@@ -60,9 +67,11 @@ export function LeadDetail({
   lead: LeadRow;
   phone: string | null;
   email: string | null;
+  address?: AddressValue | null;
   attempts: Attempt[];
   phoneHistory?: ContactHistoryRow[];
   emailHistory?: ContactHistoryRow[];
+  addressHistory?: AddressHistoryRow[];
   canSoftDelete?: boolean;
   deleteConfirmHint?: string;
   contractPackage?: (ContractPackage & { signers: ContractSigner[] }) | null;
@@ -211,6 +220,19 @@ export function LeadDetail({
                   />
                 ) : inPerson ? (
                   "waived (in-person)"
+                ) : (
+                  "—"
+                )}
+              </dd>
+              <dt className="text-muted">Address</dt>
+              <dd>
+                {lead.person_id ? (
+                  <EditableAddress
+                    personId={lead.person_id}
+                    value={address}
+                    history={addressHistory}
+                    leadId={lead.intake_lead_id}
+                  />
                 ) : (
                   "—"
                 )}

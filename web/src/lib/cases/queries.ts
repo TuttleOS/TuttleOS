@@ -280,7 +280,7 @@ export async function getPersonContacts(personId: string) {
     .schema("core")
     .from("contact_point")
     .select(
-      "contact_point_id, kind, phone, phone_e164, email, is_primary, valid_from, valid_to, deleted_at, updated_at",
+      "contact_point_id, kind, phone, phone_e164, email, is_primary, address_line1, address_line2, city, state, zip, valid_from, valid_to, deleted_at, updated_at",
     )
     .eq("person_id", personId)
     .is("deleted_at", null)
@@ -294,20 +294,24 @@ export async function getPersonContacts(personId: string) {
     data?.find((c) => c.kind === "email" && c.is_primary) ??
     data?.find((c) => c.kind === "email") ??
     null;
-  return { phone, email };
+  const address =
+    data?.find((c) => c.kind === "address" && c.is_primary) ??
+    data?.find((c) => c.kind === "address") ??
+    null;
+  return { phone, email, address };
 }
 
-/** Prior / superseded phone & email rows for B6 history strip. */
+/** Prior / superseded phone, email, or address rows for history strip. */
 export async function listContactHistory(
   personId: string,
-  kind: "phone" | "email",
+  kind: "phone" | "email" | "address",
 ) {
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("core")
     .from("contact_point")
     .select(
-      "contact_point_id, phone, email, valid_from, valid_to, deleted_at, updated_at, is_primary",
+      "contact_point_id, phone, email, address_line1, address_line2, city, state, zip, valid_from, valid_to, deleted_at, updated_at, is_primary",
     )
     .eq("person_id", personId)
     .eq("kind", kind)

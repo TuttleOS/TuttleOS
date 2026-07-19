@@ -126,6 +126,103 @@ export async function updatePersonContactAction(input: {
   }
 }
 
+/** Supersede primary mailing address; keep prior row for history. */
+export type MailingAddressInput = {
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
+export async function updatePersonAddressAction(input: {
+  personId: string;
+  address: MailingAddressInput;
+  matterId?: string;
+  leadId?: string;
+}): Promise<ActionResult> {
+  try {
+    await requireStaff();
+    const line1 = input.address.address_line1.trim();
+    if (!line1) return { ok: false, error: "Street address is required" };
+
+    const next = {
+      address_line1: line1,
+      address_line2: input.address.address_line2.trim() || null,
+      city: input.address.city.trim() || null,
+      state: input.address.state.trim().toUpperCase().slice(0, 2) || null,
+      zip: input.address.zip.trim() || null,
+    };
+
+    const supabase = createClient();
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: currentRows, error: readErr } = await supabase
+      .schema("core")
+      .from("contact_point")
+      .select(
+        "contact_point_id, address_line1, address_line2, city, state, zip, is_primary",
+      )
+      .eq("person_id", input.personId)
+      .eq("kind", "address")
+      .is("deleted_at", null);
+    if (readErr) return { ok: false, error: readErr.message };
+
+    const current =
+      currentRows?.find((r) => r.is_primary) ?? currentRows?.[0] ?? null;
+
+    const same =
+      current &&
+      String(current.address_line1 ?? "") === next.address_line1 &&
+      String(current.address_line2 ?? "") === String(next.address_line2 ?? "") &&
+      String(current.city ?? "") === String(next.city ?? "") &&
+      String(current.state ?? "") === String(next.state ?? "") &&
+      String(current.zip ?? "") === String(next.zip ?? "");
+    if (same) return { ok: true, message: "No change" };
+
+    if (current) {
+      const { error: closeErr } = await supabase
+        .schema("core")
+        .from("contact_point")
+        .update({
+          is_primary: false,
+          valid_to: today,
+          deleted_at: new Date().toISOString(),
+        })
+        .eq("contact_point_id", current.contact_point_id);
+      if (closeErr) return { ok: false, error: closeErr.message };
+    }
+
+    const { error: insErr } = await supabase
+      .schema("core")
+      .from("contact_point")
+      .insert({
+        person_id: input.personId,
+        kind: "address",
+        ...next,
+        is_primary: true,
+        valid_from: today,
+        country: "US",
+      });
+    if (insErr) return { ok: false, error: insErr.message };
+
+    if (input.matterId) {
+      revalidatePath(`/cases/${input.matterId}`);
+      revalidatePath(`/litigation/${input.matterId}`);
+    }
+    if (input.leadId) {
+      revalidatePath(`/intake/leads/${input.leadId}`);
+      revalidatePath("/intake");
+    }
+    return {
+      ok: true,
+      message: "Mailing address updated — prior address kept in history",
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
 export async function softDeleteMatterAction(input: {
   matterId: string;
   confirmText: string;

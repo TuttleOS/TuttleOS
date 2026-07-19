@@ -45,7 +45,9 @@ export async function getPersonContacts(personId: string) {
   const { data, error } = await supabase
     .schema("core")
     .from("contact_point")
-    .select("contact_point_id, kind, phone, phone_e164, email, is_primary")
+    .select(
+      "contact_point_id, kind, phone, phone_e164, email, is_primary, address_line1, address_line2, city, state, zip",
+    )
     .eq("person_id", personId)
     .is("deleted_at", null)
     .order("is_primary", { ascending: false });
@@ -56,7 +58,10 @@ export async function getPersonContacts(personId: string) {
   const email =
     data?.find((c) => c.kind === "email" && c.is_primary) ??
     data?.find((c) => c.kind === "email");
-  return { phone, email, all: data ?? [] };
+  const address =
+    data?.find((c) => c.kind === "address" && c.is_primary) ??
+    data?.find((c) => c.kind === "address");
+  return { phone, email, address, all: data ?? [] };
 }
 
 export async function listLeadAttempts(leadId: string) {

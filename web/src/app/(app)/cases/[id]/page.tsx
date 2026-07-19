@@ -48,6 +48,7 @@ export default async function MatterPage({
     contacts,
     phoneHistory,
     emailHistory,
+    addressHistory,
     tasks,
     notes,
     episodes,
@@ -67,6 +68,7 @@ export default async function MatterPage({
     getPersonContacts(matter.client_person_id),
     listContactHistory(matter.client_person_id, "phone"),
     listContactHistory(matter.client_person_id, "email"),
+    listContactHistory(matter.client_person_id, "address"),
     listMatterTasks(matter.client_matter_id),
     listPinnedNotes(matter.client_matter_id),
     listTreatmentEpisodes(matter.client_matter_id),
@@ -87,6 +89,16 @@ export default async function MatterPage({
       : Promise.resolve([]),
   ]);
 
+  const address = contacts.address
+    ? {
+        address_line1: contacts.address.address_line1 ?? null,
+        address_line2: contacts.address.address_line2 ?? null,
+        city: contacts.address.city ?? null,
+        state: contacts.address.state ?? null,
+        zip: contacts.address.zip ?? null,
+      }
+    : null;
+
   const coverageBoxes = buildCoverageBoxes(episodes, naCats);
 
   const supabase = createClient();
@@ -106,8 +118,10 @@ export default async function MatterPage({
       team={team}
       phone={contacts.phone?.phone ?? contacts.phone?.phone_e164 ?? null}
       email={contacts.email?.email ?? null}
+      address={address}
       phoneHistory={phoneHistory as never}
       emailHistory={emailHistory as never}
+      addressHistory={addressHistory as never}
       tasks={tasks}
       notes={notes}
       episodes={episodes}

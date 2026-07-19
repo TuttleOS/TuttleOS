@@ -7,6 +7,11 @@ import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
 import { ExpandableNote } from "@/components/ui/ExpandableNote";
 import { EditableContact, type ContactHistoryRow } from "@/components/ui/EditableContact";
+import {
+  EditableAddress,
+  type AddressHistoryRow,
+  type AddressValue,
+} from "@/components/ui/EditableAddress";
 import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { softDeleteMatterAction } from "@/lib/contacts/actions";
 import { caseTypeLabel } from "@/lib/intake/case-types";
@@ -70,6 +75,7 @@ export function MatterDetailView({
   team,
   phone,
   email,
+  address = null,
   tasks,
   notes,
   episodes,
@@ -87,6 +93,7 @@ export function MatterDetailView({
   viewerIsAttorney = false,
   phoneHistory = [],
   emailHistory = [],
+  addressHistory = [],
   canSoftDelete = false,
   showDocuments = true,
   documents = [],
@@ -96,6 +103,7 @@ export function MatterDetailView({
   team: TeamMember[];
   phone: string | null;
   email: string | null;
+  address?: AddressValue | null;
   tasks: TaskRow[];
   notes: { note_id: string; body: string; pinned: boolean; created_at: string }[];
   episodes: TreatmentEpisodeRow[];
@@ -119,6 +127,7 @@ export function MatterDetailView({
   cmCandidates?: AssignableStaff[];
   phoneHistory?: ContactHistoryRow[];
   emailHistory?: ContactHistoryRow[];
+  addressHistory?: AddressHistoryRow[];
   canSoftDelete?: boolean;
   showDocuments?: boolean;
   documents?: DocumentRow[];
@@ -305,6 +314,15 @@ export function MatterDetailView({
                 matterId={matter.client_matter_id}
               />
             )}
+          </div>
+          <div className="min-w-[min(100%,18rem)] basis-full sm:basis-auto">
+            <span className="text-muted">Address — </span>
+            <EditableAddress
+              personId={matter.client_person_id}
+              value={address}
+              history={addressHistory}
+              matterId={matter.client_matter_id}
+            />
           </div>
           <div>
             <span className="text-muted">DOB — </span>

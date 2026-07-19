@@ -26,16 +26,34 @@ export default async function LeadDetailPage({
 
   let phone: string | null = lead.raw_phone;
   let email: string | null = lead.raw_email;
+  let address: {
+    address_line1: string | null;
+    address_line2: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+  } | null = null;
   let phoneHistory: Awaited<ReturnType<typeof listContactHistory>> = [];
   let emailHistory: Awaited<ReturnType<typeof listContactHistory>> = [];
+  let addressHistory: Awaited<ReturnType<typeof listContactHistory>> = [];
 
   if (lead.person_id) {
     const contacts = await getPersonContacts(lead.person_id);
     phone = contacts.phone?.phone ?? phone;
     email = contacts.email?.email ?? email;
-    [phoneHistory, emailHistory] = await Promise.all([
+    if (contacts.address) {
+      address = {
+        address_line1: contacts.address.address_line1 ?? null,
+        address_line2: contacts.address.address_line2 ?? null,
+        city: contacts.address.city ?? null,
+        state: contacts.address.state ?? null,
+        zip: contacts.address.zip ?? null,
+      };
+    }
+    [phoneHistory, emailHistory, addressHistory] = await Promise.all([
       listContactHistory(lead.person_id, "phone"),
       listContactHistory(lead.person_id, "email"),
+      listContactHistory(lead.person_id, "address"),
     ]);
   }
 
@@ -72,9 +90,11 @@ export default async function LeadDetailPage({
       lead={lead}
       phone={phone}
       email={email}
+      address={address}
       attempts={attempts}
       phoneHistory={phoneHistory as never}
       emailHistory={emailHistory as never}
+      addressHistory={addressHistory as never}
       canSoftDelete={canSoftDelete}
       deleteConfirmHint={confirmHint}
       contractPackage={contractPackage}
