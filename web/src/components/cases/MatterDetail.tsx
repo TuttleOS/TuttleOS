@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
-import { CopyContact } from "@/components/ui/CopyContact";
 import { ExpandableNote } from "@/components/ui/ExpandableNote";
+import { EditableContact, type ContactHistoryRow } from "@/components/ui/EditableContact";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { softDeleteMatterAction } from "@/lib/contacts/actions";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import {
   addNoteAction,
@@ -80,6 +82,9 @@ export function MatterDetailView({
   providerDirectory,
   cmCandidates = [],
   viewerIsAttorney = false,
+  phoneHistory = [],
+  emailHistory = [],
+  canSoftDelete = false,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -106,6 +111,9 @@ export function MatterDetailView({
   negotiations: NegotiationRow[];
   providerDirectory: ProviderDirectoryRow[];
   cmCandidates?: AssignableStaff[];
+  phoneHistory?: ContactHistoryRow[];
+  emailHistory?: ContactHistoryRow[];
+  canSoftDelete?: boolean;
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -264,19 +272,29 @@ export function MatterDetailView({
         </div>
 
         {/* Contact strip */}
-        <div className="mt-4 flex flex-wrap gap-4 border-t border-grid pt-3 text-sm">
+        <div className="mt-4 flex flex-wrap gap-6 border-t border-grid pt-3 text-sm">
           <div>
             <span className="text-muted">Phone — </span>
-            {phone ? <CopyContact value={phone} kind="phone" /> : "—"}
+            <EditableContact
+              personId={matter.client_person_id}
+              kind="phone"
+              value={phone}
+              history={phoneHistory}
+              matterId={matter.client_matter_id}
+            />
           </div>
           <div>
             <span className="text-muted">Email — </span>
-            {email ? (
-              <CopyContact value={email} kind="email" />
-            ) : matter.in_person_signing ? (
+            {matter.in_person_signing && !email ? (
               "waived (in-person)"
             ) : (
-              "—"
+              <EditableContact
+                personId={matter.client_person_id}
+                kind="email"
+                value={email}
+                history={emailHistory}
+                matterId={matter.client_matter_id}
+              />
             )}
           </div>
           <div>
@@ -292,6 +310,27 @@ export function MatterDetailView({
                 : (matter.person?.preferred_language ?? "—")}
           </div>
         </div>
+
+        {canSoftDelete ? (
+          <div className="mt-4">
+            <ConfirmDeleteDialog
+              title="Soft-delete this matter?"
+              entityLabel="matter"
+              confirmHint={
+                matter.matter_number ||
+                matter.person?.last_name ||
+                "LASTNAME"
+              }
+              redirectTo="/cases"
+              onConfirm={(confirmText) =>
+                softDeleteMatterAction({
+                  matterId: matter.client_matter_id,
+                  confirmText,
+                })
+              }
+            />
+          </div>
+        ) : null}
 
         {/* Badge wall — status as links */}
         <div className="mt-4 flex flex-wrap gap-2">

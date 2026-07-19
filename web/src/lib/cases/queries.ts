@@ -279,13 +279,43 @@ export async function getPersonContacts(personId: string) {
   const { data, error } = await supabase
     .schema("core")
     .from("contact_point")
-    .select("kind, phone, phone_e164, email, is_primary")
-    .eq("person_id", personId);
+    .select(
+      "contact_point_id, kind, phone, phone_e164, email, is_primary, valid_from, valid_to, deleted_at, updated_at",
+    )
+    .eq("person_id", personId)
+    .is("deleted_at", null)
+    .order("is_primary", { ascending: false });
   if (error) throw new Error(error.message);
-  return {
-    phone: data?.find((c) => c.kind === "phone") ?? null,
-    email: data?.find((c) => c.kind === "email") ?? null,
-  };
+  const phone =
+    data?.find((c) => c.kind === "phone" && c.is_primary) ??
+    data?.find((c) => c.kind === "phone") ??
+    null;
+  const email =
+    data?.find((c) => c.kind === "email" && c.is_primary) ??
+    data?.find((c) => c.kind === "email") ??
+    null;
+  return { phone, email };
+}
+
+/** Prior / superseded phone & email rows for B6 history strip. */
+export async function listContactHistory(
+  personId: string,
+  kind: "phone" | "email",
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .schema("core")
+    .from("contact_point")
+    .select(
+      "contact_point_id, phone, email, valid_from, valid_to, deleted_at, updated_at, is_primary",
+    )
+    .eq("person_id", personId)
+    .eq("kind", kind)
+    .not("deleted_at", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(12);
+  if (error) return [];
+  return data ?? [];
 }
 
 export async function listMatterTasks(matterId: string): Promise<TaskRow[]> {

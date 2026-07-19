@@ -7,6 +7,7 @@ import {
   listAssignableCaseManagers,
   listClaims,
   listCompanionMatters,
+  listContactHistory,
   listMatterTasks,
   listPinnedNotes,
   listTreatmentEpisodes,
@@ -38,6 +39,8 @@ export default async function MatterPage({
   const [
     team,
     contacts,
+    phoneHistory,
+    emailHistory,
     tasks,
     notes,
     episodes,
@@ -53,6 +56,8 @@ export default async function MatterPage({
   ] = await Promise.all([
     getMatterTeam(matter.client_matter_id),
     getPersonContacts(matter.client_person_id),
+    listContactHistory(matter.client_person_id, "phone"),
+    listContactHistory(matter.client_person_id, "email"),
     listMatterTasks(matter.client_matter_id),
     listPinnedNotes(matter.client_matter_id),
     listTreatmentEpisodes(matter.client_matter_id),
@@ -77,12 +82,17 @@ export default async function MatterPage({
     .eq("client_matter_id", matter.client_matter_id)
     .maybeSingle();
 
+  const canSoftDelete =
+    staff.is_attorney || staff.role_code === "admin";
+
   return (
     <MatterDetailView
       matter={matter}
       team={team}
       phone={contacts.phone?.phone ?? contacts.phone?.phone_e164 ?? null}
       email={contacts.email?.email ?? null}
+      phoneHistory={phoneHistory as never}
+      emailHistory={emailHistory as never}
       tasks={tasks}
       notes={notes}
       episodes={episodes}
@@ -98,6 +108,7 @@ export default async function MatterPage({
       stalled={(stalled as StalledRow | null) ?? null}
       viewerRole={staff.role_code}
       viewerIsAttorney={staff.is_attorney}
+      canSoftDelete={canSoftDelete}
       pdClaims={pdClaims}
       coverageBoxes={coverageBoxes}
       recordRequests={recordRequests}

@@ -17,6 +17,12 @@ import { estimateSolPreview } from "@/lib/intake/sol";
 import { LEAD_STATUS_META, type LeadRow } from "@/lib/intake/types";
 import { CopyContact } from "@/components/ui/CopyContact";
 import { LeadTemperatureSelect } from "./LeadTemperatureSelect";
+import {
+  EditableContact,
+  type ContactHistoryRow,
+} from "@/components/ui/EditableContact";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { softDeleteLeadAction } from "@/lib/contacts/actions";
 
 type Attempt = {
   communication_log_id: string;
@@ -31,11 +37,19 @@ export function LeadDetail({
   phone,
   email,
   attempts,
+  phoneHistory = [],
+  emailHistory = [],
+  canSoftDelete = false,
+  deleteConfirmHint = "LASTNAME",
 }: {
   lead: LeadRow;
   phone: string | null;
   email: string | null;
   attempts: Attempt[];
+  phoneHistory?: ContactHistoryRow[];
+  emailHistory?: ContactHistoryRow[];
+  canSoftDelete?: boolean;
+  deleteConfirmHint?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -117,7 +131,15 @@ export function LeadDetail({
               </dd>
               <dt className="text-muted">Phone</dt>
               <dd>
-                {phone || lead.raw_phone ? (
+                {lead.person_id ? (
+                  <EditableContact
+                    personId={lead.person_id}
+                    kind="phone"
+                    value={phone}
+                    history={phoneHistory}
+                    leadId={lead.intake_lead_id}
+                  />
+                ) : phone || lead.raw_phone ? (
                   <CopyContact
                     value={(phone ?? lead.raw_phone)!}
                     kind="phone"
@@ -128,7 +150,19 @@ export function LeadDetail({
               </dd>
               <dt className="text-muted">Email</dt>
               <dd>
-                {email || lead.raw_email ? (
+                {lead.person_id ? (
+                  inPerson && !email ? (
+                    "waived (in-person)"
+                  ) : (
+                    <EditableContact
+                      personId={lead.person_id}
+                      kind="email"
+                      value={email}
+                      history={emailHistory}
+                      leadId={lead.intake_lead_id}
+                    />
+                  )
+                ) : email || lead.raw_email ? (
                   <CopyContact
                     value={(email ?? lead.raw_email)!}
                     kind="email"
@@ -325,6 +359,20 @@ export function LeadDetail({
                   Record non-engagement letter sent
                 </button>
               )}
+              {canSoftDelete ? (
+                <ConfirmDeleteDialog
+                  title="Soft-delete this lead?"
+                  entityLabel="lead"
+                  confirmHint={deleteConfirmHint}
+                  redirectTo="/intake"
+                  onConfirm={(confirmText) =>
+                    softDeleteLeadAction({
+                      leadId: lead.intake_lead_id,
+                      confirmText,
+                    })
+                  }
+                />
+              ) : null}
             </div>
             {msg && (
               <p className="mt-3 text-sm font-semibold text-success">{msg}</p>

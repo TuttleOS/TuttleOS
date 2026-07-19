@@ -46,10 +46,16 @@ export async function getPersonContacts(personId: string) {
     .schema("core")
     .from("contact_point")
     .select("contact_point_id, kind, phone, phone_e164, email, is_primary")
-    .eq("person_id", personId);
+    .eq("person_id", personId)
+    .is("deleted_at", null)
+    .order("is_primary", { ascending: false });
   if (error) throw new Error(error.message);
-  const phone = data?.find((c) => c.kind === "phone");
-  const email = data?.find((c) => c.kind === "email");
+  const phone =
+    data?.find((c) => c.kind === "phone" && c.is_primary) ??
+    data?.find((c) => c.kind === "phone");
+  const email =
+    data?.find((c) => c.kind === "email" && c.is_primary) ??
+    data?.find((c) => c.kind === "email");
   return { phone, email, all: data ?? [] };
 }
 
