@@ -54,6 +54,7 @@ export function LeadDetail({
   deleteConfirmHint = "LASTNAME",
   contractPackage = null,
   companionOptions = [],
+  crashCompanions = [],
   locationGuess = "San Antonio",
 }: {
   lead: LeadRow;
@@ -66,6 +67,7 @@ export function LeadDetail({
   deleteConfirmHint?: string;
   contractPackage?: (ContractPackage & { signers: ContractSigner[] }) | null;
   companionOptions?: CompanionOption[];
+  crashCompanions?: LeadRow[];
   locationGuess?: string;
 }) {
   const router = useRouter();
@@ -146,6 +148,29 @@ export function LeadDetail({
                   .filter((l) => !l.startsWith("[in-person"))
                   .join(" ") || "—"}
               </dd>
+              {crashCompanions.length > 0 ? (
+                <>
+                  <dt className="text-muted">Same crash</dt>
+                  <dd>
+                    <ul className="space-y-1">
+                      {crashCompanions.map((c) => (
+                        <li key={c.intake_lead_id}>
+                          <Link
+                            href={`/intake/leads/${c.intake_lead_id}`}
+                            className="font-semibold text-accent-dk hover:underline"
+                          >
+                            {leadDisplayName(c)}
+                          </Link>
+                          <span className="text-muted">
+                            {" "}
+                            · {LEAD_STATUS_META[c.status]?.label ?? c.status}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                </>
+              ) : null}
               <dt className="text-muted">Phone</dt>
               <dd>
                 {lead.person_id ? (

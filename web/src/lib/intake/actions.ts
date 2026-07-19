@@ -34,12 +34,42 @@ export async function createLeadAction(
       };
     }
 
+    const companions = (input.companions ?? []).filter((c) =>
+      c.full_name.trim(),
+    );
+
+    let incidentGroupId: string | null = null;
+    if (input.same_crash_as_lead_id) {
+      const resolved = await resolveOrCreateSharedIncidentGroup(
+        supabase,
+        input.same_crash_as_lead_id,
+        {
+          incident_date: input.incident_date,
+          case_type_code: input.case_type_code,
+          location: input.location,
+        },
+      );
+      if (!resolved.ok) return resolved;
+      incidentGroupId = resolved.incidentGroupId;
+    } else if (companions.length > 0) {
+      const created = await createIncidentGroupFromForm(supabase, {
+        incident_date: input.incident_date,
+        case_type_code: input.case_type_code,
+        location: input.location,
+        multiple: true,
+      });
+      if (!created.ok) return created;
+      incidentGroupId = created.incidentGroupId;
+    }
+
     const lang =
       input.preferred_language === "es"
         ? "es"
         : input.preferred_language === "other"
           ? "other"
           : "en";
+
+    const dob = normalizeDob(input.date_of_birth);
 
     const { data: person, error: pErr } = await supabase
       .schema("core")
@@ -50,6 +80,7 @@ export async function createLeadAction(
         last_name: input.last_name.trim() || "Unknown",
         suffix: input.suffix?.trim() || null,
         goes_by: input.goes_by?.trim() || null,
+        date_of_birth: dob,
         preferred_language: lang,
       })
       .select("person_id")
@@ -111,6 +142,7 @@ export async function createLeadAction(
         estimated_sol_date: estimateSolIso(input.incident_date || null),
         status: "open",
         handled_by: staff.staff_id,
+        incident_group_id: incidentGroupId,
       })
       .select("intake_lead_id")
       .single();
@@ -119,20 +151,261 @@ export async function createLeadAction(
       return { ok: false, error: lErr?.message ?? "Could not create lead" };
     }
 
+    let companionCount = 0;
+    for (const c of companions) {
+      const names = splitFullName(c.full_name);
+      const cDob = normalizeDob(c.date_of_birth);
+      const { data: cPerson, error: cpErr } = await supabase
+        .schema("core")
+        .from("person")
+        .insert({
+          first_name: names.first,
+          last_name: names.last,
+          date_of_birth: cDob,
+          preferred_language: lang,
+        })
+        .select("person_id")
+        .single();
+      if (cpErr || !cPerson) {
+        return {
+          ok: false,
+          error: cpErr?.message ?? `Could not create companion ${c.full_name}`,
+        };
+      }
+
+      const cEmail = c.email?.trim() || "";
+      if (cEmail) {
+        const { error: cemErr } = await supabase
+          .schema("core")
+          .from("contact_point")
+          .insert({
+            person_id: cPerson.person_id,
+            kind: "email",
+            email: cEmail,
+            is_primary: true,
+          });
+        if (cemErr) return { ok: false, error: cemErr.message };
+      }
+
+      const { data: cLead, error: clErr } = await supabase
+        .schema("core")
+        .from("intake_lead")
+        .insert({
+          person_id: cPerson.person_id,
+          raw_name: c.full_name.trim(),
+          raw_email: cEmail || null,
+          incident_date: input.incident_date || null,
+          case_type_code: input.case_type_code || null,
+          description,
+          marketing_source: input.marketing_source?.trim() || null,
+          estimated_sol_date: estimateSolIso(input.incident_date || null),
+          status: "open",
+          handled_by: staff.staff_id,
+          incident_group_id: incidentGroupId,
+        })
+        .select("intake_lead_id")
+        .single();
+      if (clErr || !cLead) {
+        return {
+          ok: false,
+          error: clErr?.message ?? `Could not save companion ${c.full_name}`,
+        };
+      }
+
+      await supabase.schema("workflow").from("communication_log").insert({
+        intake_lead_id: cLead.intake_lead_id,
+        person_id: cPerson.person_id,
+        staff_id: staff.staff_id,
+        channel: "portal",
+        direction: "inbound",
+        summary: `Companion lead created with ${input.first_name} ${input.last_name}`.trim(),
+      });
+      companionCount += 1;
+    }
+
     await supabase.schema("workflow").from("communication_log").insert({
       intake_lead_id: lead.intake_lead_id,
       person_id: person.person_id,
       staff_id: staff.staff_id,
       channel: "portal",
       direction: "inbound",
-      summary: "Lead created in Intake workspace",
+      summary:
+        companionCount > 0
+          ? `Lead created with ${companionCount} companion${companionCount === 1 ? "" : "s"} on same crash`
+          : incidentGroupId
+            ? "Lead created and linked to same crash as companion lead"
+            : "Lead created in Intake workspace",
     });
 
     revalidatePath("/intake");
-    return { ok: true, id: lead.intake_lead_id, message: "Lead saved" };
+    return {
+      ok: true,
+      id: lead.intake_lead_id,
+      message:
+        companionCount > 0
+          ? `Saved primary + ${companionCount} companion lead${companionCount === 1 ? "" : "s"}`
+          : "Lead saved",
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
+}
+
+type Sb = ReturnType<typeof createClient>;
+
+function normalizeDob(raw?: string | null): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  // Accept YYYY-MM-DD from <input type="date">
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  return null;
+}
+
+function splitFullName(full: string): { first: string; last: string } {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { first: "Unknown", last: "Unknown" };
+  if (parts.length === 1) return { first: parts[0], last: "Unknown" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+async function createIncidentGroupFromForm(
+  supabase: Sb,
+  input: {
+    incident_date: string;
+    case_type_code: string;
+    location: string;
+    multiple?: boolean;
+  },
+): Promise<
+  | { ok: true; incidentGroupId: string }
+  | { ok: false; error: string }
+> {
+  if (!input.incident_date || !input.case_type_code) {
+    return {
+      ok: false,
+      error: "Incident date and type required to link multiple people",
+    };
+  }
+  const loc = input.location.trim();
+  if (!loc) {
+    return {
+      ok: false,
+      error: "Location required to link multiple people on one crash",
+    };
+  }
+  const { data: ig, error } = await supabase
+    .schema("core")
+    .from("incident_group")
+    .insert({
+      date_of_loss: input.incident_date,
+      case_type_code: input.case_type_code,
+      incident_city: loc.length < 40 ? loc : null,
+      incident_location_description: loc.length >= 40 ? loc : loc,
+      incident_state: "TX",
+      multiple_clients: Boolean(input.multiple),
+    })
+    .select("incident_group_id")
+    .single();
+  if (error || !ig) {
+    return { ok: false, error: error?.message ?? "Could not create shared crash" };
+  }
+  return { ok: true, incidentGroupId: ig.incident_group_id as string };
+}
+
+async function resolveOrCreateSharedIncidentGroup(
+  supabase: Sb,
+  anchorLeadId: string,
+  fallback: {
+    incident_date: string;
+    case_type_code: string;
+    location: string;
+  },
+): Promise<
+  | { ok: true; incidentGroupId: string }
+  | { ok: false; error: string }
+> {
+  const { data: anchor, error } = await supabase
+    .schema("core")
+    .from("intake_lead")
+    .select(
+      "intake_lead_id, incident_date, case_type_code, description, incident_group_id, resulting_matter_id",
+    )
+    .eq("intake_lead_id", anchorLeadId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error || !anchor) {
+    return { ok: false, error: "Companion lead not found" };
+  }
+
+  if (anchor.incident_group_id) {
+    return { ok: true, incidentGroupId: anchor.incident_group_id as string };
+  }
+
+  if (anchor.resulting_matter_id) {
+    const { data: matter } = await supabase
+      .schema("core")
+      .from("client_matter")
+      .select("incident_group_id")
+      .eq("client_matter_id", anchor.resulting_matter_id)
+      .maybeSingle();
+    if (matter?.incident_group_id) {
+      await supabase
+        .schema("core")
+        .from("intake_lead")
+        .update({ incident_group_id: matter.incident_group_id })
+        .eq("intake_lead_id", anchorLeadId);
+      return { ok: true, incidentGroupId: matter.incident_group_id as string };
+    }
+  }
+
+  const doi = (anchor.incident_date as string | null) || fallback.incident_date;
+  const caseType =
+    (anchor.case_type_code as string | null) || fallback.case_type_code;
+  const locFromAnchor = String(anchor.description ?? "")
+    .split("\n")
+    .filter((line) => !line.startsWith("[in-person"))
+    .join(" ")
+    .trim();
+  const loc = locFromAnchor || fallback.location.trim();
+
+  if (!doi || !caseType) {
+    return {
+      ok: false,
+      error:
+        "Companion lead needs an incident date and type before linking (or fill them on this form)",
+    };
+  }
+  if (!loc) {
+    return {
+      ok: false,
+      error: "Companion lead needs a location before linking (or enter one here)",
+    };
+  }
+
+  const { data: ig, error: igErr } = await supabase
+    .schema("core")
+    .from("incident_group")
+    .insert({
+      date_of_loss: doi,
+      case_type_code: caseType,
+      incident_city: loc.length < 40 ? loc : null,
+      incident_location_description: loc.length >= 40 ? loc : loc,
+      incident_state: "TX",
+      multiple_clients: true,
+    })
+    .select("incident_group_id")
+    .single();
+  if (igErr || !ig) {
+    return { ok: false, error: igErr?.message ?? "Could not create shared crash" };
+  }
+
+  await supabase
+    .schema("core")
+    .from("intake_lead")
+    .update({ incident_group_id: ig.incident_group_id })
+    .eq("intake_lead_id", anchorLeadId);
+
+  return { ok: true, incidentGroupId: ig.incident_group_id as string };
 }
 
 export async function updateLeadStatusAction(
@@ -293,7 +566,7 @@ export async function convertLeadToMatterAction(
       .schema("core")
       .from("intake_lead")
       .select(
-        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email",
+        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email, incident_group_id",
       )
       .eq("intake_lead_id", leadId)
       .single();
@@ -334,20 +607,36 @@ export async function convertLeadToMatterAction(
       return { ok: false, error: "Injury location required before opening a matter" };
     }
 
-    const { data: ig, error: igErr } = await supabase
-      .schema("core")
-      .from("incident_group")
-      .insert({
-        date_of_loss: lead.incident_date,
-        case_type_code: lead.case_type_code,
-        incident_city: loc.length < 40 ? loc : null,
-        incident_location_description: loc.length >= 40 ? loc : loc,
-        incident_state: "TX",
-      })
-      .select("incident_group_id")
-      .single();
-
-    if (igErr || !ig) return { ok: false, error: igErr?.message ?? "Could not create incident" };
+    let incidentGroupId = (lead.incident_group_id as string | null) ?? null;
+    if (incidentGroupId) {
+      await supabase
+        .schema("core")
+        .from("incident_group")
+        .update({ multiple_clients: true })
+        .eq("incident_group_id", incidentGroupId);
+    } else {
+      const { data: ig, error: igErr } = await supabase
+        .schema("core")
+        .from("incident_group")
+        .insert({
+          date_of_loss: lead.incident_date,
+          case_type_code: lead.case_type_code,
+          incident_city: loc.length < 40 ? loc : null,
+          incident_location_description: loc.length >= 40 ? loc : loc,
+          incident_state: "TX",
+        })
+        .select("incident_group_id")
+        .single();
+      if (igErr || !ig) {
+        return { ok: false, error: igErr?.message ?? "Could not create incident" };
+      }
+      incidentGroupId = ig.incident_group_id as string;
+      await supabase
+        .schema("core")
+        .from("intake_lead")
+        .update({ incident_group_id: incidentGroupId })
+        .eq("intake_lead_id", leadId);
+    }
 
     const matterNumber = `INT-${lead.intake_lead_id.slice(0, 8).toUpperCase()}`;
 
@@ -355,7 +644,7 @@ export async function convertLeadToMatterAction(
       .schema("core")
       .from("client_matter")
       .insert({
-        incident_group_id: ig.incident_group_id,
+        incident_group_id: incidentGroupId,
         client_person_id: lead.person_id,
         matter_number: matterNumber,
         client_role: defaultClientRole(lead.case_type_code),

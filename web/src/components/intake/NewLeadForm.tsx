@@ -13,6 +13,13 @@ import {
 import { estimateSolPreview } from "@/lib/intake/sol";
 import { DateField } from "@/components/ui/DateField";
 
+type CompanionRow = {
+  key: string;
+  full_name: string;
+  email: string;
+  date_of_birth: string;
+};
+
 export function NewLeadForm() {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -23,6 +30,7 @@ export function NewLeadForm() {
   const [last, setLast] = useState("");
   const [suffix, setSuffix] = useState("");
   const [goesBy, setGoesBy] = useState("");
+  const [dob, setDob] = useState("");
   const [type, setType] = useState("");
   const [doi, setDoi] = useState("");
   const [loc, setLoc] = useState("");
@@ -32,6 +40,7 @@ export function NewLeadForm() {
   const [inPerson, setInPerson] = useState(false);
   const [lang, setLang] = useState<"en" | "es" | "other">("en");
   const [source, setSource] = useState("");
+  const [companions, setCompanions] = useState<CompanionRow[]>([]);
 
   const digits = phone.replace(/\D/g, "").slice(0, 10);
   const hint = phoneHint(country, digits);
@@ -67,6 +76,31 @@ export function NewLeadForm() {
     setTimeout(() => el.classList.remove("ring-2", "ring-accent"), 1600);
   }
 
+  function addCompanion() {
+    setCompanions((prev) => [
+      ...prev,
+      {
+        key: `c-${Date.now()}-${prev.length}`,
+        full_name: "",
+        email: "",
+        date_of_birth: "",
+      },
+    ]);
+  }
+
+  function updateCompanion(
+    key: string,
+    patch: Partial<Omit<CompanionRow, "key">>,
+  ) {
+    setCompanions((prev) =>
+      prev.map((c) => (c.key === key ? { ...c, ...patch } : c)),
+    );
+  }
+
+  function removeCompanion(key: string) {
+    setCompanions((prev) => prev.filter((c) => c.key !== key));
+  }
+
   function save(partial: boolean) {
     setError(null);
     start(async () => {
@@ -76,6 +110,7 @@ export function NewLeadForm() {
         last_name: last,
         suffix,
         goes_by: goesBy,
+        date_of_birth: dob || undefined,
         case_type_code: type,
         incident_date: doi,
         location: loc,
@@ -85,6 +120,13 @@ export function NewLeadForm() {
         in_person_signing: inPerson,
         preferred_language: lang,
         marketing_source: source,
+        companions: companions
+          .filter((c) => c.full_name.trim())
+          .map((c) => ({
+            full_name: c.full_name,
+            email: c.email,
+            date_of_birth: c.date_of_birth || undefined,
+          })),
         partial,
       });
       if (!res.ok) {
@@ -101,9 +143,8 @@ export function NewLeadForm() {
       <section className="rounded-panel border border-grid bg-surface p-6 shadow-soft">
         <h1 className="text-xl font-bold">New Lead — the six minimums</h1>
         <p className="mt-1 text-sm text-muted">
-          Only these six facts are required to sign someone up. Everything else
-          can wait. Partial save is always allowed for a lead — the gate only
-          blocks opening a matter.
+          Primary person below. Add others on the same crash with name, email,
+          and optional DOB — each becomes their own linked lead.
         </p>
 
         <div className="mt-4 grid gap-x-3 sm:grid-cols-2">
@@ -157,6 +198,15 @@ export function NewLeadForm() {
             onChange={(e) => setGoesBy(e.target.value)}
             className={INPUT}
             placeholder="Nickname"
+          />
+        </Field>
+
+        <Field label="Date of birth" hint="optional · MM/DD/YYYY">
+          <DateField
+            id="f-dob"
+            value={dob}
+            onChange={setDob}
+            className={INPUT}
           />
         </Field>
 
@@ -277,6 +327,86 @@ export function NewLeadForm() {
           />
         </Field>
 
+        <div className="mt-6 border-t border-grid pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
+                Others on this crash
+              </h2>
+              <p className="mt-1 text-xs text-muted">
+                Name + email (+ optional DOB). Each person gets their own lead,
+                linked to the same crash.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addCompanion}
+              className="rounded-lg border border-grid bg-page px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-2"
+            >
+              + Add person
+            </button>
+          </div>
+
+          {companions.length === 0 ? (
+            <p className="mt-3 text-xs text-muted">
+              No companions yet — click Add person for passengers / family on
+              this wreck.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {companions.map((c, idx) => (
+                <li
+                  key={c.key}
+                  className="rounded-lg border border-grid bg-page p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted">
+                      Person {idx + 2}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeCompanion(c.key)}
+                      className="text-xs font-semibold text-danger hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <Field label="Full name" required>
+                    <input
+                      value={c.full_name}
+                      onChange={(e) =>
+                        updateCompanion(c.key, { full_name: e.target.value })
+                      }
+                      className={INPUT}
+                      placeholder="Jordan Reyes"
+                    />
+                  </Field>
+                  <Field label="Email">
+                    <input
+                      type="email"
+                      value={c.email}
+                      onChange={(e) =>
+                        updateCompanion(c.key, { email: e.target.value })
+                      }
+                      className={INPUT}
+                      placeholder="jordan@example.com"
+                    />
+                  </Field>
+                  <Field label="Date of birth" hint="optional">
+                    <DateField
+                      value={c.date_of_birth}
+                      onChange={(iso) =>
+                        updateCompanion(c.key, { date_of_birth: iso })
+                      }
+                      className={INPUT}
+                    />
+                  </Field>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {sol && (
           <div className="mt-4 rounded-lg border border-warning/40 bg-warning-bg px-3 py-2 text-sm text-warning">
             Est. SOL: <strong>{sol.label}</strong> — auto-computed as DOI + 2
@@ -323,7 +453,11 @@ export function NewLeadForm() {
             onClick={() => save(false)}
             className="rounded-lg bg-accent-dk px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Save lead"}
+            {pending
+              ? "Saving…"
+              : companions.some((c) => c.full_name.trim())
+                ? "Save lead + companions"
+                : "Save lead"}
           </button>
           <button
             type="button"
@@ -341,12 +475,16 @@ export function NewLeadForm() {
           What happens next
         </h2>
         <ol className="mt-3 list-decimal space-y-2 pl-4 text-sm text-muted">
-          <li>Lead saved → appears in the queue.</li>
+          <li>Primary lead saved → appears in the queue.</li>
+          <li>
+            <strong>Add person</strong> creates extra leads on the same crash
+            (each keeps their own file; companions show under Same crash).
+          </li>
           <li>Estimated SOL is computed immediately — even for rejects.</li>
           <li>Gate satisfied → mark contract sent when ready.</li>
           <li>
-            Signature → open the matter; DB stamps dates and CM checklist path.
-            Intake&apos;s job is done.
+            Signature → open the matter; companions convert onto the shared
+            crash. Intake&apos;s job is done.
           </li>
         </ol>
       </aside>

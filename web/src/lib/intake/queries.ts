@@ -5,7 +5,7 @@ const LEAD_SELECT = `
   intake_lead_id, person_id, raw_name, raw_phone, raw_email, contact_date,
   incident_date, case_type_code, description, intake_source, marketing_source,
   estimated_sol_date, status, lead_temperature, rejected_reason, non_engagement_letter_sent_date,
-  handled_by, resulting_matter_id, created_at, updated_at, deleted_at,
+  handled_by, resulting_matter_id, incident_group_id, created_at, updated_at, deleted_at,
   person:person_id(person_id, first_name, middle_name, last_name, suffix, goes_by, preferred_language)
 `;
 
@@ -88,5 +88,52 @@ export async function listMyIntakeActivity(staffId: string, limit = 30) {
     .limit(limit);
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+/** Open / in-flight leads staff can attach a new person to as same-crash companions. */
+export async function listLinkableLeadsForCrash(limit = 40) {
+  const leads = await listLeads("all");
+  return leads
+    .filter((l) =>
+      ["open", "contract_sent", "signed"].includes(l.status),
+    )
+    .slice(0, limit)
+    .map((l) => {
+      const p = l.person;
+      const name = p
+        ? `${p.last_name}, ${p.first_name}`
+        : l.raw_name || "Unnamed lead";
+      return {
+        intake_lead_id: l.intake_lead_id,
+        name,
+        incident_date: l.incident_date,
+        case_type_code: l.case_type_code,
+        location:
+          (l.description ?? "")
+            .split("\n")
+            .filter((line) => !line.startsWith("[in-person"))
+            .join(" ")
+            .trim() || null,
+        status: l.status,
+      };
+    });
+}
+
+export async function listCompanionLeadsForGroup(
+  incidentGroupId: string,
+  excludeLeadId?: string,
+): Promise<LeadRow[]> {
+  const supabase = createClient();
+  let q = supabase
+    .schema("core")
+    .from("intake_lead")
+    .select(LEAD_SELECT)
+    .eq("incident_group_id", incidentGroupId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  if (excludeLeadId) q = q.neq("intake_lead_id", excludeLeadId);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as LeadRow[];
 }
 

@@ -64,10 +64,17 @@ export type LeadRow = {
   non_engagement_letter_sent_date: string | null;
   handled_by: string | null;
   resulting_matter_id: string | null;
+  incident_group_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
   person?: LeadPerson | null;
+};
+
+export type CompanionFormInput = {
+  full_name: string;
+  email?: string;
+  date_of_birth?: string;
 };
 
 export type LeadFormInput = {
@@ -76,6 +83,7 @@ export type LeadFormInput = {
   last_name: string;
   suffix?: string;
   goes_by?: string;
+  date_of_birth?: string;
   case_type_code: string;
   incident_date: string;
   location: string;
@@ -85,6 +93,10 @@ export type LeadFormInput = {
   in_person_signing: boolean;
   preferred_language: "en" | "es" | "other";
   marketing_source?: string;
+  /** Extra people on the same crash — each becomes their own linked lead. */
+  companions?: CompanionFormInput[];
+  /** Link onto an existing lead’s crash (advanced). */
+  same_crash_as_lead_id?: string | null;
   partial?: boolean;
 };
 

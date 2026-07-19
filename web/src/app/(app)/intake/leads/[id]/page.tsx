@@ -3,6 +3,7 @@ import { LeadDetail } from "@/components/intake/LeadDetail";
 import {
   getLead,
   getPersonContacts,
+  listCompanionLeadsForGroup,
   listLeadAttempts,
 } from "@/lib/intake/queries";
 import { listContactHistory } from "@/lib/cases/queries";
@@ -38,11 +39,18 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [attempts, contractPackage, companionOptions] = await Promise.all([
-    listLeadAttempts(lead.intake_lead_id),
-    getActivePackageForLead(lead.intake_lead_id),
-    listCompanionLeadOptions(lead.intake_lead_id),
-  ]);
+  const [attempts, contractPackage, companionOptions, crashCompanions] =
+    await Promise.all([
+      listLeadAttempts(lead.intake_lead_id),
+      getActivePackageForLead(lead.intake_lead_id),
+      listCompanionLeadOptions(lead.intake_lead_id),
+      lead.incident_group_id
+        ? listCompanionLeadsForGroup(
+            lead.incident_group_id,
+            lead.intake_lead_id,
+          )
+        : Promise.resolve([]),
+    ]);
 
   const canSoftDelete =
     !!staff && (staff.is_attorney || staff.role_code === "admin");
@@ -71,6 +79,7 @@ export default async function LeadDetailPage({
       deleteConfirmHint={confirmHint}
       contractPackage={contractPackage}
       companionOptions={companionOptions}
+      crashCompanions={crashCompanions}
       locationGuess={locationGuess}
     />
   );

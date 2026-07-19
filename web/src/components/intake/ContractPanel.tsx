@@ -93,7 +93,8 @@ export function ContractPanel({
       },
     ];
   });
-  const [extraName, setExtraName] = useState("");
+  const [companionQuery, setCompanionQuery] = useState("");
+  const [companionOpen, setCompanionOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   const locked = ["sent", "partially_signed", "executed"].includes(
@@ -120,23 +121,21 @@ export function ContractPanel({
     ? contractPublicUrl(activePackage.public_token)
     : null;
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string; message?: string; token?: string }>) {
-    setErr(null);
-    setMsg(null);
-    start(async () => {
-      const res = await fn();
-      if (!res.ok) setErr(res.error ?? "Failed");
-      else setMsg(res.message ?? "Done");
-      router.refresh();
-    });
-  }
+  const availableCompanions = useMemo(() => {
+    const q = companionQuery.trim().toLowerCase();
+    return companionOptions
+      .filter((c) => !signers.some((s) => s.intake_lead_id === c.intake_lead_id))
+      .filter((c) => {
+        if (!q) return true;
+        const hay = `${c.name} ${c.email ?? ""} ${c.phone ?? ""}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 10);
+  }, [companionOptions, signers, companionQuery]);
 
-  function toggleCompanion(c: CompanionOption) {
+  function addCompanionLead(c: CompanionOption) {
     setSigners((prev) => {
-      const exists = prev.some((s) => s.intake_lead_id === c.intake_lead_id);
-      if (exists) {
-        return prev.filter((s) => s.intake_lead_id !== c.intake_lead_id);
-      }
+      if (prev.some((s) => s.intake_lead_id === c.intake_lead_id)) return prev;
       return [
         ...prev,
         {
@@ -150,6 +149,35 @@ export function ContractPanel({
           person_id: c.person_id,
         },
       ];
+    });
+    setCompanionQuery("");
+    setCompanionOpen(false);
+  }
+
+  function addManualSigner() {
+    const name = companionQuery.trim();
+    if (!name) return;
+    setSigners((prev) => [
+      ...prev,
+      {
+        key: `manual-${Date.now()}`,
+        full_name: name,
+        email: "",
+        phone: "",
+      },
+    ]);
+    setCompanionQuery("");
+    setCompanionOpen(false);
+  }
+
+  function run(fn: () => Promise<{ ok: boolean; error?: string; message?: string; token?: string }>) {
+    setErr(null);
+    setMsg(null);
+    start(async () => {
+      const res = await fn();
+      if (!res.ok) setErr(res.error ?? "Failed");
+      else setMsg(res.message ?? "Done");
+      router.refresh();
     });
   }
 
@@ -377,80 +405,121 @@ export function ContractPanel({
               ))}
             </ul>
 
-            {companionOptions.length > 0 ? (
-              <div className="mt-3">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                  Add companion leads
-                </div>
-                <ul className="mt-1 max-h-32 space-y-1 overflow-auto text-xs">
-                  {companionOptions.map((c) => {
-                    const on = signers.some(
-                      (s) => s.intake_lead_id === c.intake_lead_id,
-                    );
-                    return (
-                      <li key={c.intake_lead_id}>
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={on}
-                            onChange={() => toggleCompanion(c)}
-                          />
-                          <span>
-                            {c.name}{" "}
-                            <span className="text-muted">({c.status})</span>
-                          </span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
+            <div className="relative mt-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                Link companion / add signer
               </div>
-            ) : null}
-
-            <div className="mt-2 flex gap-2">
-              <input
-                className="h-9 flex-1 rounded-lg border border-grid bg-page px-2 text-xs"
-                placeholder="Add signer by name…"
-                value={extraName}
-                onChange={(e) => setExtraName(e.target.value)}
-              />
-              <button
-                type="button"
-                className="rounded-lg border border-grid px-2 text-xs font-semibold hover:bg-surface-2"
-                onClick={() => {
-                  if (!extraName.trim()) return;
-                  setSigners((prev) => [
-                    ...prev,
-                    {
-                      key: `manual-${Date.now()}`,
-                      full_name: extraName.trim(),
-                      email: "",
-                      phone: "",
-                    },
-                  ]);
-                  setExtraName("");
-                }}
-              >
-                Add
-              </button>
+              <div className="mt-1 flex gap-2">
+                <input
+                  className="h-9 flex-1 rounded-lg border border-grid bg-page px-2 text-xs"
+                  placeholder="Search leads by name, email, or phone…"
+                  value={companionQuery}
+                  onChange={(e) => {
+                    setCompanionQuery(e.target.value);
+                    setCompanionOpen(true);
+                  }}
+                  onFocus={() => setCompanionOpen(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => setCompanionOpen(false), 150);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (availableCompanions[0]) {
+                        addCompanionLead(availableCompanions[0]);
+                      } else {
+                        addManualSigner();
+                      }
+                    }
+                    if (e.key === "Escape") setCompanionOpen(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="rounded-lg border border-grid px-2 text-xs font-semibold hover:bg-surface-2"
+                  onClick={() => {
+                    if (availableCompanions[0] && companionQuery.trim()) {
+                      addCompanionLead(availableCompanions[0]);
+                    } else {
+                      addManualSigner();
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              {companionOpen &&
+              (availableCompanions.length > 0 || companionQuery.trim()) ? (
+                <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-grid bg-surface py-1 shadow-soft">
+                  {availableCompanions.map((c) => (
+                    <li key={c.intake_lead_id}>
+                      <button
+                        type="button"
+                        className="flex w-full flex-col px-3 py-2 text-left text-xs hover:bg-page"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => addCompanionLead(c)}
+                      >
+                        <span className="font-semibold text-ink">{c.name}</span>
+                        <span className="text-muted">
+                          {c.status}
+                          {c.email ? ` · ${c.email}` : ""}
+                          {c.phone ? ` · ${c.phone}` : ""}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                  {companionQuery.trim() &&
+                  !availableCompanions.some(
+                    (c) =>
+                      c.name.toLowerCase() ===
+                      companionQuery.trim().toLowerCase(),
+                  ) ? (
+                    <li>
+                      <button
+                        type="button"
+                        className="flex w-full px-3 py-2 text-left text-xs font-semibold text-accent-dk hover:bg-page"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={addManualSigner}
+                      >
+                        Add “{companionQuery.trim()}” as new signer
+                      </button>
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
             </div>
           </div>
 
-          <button
-            type="button"
-            className="text-xs font-semibold text-accent-dk hover:underline"
-            onClick={() => setShowPreview((p) => !p)}
-          >
-            {showPreview ? "Hide preview" : "Preview contract text"}
-          </button>
           {showPreview ? (
-            <div
-              className="contract-body max-h-64 overflow-auto rounded-lg border border-grid bg-page p-3 text-[11px] leading-relaxed [&_.contract-field]:font-bold [&_p]:mb-2"
-              dangerouslySetInnerHTML={{ __html: previewBodyHtml }}
-            />
+            <div className="rounded-lg border border-grid bg-page p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
+                  Contract preview
+                </h3>
+                <button
+                  type="button"
+                  className="text-[11px] font-semibold text-muted hover:underline"
+                  onClick={() => setShowPreview(false)}
+                >
+                  Close
+                </button>
+              </div>
+              <div
+                className="contract-body max-h-96 overflow-auto text-[12px] leading-relaxed text-ink [&_.contract-field]:font-bold [&_p]:mb-2"
+                dangerouslySetInnerHTML={{ __html: previewBodyHtml }}
+              />
+            </div>
           ) : null}
 
           <div className="flex flex-col gap-2 pt-1">
+            <button
+              type="button"
+              disabled={!signers.some((s) => s.full_name.trim())}
+              onClick={() => setShowPreview((p) => !p)}
+              className="rounded-lg border border-grid bg-surface px-3 py-2 text-sm font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
+            >
+              {showPreview ? "Hide contract preview" : "Preview contract"}
+            </button>
             <button
               type="button"
               disabled={pending || !gateReady || !signers.length}
