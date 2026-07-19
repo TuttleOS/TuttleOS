@@ -118,21 +118,103 @@ export async function createFollowUpTaskAction(input: {
 export async function addNoteAction(
   matterId: string,
   body: string,
-  pinned = false,
+  opts?: { pinned?: boolean; shareToCompanions?: boolean },
 ): Promise<ActionResult> {
   try {
     const staff = await requireStaff();
     if (!body.trim()) return { ok: false, error: "Note required" };
+    const pinned = opts?.pinned ?? false;
+    const shareToCompanions = opts?.shareToCompanions ?? false;
     const supabase = createClient();
-    const { error } = await supabase.schema("workflow").from("note").insert({
-      entity_id: matterId,
-      body: body.trim(),
-      pinned,
-      author_staff_id: staff.staff_id,
-    });
+
+    let companionIds: string[] = [];
+    if (shareToCompanions) {
+      const { data: matter, error: mErr } = await supabase
+        .schema("core")
+        .from("client_matter")
+        .select("incident_group_id")
+        .eq("client_matter_id", matterId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (mErr) return { ok: false, error: mErr.message };
+      if (!matter?.incident_group_id) {
+        return { ok: false, error: "Matter not found" };
+      }
+
+      const { data: companions, error: cErr } = await supabase
+        .schema("core")
+        .from("client_matter")
+        .select("client_matter_id")
+        .eq("incident_group_id", matter.incident_group_id)
+        .neq("client_matter_id", matterId)
+        .is("deleted_at", null);
+      if (cErr) return { ok: false, error: cErr.message };
+      companionIds = (companions ?? []).map((c) => c.client_matter_id as string);
+
+      if (companionIds.length === 0) {
+        return {
+          ok: false,
+          error: "No companion matters on this crash to share with",
+        };
+      }
+    }
+
+    const { data: noteRow, error } = await supabase
+      .schema("workflow")
+      .from("note")
+      .insert({
+        entity_id: matterId,
+        body: body.trim(),
+        pinned,
+        author_staff_id: staff.staff_id,
+        scope: shareToCompanions ? "all_linked" : "single",
+      })
+      .select("note_id")
+      .single();
     if (error) return { ok: false, error: error.message };
 
+    let shared = 0;
+    const blocked: string[] = [];
+    if (shareToCompanions && noteRow?.note_id) {
+      for (const companionId of companionIds) {
+        const { error: tErr } = await supabase
+          .schema("workflow")
+          .from("note_target")
+          .insert({
+            note_id: noteRow.note_id,
+            client_matter_id: companionId,
+          });
+        if (tErr) {
+          blocked.push(companionId.slice(0, 8));
+        } else {
+          shared += 1;
+          revalidatePath(`/cases/${companionId}`);
+          revalidatePath(`/litigation/${companionId}`);
+        }
+      }
+    }
+
     revalidatePath(`/cases/${matterId}`);
+    revalidatePath(`/litigation/${matterId}`);
+
+    if (shareToCompanions) {
+      if (shared === 0) {
+        return {
+          ok: true,
+          message:
+            "Note saved here — sharing blocked (conflict clearance incomplete on companion links)",
+        };
+      }
+      const suffix =
+        blocked.length > 0
+          ? ` (${blocked.length} blocked by conflict)`
+          : "";
+      return {
+        ok: true,
+        message: `Note saved + shared to ${shared} companion${shared === 1 ? "" : "s"}${suffix}`,
+      };
+    }
+
     return { ok: true, message: "Note saved" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };

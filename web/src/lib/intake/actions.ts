@@ -7,7 +7,7 @@ import { defaultClientRole } from "./case-types";
 import { formToGate } from "./gate";
 import { digitsOnly, phoneForStorage, type PhoneCountry } from "./phone";
 import { estimateSolIso } from "./sol";
-import type { LeadFormInput, LeadStatus } from "./types";
+import type { LeadFormInput, LeadStatus, LeadTemperature } from "./types";
 
 async function requireStaff() {
   const staff = await getCurrentStaff();
@@ -172,6 +172,46 @@ export async function updateLeadStatusAction(
     revalidatePath("/intake");
     revalidatePath(`/intake/leads/${leadId}`);
     return { ok: true, message: `Status updated to ${status}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+export async function updateLeadTemperatureAction(
+  leadId: string,
+  temperature: LeadTemperature | null,
+): Promise<ActionResult> {
+  try {
+    const staff = await requireStaff();
+    if (temperature !== null && !["hot", "warm", "cold"].includes(temperature)) {
+      return { ok: false, error: "Invalid temperature" };
+    }
+    const supabase = createClient();
+    const { error } = await supabase
+      .schema("core")
+      .from("intake_lead")
+      .update({ lead_temperature: temperature })
+      .eq("intake_lead_id", leadId);
+    if (error) return { ok: false, error: error.message };
+
+    await supabase.schema("workflow").from("communication_log").insert({
+      intake_lead_id: leadId,
+      staff_id: staff.staff_id,
+      channel: "portal",
+      direction: "outbound",
+      summary: temperature
+        ? `Lead temperature → ${temperature}`
+        : "Lead temperature cleared",
+    });
+
+    revalidatePath("/intake");
+    revalidatePath(`/intake/leads/${leadId}`);
+    return {
+      ok: true,
+      message: temperature
+        ? `Marked ${temperature}`
+        : "Temperature cleared",
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }

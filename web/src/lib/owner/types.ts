@@ -119,7 +119,8 @@ export function reconciliationLabel(code: string): string {
 }
 
 export function matterHref(stage: string, matterId: string): string {
-  return stage === "litigation"
-    ? `/litigation/${matterId}`
-    : `/cases/${matterId}`;
+  // Prefer Case Manager matter view from firm / owner surfaces (Michael call A3).
+  // Stage-based lit routing remains available via explicit /litigation/[id] links.
+  void stage;
+  return `/cases/${matterId}`;
 }

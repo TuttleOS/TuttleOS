@@ -9,6 +9,7 @@ import {
 } from "@/lib/intake/types";
 import { leadDisplayName } from "@/lib/intake/display";
 import { gateFromLead } from "@/lib/intake/gate";
+import { LeadTemperatureBadge } from "./LeadTemperatureBadge";
 
 const FILTERS: { key: LeadStatus | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -144,12 +145,15 @@ export function LeadQueue({
                       className="border-b border-grid hover:bg-surface-2"
                     >
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/intake/leads/${l.intake_lead_id}`}
-                          className="font-semibold text-accent-dk no-underline hover:underline"
-                        >
-                          {leadDisplayName(l)}
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/intake/leads/${l.intake_lead_id}`}
+                            className="font-semibold text-accent-dk no-underline hover:underline"
+                          >
+                            {leadDisplayName(l)}
+                          </Link>
+                          <LeadTemperatureBadge value={l.lead_temperature} />
+                        </div>
                         <div className="text-xs text-muted">
                           {caseTypeLabel(l.case_type_code)}
                           {l.person?.preferred_language === "es"

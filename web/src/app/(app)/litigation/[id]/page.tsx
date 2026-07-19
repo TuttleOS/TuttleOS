@@ -9,8 +9,9 @@ import {
   listMatterTasks,
   listPinnedNotes,
 } from "@/lib/litigation/queries";
-import { listAssignableCaseManagers } from "@/lib/cases/queries";
+import { listAssignableCaseManagers, listCompanionMatters } from "@/lib/cases/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
+import { litMilestonesOnly } from "@/lib/workspace";
 
 export default async function LitigationMatterPage({
   params,
@@ -23,7 +24,7 @@ export default async function LitigationMatterPage({
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
-  const [team, contacts, court, deadlines, tasks, notes, cmCandidates] =
+  const [team, contacts, court, deadlines, tasks, notes, cmCandidates, companions] =
     await Promise.all([
       getMatterTeam(matter.client_matter_id),
       getPersonContacts(matter.client_person_id),
@@ -32,6 +33,7 @@ export default async function LitigationMatterPage({
       listMatterTasks(matter.client_matter_id),
       listPinnedNotes(matter.client_matter_id),
       listAssignableCaseManagers(),
+      listCompanionMatters(matter.incident_group_id, matter.client_matter_id),
     ]);
 
   return (
@@ -47,7 +49,16 @@ export default async function LitigationMatterPage({
       viewerRole={staff.role_code}
       viewerIsAttorney={staff.is_attorney}
       cmCandidates={cmCandidates}
-      milestonesOnly={staff.role_code === "case_manager"}
+      companions={
+        companions as unknown as {
+          client_matter_id: string;
+          matter_number: string | null;
+          current_stage_code: string;
+          person: { first_name: string; last_name: string } | null;
+          copy_sharing_allowed?: boolean;
+        }[]
+      }
+      milestonesOnly={litMilestonesOnly(staff.role_code)}
     />
   );
 }

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
-import { CopyEmail } from "@/components/ui/CopyEmail";
+import { CopyContact } from "@/components/ui/CopyContact";
+import { ExpandableNote } from "@/components/ui/ExpandableNote";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember } from "@/lib/cases/types";
 import type { CourtCaseRow } from "@/lib/litigation/types";
@@ -44,6 +45,7 @@ export function LitMatterDetail({
   viewerIsAttorney = false,
   cmCandidates = [],
   milestonesOnly = false,
+  companions = [],
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -65,6 +67,13 @@ export function LitMatterDetail({
   viewerIsAttorney?: boolean;
   cmCandidates?: AssignableStaff[];
   milestonesOnly?: boolean;
+  companions?: {
+    client_matter_id: string;
+    matter_number: string | null;
+    current_stage_code: string;
+    person: { first_name: string; last_name: string } | null;
+    copy_sharing_allowed?: boolean;
+  }[];
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -72,6 +81,7 @@ export function LitMatterDetail({
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [shareNoteToCompanions, setShareNoteToCompanions] = useState(false);
   const [followTitle, setFollowTitle] = useState("");
   const [followDue, setFollowDue] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -113,6 +123,7 @@ export function LitMatterDetail({
           <MatterViewToggle
             matterId={matter.client_matter_id}
             active="litigation"
+            viewerRole={viewerRole}
           />
         )}
       </div>
@@ -194,17 +205,11 @@ export function LitMatterDetail({
         <div className="mt-4 flex flex-wrap gap-4 border-t border-grid pt-3 text-sm">
           <div>
             <span className="text-muted">Phone — </span>
-            {phone ? (
-              <a href={`tel:${phone}`} className="text-accent-dk">
-                {phone}
-              </a>
-            ) : (
-              "—"
-            )}
+            {phone ? <CopyContact value={phone} kind="phone" /> : "—"}
           </div>
           <div>
             <span className="text-muted">Email — </span>
-            {email ? <CopyEmail email={email} /> : "—"}
+            {email ? <CopyContact value={email} kind="email" /> : "—"}
           </div>
           <div>
             <span className="text-muted">Language — </span>
@@ -446,7 +451,7 @@ export function LitMatterDetail({
               )}
               {notes.map((n) => (
                 <li key={n.note_id} className="border-l-2 border-grid pl-2">
-                  {n.body}
+                  <ExpandableNote text={n.body} />
                   <div className="text-xs text-muted">
                     {formatDate(n.created_at)}
                   </div>
@@ -462,6 +467,35 @@ export function LitMatterDetail({
                   className="w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
                   placeholder="Add a note…"
                 />
+                {companions.length > 0 ? (
+                  <label className="mt-2 flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={shareNoteToCompanions}
+                      onChange={(e) =>
+                        setShareNoteToCompanions(e.target.checked)
+                      }
+                    />
+                    <span>
+                      Also save to{" "}
+                      <span className="font-semibold">
+                        {companions.length} companion
+                        {companions.length === 1 ? "" : "s"}
+                      </span>
+                      {companions.some((c) => !c.copy_sharing_allowed) ? (
+                        <span className="block text-xs text-warning">
+                          Some links lack conflict clearance — those will be
+                          skipped.
+                        </span>
+                      ) : (
+                        <span className="block text-xs text-muted">
+                          Respects pairwise conflict clearance.
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ) : null}
                 <button
                   type="button"
                   disabled={pending || !note.trim()}
@@ -470,8 +504,12 @@ export function LitMatterDetail({
                       const res = await addLitNoteAction(
                         matter.client_matter_id,
                         note,
+                        { shareToCompanions: shareNoteToCompanions },
                       );
-                      if (res.ok) setNote("");
+                      if (res.ok) {
+                        setNote("");
+                        setShareNoteToCompanions(false);
+                      }
                       return res;
                     })
                   }

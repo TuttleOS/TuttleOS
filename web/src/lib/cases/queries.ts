@@ -365,24 +365,97 @@ export async function listCompanionMatters(
     .neq("client_matter_id", excludeMatterId)
     .is("deleted_at", null);
   if (error) throw new Error(error.message);
-  return data ?? [];
+
+  const rows = data ?? [];
+  if (!rows.length) return [];
+
+  const pairAllowed = new Map<string, boolean>();
+  const { createServiceClient } = await import("@/lib/supabase/service");
+  const admin = createServiceClient();
+  if (admin) {
+    const { data: links } = await admin
+      .schema("core")
+      .from("representation_link")
+      .select("matter_a, matter_b, copy_sharing_allowed, conflict_status")
+      .is("deleted_at", null)
+      .or(
+        `matter_a.eq.${excludeMatterId},matter_b.eq.${excludeMatterId}`,
+      );
+
+    for (const link of links ?? []) {
+      const other =
+        link.matter_a === excludeMatterId ? link.matter_b : link.matter_a;
+      const ok =
+        Boolean(link.copy_sharing_allowed) &&
+        (link.conflict_status === "cleared" ||
+          link.conflict_status === "waived_in_writing");
+      pairAllowed.set(other as string, ok);
+    }
+  } else {
+    for (const row of rows) {
+      const { data: allowed } = await supabase.rpc("can_copy_notes_between", {
+        p_a: excludeMatterId,
+        p_b: row.client_matter_id,
+      });
+      pairAllowed.set(row.client_matter_id as string, Boolean(allowed));
+    }
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    copy_sharing_allowed: pairAllowed.get(row.client_matter_id as string) ?? false,
+  }));
 }
 
 export async function listPinnedNotes(matterId: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+  const { data: own, error } = await supabase
     .schema("workflow")
     .from("note")
-    .select("note_id, body, pinned, created_at")
+    .select("note_id, body, pinned, created_at, scope")
     .eq("entity_id", matterId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) {
-    // note table may use different filter — soft-fail
     return [];
   }
-  return data ?? [];
+
+  const { data: targets } = await supabase
+    .schema("workflow")
+    .from("note_target")
+    .select("note_id")
+    .eq("client_matter_id", matterId)
+    .is("deleted_at", null);
+
+  const targetIds = (targets ?? [])
+    .map((t) => t.note_id as string)
+    .filter((id) => !(own ?? []).some((n) => n.note_id === id));
+
+  let shared: {
+    note_id: string;
+    body: string;
+    pinned: boolean;
+    created_at: string;
+    scope: string;
+  }[] = [];
+
+  if (targetIds.length) {
+    const { data: sharedRows } = await supabase
+      .schema("workflow")
+      .from("note")
+      .select("note_id, body, pinned, created_at, scope")
+      .in("note_id", targetIds)
+      .is("deleted_at", null);
+    shared = (sharedRows ?? []) as typeof shared;
+  }
+
+  const merged = [...(own ?? []), ...shared.map((n) => ({ ...n, pinned: n.pinned }))];
+  merged.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+  return merged.slice(0, 20);
 }
 
 export async function listTreatmentEpisodes(

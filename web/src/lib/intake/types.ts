@@ -1,3 +1,14 @@
+export type LeadTemperature = "hot" | "warm" | "cold";
+
+export const LEAD_TEMPERATURE_META: Record<
+  LeadTemperature,
+  { label: string; chip: string }
+> = {
+  hot: { label: "Hot", chip: "bg-danger-bg text-danger border-danger/30" },
+  warm: { label: "Warm", chip: "bg-warning-bg text-warning border-warning/30" },
+  cold: { label: "Cold", chip: "bg-surface-2 text-muted border-grid" },
+};
+
 export type LeadStatus =
   | "open"
   | "contract_sent"
@@ -48,6 +59,7 @@ export type LeadRow = {
   marketing_source: string | null;
   estimated_sol_date: string | null;
   status: LeadStatus;
+  lead_temperature: LeadTemperature | null;
   rejected_reason: string | null;
   non_engagement_letter_sent_date: string | null;
   handled_by: string | null;

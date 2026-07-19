@@ -8,8 +8,8 @@ import { IdentityBanner } from "./IdentityBanner";
 import type { StaffProfile } from "@/lib/staff";
 import { displayName } from "@/lib/staff";
 import {
-  cmLitSwitchAction,
   identityBannerCopy,
+  canOpenFullLitigationWorkspace,
 } from "@/lib/workspace";
 
 type NavItem = {
@@ -89,6 +89,23 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
   "/review": [{ href: "/review", label: "Viability reviews" }],
 };
 
+/** CM in litigation: milestones caseload only — lock full PL tools. */
+const LIT_MILESTONES_NAV: NavItem[] = [
+  { href: "/litigation", label: "My Cases" },
+  {
+    href: "/litigation/tasks",
+    label: "My Tasks",
+    locked: true,
+    lockReason: "Full litigation tasking is paralegal-only (B1)",
+  },
+  {
+    href: "/litigation/deadlines",
+    label: "Deadline Horizon",
+    locked: true,
+    lockReason: "Deadline horizon is paralegal-only (B1)",
+  },
+];
+
 function usesFirmWideNav(staff: StaffProfile): boolean {
   return (
     staff.is_attorney ||
@@ -104,6 +121,13 @@ function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
   if (pathname === "/test" || pathname.startsWith("/test/")) {
     return NAV_BY_PREFIX["/owner"];
   }
+  if (
+    pathname.startsWith("/litigation") &&
+    !canOpenFullLitigationWorkspace(staff.role_code)
+  ) {
+    return LIT_MILESTONES_NAV;
+  }
+  // PL in CM workspace gets the full CM nav (B1)
   const key = Object.keys(NAV_BY_PREFIX).find((p) => pathname.startsWith(p));
   return NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
 }
@@ -127,7 +151,6 @@ export function AppShell({
   const router = useRouter();
   const nav = navForPath(pathname, staff);
   const name = displayName(staff);
-  const switchAction = cmLitSwitchAction(staff, pathname);
   const banner = identityBannerCopy(staff, pathname);
 
   async function signOut() {
@@ -162,15 +185,6 @@ export function AppShell({
           <GlobalSearch />
         </div>
         <div className="flex items-center gap-3 px-5">
-          {switchAction && (
-            <Link
-              href={switchAction.href}
-              className="rounded-lg border border-grid bg-surface px-3 py-1.5 text-xs font-bold no-underline hover:bg-surface-2"
-              title="Switch workspace — audits stay under your name"
-            >
-              {switchAction.label}
-            </Link>
-          )}
           <button
             type="button"
             onClick={toggleTheme}

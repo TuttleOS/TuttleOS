@@ -15,6 +15,8 @@ import { gateFromLead } from "@/lib/intake/gate";
 import { leadDisplayName } from "@/lib/intake/display";
 import { estimateSolPreview } from "@/lib/intake/sol";
 import { LEAD_STATUS_META, type LeadRow } from "@/lib/intake/types";
+import { CopyContact } from "@/components/ui/CopyContact";
+import { LeadTemperatureSelect } from "./LeadTemperatureSelect";
 
 type Attempt = {
   communication_log_id: string;
@@ -86,13 +88,19 @@ export function LeadDetail({
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-4">
           <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold">{leadDisplayName(lead)}</h1>
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${meta.chip}`}
-              >
-                {meta.icon} {meta.label}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold">{leadDisplayName(lead)}</h1>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${meta.chip}`}
+                >
+                  {meta.icon} {meta.label}
+                </span>
+              </div>
+              <LeadTemperatureSelect
+                leadId={lead.intake_lead_id}
+                value={lead.lead_temperature}
+              />
             </div>
             <dl className="mt-4 grid grid-cols-[130px_1fr] gap-x-3 gap-y-2 text-sm">
               <dt className="text-muted">Incident</dt>
@@ -108,10 +116,28 @@ export function LeadDetail({
                   .join(" ") || "—"}
               </dd>
               <dt className="text-muted">Phone</dt>
-              <dd>{phone ?? lead.raw_phone ?? "—"}</dd>
+              <dd>
+                {phone || lead.raw_phone ? (
+                  <CopyContact
+                    value={(phone ?? lead.raw_phone)!}
+                    kind="phone"
+                  />
+                ) : (
+                  "—"
+                )}
+              </dd>
               <dt className="text-muted">Email</dt>
               <dd>
-                {email ?? lead.raw_email ?? (inPerson ? "waived (in-person)" : "—")}
+                {email || lead.raw_email ? (
+                  <CopyContact
+                    value={(email ?? lead.raw_email)!}
+                    kind="email"
+                  />
+                ) : inPerson ? (
+                  "waived (in-person)"
+                ) : (
+                  "—"
+                )}
               </dd>
               <dt className="text-muted">Est. SOL</dt>
               <dd>

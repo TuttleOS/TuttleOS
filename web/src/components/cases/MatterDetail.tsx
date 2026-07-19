@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
-import { CopyEmail } from "@/components/ui/CopyEmail";
+import { CopyContact } from "@/components/ui/CopyContact";
+import { ExpandableNote } from "@/components/ui/ExpandableNote";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import {
   addNoteAction,
@@ -93,6 +94,7 @@ export function MatterDetailView({
     matter_number: string | null;
     current_stage_code: string;
     person: { first_name: string; last_name: string } | null;
+    copy_sharing_allowed?: boolean;
   }[];
   stalled: StalledRow | null;
   viewerRole?: StaffRoleCode | string;
@@ -111,6 +113,7 @@ export function MatterDetailView({
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [shareNoteToCompanions, setShareNoteToCompanions] = useState(false);
   const [followTitle, setFollowTitle] = useState("");
   const [followDue, setFollowDue] = useState("");
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({});
@@ -247,6 +250,7 @@ export function MatterDetailView({
               <MatterViewToggle
                 matterId={matter.client_matter_id}
                 active="cases"
+                viewerRole={viewerRole}
               />
             )}
             <button
@@ -263,18 +267,12 @@ export function MatterDetailView({
         <div className="mt-4 flex flex-wrap gap-4 border-t border-grid pt-3 text-sm">
           <div>
             <span className="text-muted">Phone — </span>
-            {phone ? (
-              <a href={`tel:${phone}`} className="text-accent-dk">
-                {phone}
-              </a>
-            ) : (
-              "—"
-            )}
+            {phone ? <CopyContact value={phone} kind="phone" /> : "—"}
           </div>
           <div>
             <span className="text-muted">Email — </span>
             {email ? (
-              <CopyEmail email={email} />
+              <CopyContact value={email} kind="email" />
             ) : matter.in_person_signing ? (
               "waived (in-person)"
             ) : (
@@ -465,14 +463,14 @@ export function MatterDetailView({
                             : completeTaskAction(t.task_id),
                         )
                       }
-                      className="mt-1"
+                      className="mt-1 h-4 w-4 cursor-pointer accent-blue-700 disabled:cursor-wait"
                     />
                     <div>
                       <div
                         className={
                           t.status === "done"
                             ? "text-muted line-through"
-                            : "font-semibold"
+                            : "font-semibold text-ink"
                         }
                       >
                         {t.title}
@@ -480,6 +478,7 @@ export function MatterDetailView({
                       <div className="text-xs text-muted">
                         {t.trigger_source ?? t.task_type ?? "task"}
                         {t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}
+                        {pending ? "" : " · click to complete"}
                       </div>
                     </div>
                   </li>
@@ -684,7 +683,7 @@ export function MatterDetailView({
                       pinned
                     </span>
                   )}
-                  {n.body}
+                  <ExpandableNote text={n.body} />
                   <div className="text-xs text-muted">
                     {formatDate(n.created_at)}
                   </div>
@@ -698,13 +697,45 @@ export function MatterDetailView({
               placeholder="Add a note…"
               className="w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
             />
+            {companions.length > 0 ? (
+              <label className="mt-2 flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={shareNoteToCompanions}
+                  onChange={(e) => setShareNoteToCompanions(e.target.checked)}
+                />
+                <span>
+                  Also save to{" "}
+                  <span className="font-semibold">
+                    {companions.length} companion
+                    {companions.length === 1 ? "" : "s"}
+                  </span>
+                  {companions.some((c) => !c.copy_sharing_allowed) ? (
+                    <span className="block text-xs text-warning">
+                      Some links lack conflict clearance — those will be
+                      skipped.
+                    </span>
+                  ) : (
+                    <span className="block text-xs text-muted">
+                      Respects pairwise conflict clearance.
+                    </span>
+                  )}
+                </span>
+              </label>
+            ) : null}
             <button
               type="button"
               disabled={pending || !note.trim()}
               onClick={() =>
                 run(async () => {
-                  const res = await addNoteAction(matter.client_matter_id, note);
-                  if (res.ok) setNote("");
+                  const res = await addNoteAction(matter.client_matter_id, note, {
+                    shareToCompanions: shareNoteToCompanions,
+                  });
+                  if (res.ok) {
+                    setNote("");
+                    setShareNoteToCompanions(false);
+                  }
                   return res;
                 })
               }

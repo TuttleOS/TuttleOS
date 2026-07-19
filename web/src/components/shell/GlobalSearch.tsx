@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-type Hit = { label: string; sub: string; href?: string };
+import {
+  searchMattersByQuery,
+  type MatterSearchHit,
+} from "@/lib/search/matterSearch";
 
 export function GlobalSearch() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [hits, setHits] = useState<Hit[]>([]);
+  const [hits, setHits] = useState<MatterSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -36,36 +39,27 @@ export function GlobalSearch() {
     if (!q.trim()) {
       setHits([]);
       setOpen(false);
+      setErr(null);
       return;
     }
     let cancelled = false;
     const t = setTimeout(async () => {
       setLoading(true);
-      const supabase = createClient();
-      const term = q.trim();
-      const { data } = await supabase
-        .schema("core")
-        .from("person")
-        .select("person_id, first_name, last_name, date_of_birth")
-        .or(`last_name.ilike.%${term}%,first_name.ilike.%${term}%`)
-        .is("deleted_at", null)
-        .limit(8);
-
-      if (cancelled) return;
-      const next: Hit[] = (data ?? []).map((p) => ({
-        label: `${p.last_name}, ${p.first_name}`,
-        sub: p.date_of_birth
-          ? `DOB ${new Date(p.date_of_birth).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}`
-          : "Client",
-        href: `/search?q=${encodeURIComponent(term)}`,
-      }));
-      setHits(next);
-      setOpen(true);
-      setLoading(false);
+      setErr(null);
+      try {
+        const supabase = createClient();
+        const next = await searchMattersByQuery(supabase, q.trim(), 8);
+        if (cancelled) return;
+        setHits(next);
+        setOpen(true);
+      } catch (e) {
+        if (cancelled) return;
+        setHits([]);
+        setErr(e instanceof Error ? e.message : "Search failed");
+        setOpen(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }, 220);
     return () => {
       cancelled = true;
@@ -84,7 +78,11 @@ export function GlobalSearch() {
           if (e.key === "Enter") {
             e.preventDefault();
             setOpen(false);
-            router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+            if (hits[0]) {
+              router.push(hits[0].href);
+            } else {
+              router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+            }
           }
           if (e.key === "Escape") setOpen(false);
         }}
@@ -99,19 +97,22 @@ export function GlobalSearch() {
       {open && (
         <div className="absolute left-0 right-0 top-12 z-30 overflow-hidden rounded-[10px] border border-grid bg-surface shadow-soft">
           <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted">
-            {loading ? "Searching…" : "Clients / Cases"}
+            {loading ? "Searching…" : "Cases"}
           </div>
-          {hits.length === 0 && !loading ? (
+          {err && (
+            <div className="px-3 py-2 text-sm text-danger">{err}</div>
+          )}
+          {!err && hits.length === 0 && !loading ? (
             <div className="px-3 py-3 text-sm text-muted">No matches</div>
           ) : (
             hits.map((h) => (
               <button
-                key={h.label + h.sub}
+                key={h.client_matter_id}
                 type="button"
                 className="flex w-full items-center justify-between gap-4 border-t border-grid px-3 py-2.5 text-left hover:bg-surface-2"
                 onClick={() => {
                   setOpen(false);
-                  router.push(h.href ?? `/search?q=${encodeURIComponent(q)}`);
+                  router.push(h.href);
                 }}
               >
                 <strong className="text-accent-dk">{h.label}</strong>

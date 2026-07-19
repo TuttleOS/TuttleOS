@@ -48,8 +48,9 @@ export async function createLitFollowUpAction(input: {
 export async function addLitNoteAction(
   matterId: string,
   body: string,
+  opts?: { pinned?: boolean; shareToCompanions?: boolean },
 ): Promise<ActionResult> {
-  const res = await addCaseNote(matterId, body);
+  const res = await addCaseNote(matterId, body, opts);
   await revalidateLit(matterId);
   return res;
 }
