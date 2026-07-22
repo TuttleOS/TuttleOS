@@ -48,6 +48,9 @@ const FIRM_WIDE_NAV: NavItem[] = [
   { href: "/cases", label: "Cases", section: "Case Manager" },
   { href: "/cases/new-cases", label: "New cases", section: "Case Manager" },
   { href: "/cases/lors", label: "LORs pending", section: "Case Manager" },
+  { href: "/cases/liability", label: "Liability pending", section: "Case Manager" },
+  { href: "/cases/pd", label: "PD pending", section: "Case Manager" },
+  { href: "/cases/records", label: "Records pending", section: "Case Manager" },
   { href: "/cases/calls", label: "Provider calls", section: "Case Manager" },
   { href: "/cases/tasks", label: "Tasks", section: "Case Manager" },
   { href: "/litigation", label: "Cases", section: "Litigation" },
@@ -85,6 +88,9 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/cases", label: "My Caseload" },
     { href: "/cases/new-cases", label: "New cases" },
     { href: "/cases/lors", label: "LORs pending" },
+    { href: "/cases/liability", label: "Liability pending" },
+    { href: "/cases/pd", label: "PD pending" },
+    { href: "/cases/records", label: "Records pending" },
     { href: "/cases/calls", label: "Provider Calls" },
     { href: "/cases/tasks", label: "My Tasks" },
     {
@@ -142,7 +148,13 @@ function helpNavFor(staff: StaffProfile): NavItem[] {
 
 function withQueueBadges(
   items: NavItem[],
-  counts: { newCases: number; lors: number } | null | undefined,
+  counts: {
+    newCases: number;
+    lors: number;
+    liability: number;
+    pd: number;
+    records: number;
+  } | null | undefined,
 ): NavItem[] {
   if (!counts) return items;
   return items.map((item) => {
@@ -152,6 +164,15 @@ function withQueueBadges(
     if (item.href === "/cases/lors") {
       return { ...item, badge: counts.lors };
     }
+    if (item.href === "/cases/liability") {
+      return { ...item, badge: counts.liability };
+    }
+    if (item.href === "/cases/pd") {
+      return { ...item, badge: counts.pd };
+    }
+    if (item.href === "/cases/records") {
+      return { ...item, badge: counts.records };
+    }
     return item;
   });
 }
@@ -159,7 +180,13 @@ function withQueueBadges(
 function navForPath(
   pathname: string,
   staff: StaffProfile,
-  cmQueueCounts?: { newCases: number; lors: number } | null,
+  cmQueueCounts?: {
+    newCases: number;
+    lors: number;
+    liability: number;
+    pd: number;
+    records: number;
+  } | null,
 ): NavItem[] {
   const help = helpNavFor(staff);
   if (usesFirmWideNav(staff)) {
@@ -199,7 +226,13 @@ export function AppShell({
 }: {
   staff: StaffProfile;
   children: React.ReactNode;
-  cmQueueCounts?: { newCases: number; lors: number } | null;
+  cmQueueCounts?: {
+    newCases: number;
+    lors: number;
+    liability: number;
+    pd: number;
+    records: number;
+  } | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();

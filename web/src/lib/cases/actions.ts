@@ -299,6 +299,11 @@ function revalidateMatter(matterId: string) {
   revalidatePath(`/cases/${matterId}`);
   revalidatePath("/cases");
   revalidatePath("/cases/calls");
+  revalidatePath("/cases/new-cases");
+  revalidatePath("/cases/lors");
+  revalidatePath("/cases/liability");
+  revalidatePath("/cases/pd");
+  revalidatePath("/cases/records");
   revalidatePath("/demands");
 }
 
@@ -813,9 +818,50 @@ export async function setClaimLorSentAction(
     revalidatePath(`/cases/${matterId}`);
     revalidatePath("/cases/lors");
     revalidatePath("/cases/new-cases");
+    revalidatePath("/cases/liability");
     revalidatePath("/cases/tasks");
     revalidatePath("/cases");
     return { ok: true, message: "LOR sent date saved" };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+/** Set claim liability / status (row leaves Liability pending when no longer open). */
+export async function setClaimStatusAction(
+  claimId: string,
+  matterId: string,
+  status: string,
+): Promise<ActionResult> {
+  try {
+    await requireStaff();
+    const allowed = new Set([
+      "open",
+      "liability_accepted",
+      "liability_disputed",
+      "liability_denied",
+      "settled",
+      "closed",
+      "litigation",
+    ]);
+    if (!allowed.has(status)) {
+      return { ok: false, error: "Invalid claim status" };
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .schema("insurance")
+      .from("claim")
+      .update({ status })
+      .eq("claim_id", claimId)
+      .is("deleted_at", null);
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath(`/cases/${matterId}`);
+    revalidatePath("/cases/liability");
+    revalidatePath("/cases/lors");
+    revalidatePath("/cases");
+    return { ok: true, message: "Claim status saved" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }

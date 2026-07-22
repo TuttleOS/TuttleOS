@@ -71,3 +71,57 @@ test.describe("CM work queues — New cases + LORs pending", () => {
     await expect(card).toHaveClass(/ring-2/);
   });
 });
+
+test.describe("CM work queues — Liability + PD + Records", () => {
+  test.skip(!hasCreds, "Set E2E_EMAIL and E2E_PASSWORD to run UI smoke");
+
+  test("Liability pending deep-links to insurance card", async ({ page }) => {
+    await login(page, "/cases/liability");
+    await expect(
+      page.getByRole("heading", { name: "Liability pending" }),
+    ).toBeVisible();
+
+    const rows = page.getByTestId("liability-pending-row");
+    if ((await rows.count()) === 0) {
+      await expect(page.getByText(/No open liability decisions/i)).toBeVisible();
+      return;
+    }
+    await rows.first().click();
+    await expect(page).toHaveURL(/\/cases\/[^/]+\?focus=insurance/);
+    await expect(page.locator("#card-insurance")).toHaveClass(/ring-2/);
+  });
+
+  test("PD pending deep-links to PD card", async ({ page }) => {
+    await login(page, "/cases/pd");
+    await expect(
+      page.getByRole("heading", { name: "PD pending" }),
+    ).toBeVisible();
+
+    const rows = page.getByTestId("pd-pending-row");
+    if ((await rows.count()) === 0) {
+      await expect(page.getByText(/No open PD claims/i)).toBeVisible();
+      return;
+    }
+    await rows.first().click();
+    await expect(page).toHaveURL(/\/cases\/[^/]+\?focus=pd/);
+    await expect(page.locator("#card-pd")).toHaveClass(/ring-2/);
+  });
+
+  test("Records pending deep-links to records card", async ({ page }) => {
+    await login(page, "/cases/records");
+    await expect(
+      page.getByRole("heading", { name: "Records pending" }),
+    ).toBeVisible();
+
+    const rows = page.getByTestId("records-pending-row");
+    if ((await rows.count()) === 0) {
+      await expect(
+        page.getByText(/No outstanding records requests/i),
+      ).toBeVisible();
+      return;
+    }
+    await rows.first().click();
+    await expect(page).toHaveURL(/\/cases\/[^/]+\?focus=records/);
+    await expect(page.locator("#card-records")).toHaveClass(/ring-2/);
+  });
+});

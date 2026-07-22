@@ -11,6 +11,8 @@ export type VersionUpdate = {
   title: string;
   summary: string;
   items: WhatsNewItem[];
+  /** Step-by-step smoke test for reviewers (shown on /updates). */
+  howToTest?: string[];
 };
 
 /** Stable Vercel preview for branch `cm-work-queues` (not production). */
@@ -21,14 +23,52 @@ export function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href);
 }
 
+export type ReleaseReviewVote = "up" | "down" | null;
+
+export type ReleaseReviewScreenshot = {
+  name: string;
+  dataUrl: string;
+};
+
+/** Browser-local review state for a Version updates release. */
+export type ReleaseReviewState = {
+  vote: ReleaseReviewVote;
+  happy: boolean;
+  notes: string;
+  screenshots: ReleaseReviewScreenshot[];
+  updatedAt: string | null;
+};
+
+export const EMPTY_RELEASE_REVIEW: ReleaseReviewState = {
+  vote: null,
+  happy: false,
+  notes: "",
+  screenshots: [],
+  updatedAt: null,
+};
+
+export function releaseReviewStorageKey(releaseId: string): string {
+  return `tuttleos.versionReview.${releaseId}`;
+}
+
 /** Newest first — used by What’s New modal (current) and /updates history. */
 export const VERSION_UPDATES: VersionUpdate[] = [
   {
     id: "2026-07-22-cm-work-queues-preview",
     dateLabel: "07/22/2026",
-    title: "CM work queues — preview (New cases + LORs)",
+    title: "CM work queues — preview (all five)",
     summary:
-      "Day 2 of the CM assembly-line queues is on a preview branch — not live on production yet. Use the links below to try them.",
+      "All five CM assembly-line queues are on a preview branch — not live on production yet. Use the links below to try them.",
+    howToTest: [
+      "Open the Preview home link (Vercel may ask for SSO). Sign in as a case manager.",
+      "Confirm the sidebar shows New cases, LORs, Liability, PD, and Records pending — each with a live count badge.",
+      "New cases: open a row → checklist card expands, scrolls into view, and briefly highlights.",
+      "LORs pending: open a row → Insurance card; enter an LOR sent date → refresh queue → that row is gone.",
+      "Liability pending: open a row → set claim status away from open → refresh → row gone.",
+      "PD pending: open a row → Mark resolved on the PD card → refresh → row gone.",
+      "Records pending: open a row → mark Received → refresh → row gone.",
+      "When everything above works, thumbs-up, check “Happy with testing,” and add notes/screenshots if anything felt off.",
+    ],
     items: [
       {
         title: "Preview home (branch cm-work-queues)",
@@ -49,10 +89,22 @@ export const VERSION_UPDATES: VersionUpdate[] = [
         hrefLabel: "Open LORs pending",
       },
       {
-        title: "Version updates on the preview",
-        body: "Same notes, hosted on the preview deployment.",
-        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/updates`,
-        hrefLabel: "Open Version updates (preview)",
+        title: "Liability pending queue",
+        body: "Liability claims still status open. Set liability accepted / disputed / denied on Insurance & claims — row leaves the queue.",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/cases/liability`,
+        hrefLabel: "Open Liability pending",
+      },
+      {
+        title: "PD pending queue",
+        body: "Unresolved property-damage claims. Mark resolved on the PD card.",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/cases/pd`,
+        hrefLabel: "Open PD pending",
+      },
+      {
+        title: "Records pending queue",
+        body: "Outstanding medical records / bills requests. Mark received on the Records card.",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/cases/records`,
+        hrefLabel: "Open Records pending",
       },
     ],
   },
@@ -62,6 +114,12 @@ export const VERSION_UPDATES: VersionUpdate[] = [
     title: "Case document upload (storage only)",
     summary:
       "Upload and version case files on the Case Manager matter page. No AI/OCR.",
+    howToTest: [
+      "Open Cases → pick a matter → expand Case documents.",
+      "Upload a small PDF or image; confirm it appears in the list.",
+      "Open / preview the file; confirm access log records the open.",
+      "Optional: supersede with a new version, then soft-delete.",
+    ],
     items: [
       {
         title: "Case documents panel",
@@ -81,6 +139,12 @@ export const VERSION_UPDATES: VersionUpdate[] = [
     title: "Contingent fee e-sign & multi-person intake",
     summary:
       "Shared contract signing, firm countersign, companions on New Lead, searchable co-signers.",
+    howToTest: [
+      "Create or open a lead with email; draft / send a contingent fee contract.",
+      "Open the public sign link; draw + type a signature as the client.",
+      "As attorney/admin, countersign; confirm PDF can be viewed/printed.",
+      "On New Lead, add a companion; confirm both people share one signing package when co-signed.",
+    ],
     items: [
       {
         title: "Contingent fee e-sign",

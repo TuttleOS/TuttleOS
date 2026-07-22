@@ -13,7 +13,13 @@ export default async function WorkspaceLayout({
     redirect("/login?next=/cases");
   }
 
-  let cmQueueCounts: { newCases: number; lors: number } | null = null;
+  let cmQueueCounts: {
+    newCases: number;
+    lors: number;
+    liability: number;
+    pd: number;
+    records: number;
+  } | null = null;
   try {
     cmQueueCounts = await countCmWorkQueues({
       staffId: staff.staff_id,

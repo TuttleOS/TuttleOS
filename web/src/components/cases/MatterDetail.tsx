@@ -21,6 +21,7 @@ import {
   createFollowUpTaskAction,
   reopenTaskAction,
   setClaimLorSentAction,
+  setClaimStatusAction,
 } from "@/lib/cases/actions";
 import {
   STAGE_LABEL,
@@ -782,6 +783,41 @@ export function MatterDetailView({
                       </span>
                     </div>
                     <div className="mt-2 flex flex-wrap items-end gap-3">
+                      <label className="block text-xs">
+                        <span className="font-semibold text-muted">
+                          Liability / status
+                        </span>
+                        <select
+                          className="mt-1 block h-9 rounded-lg border border-grid bg-page px-2 text-sm"
+                          value={c.status ?? "open"}
+                          disabled={pending}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            if (next === (c.status ?? "open")) return;
+                            run(() =>
+                              setClaimStatusAction(
+                                c.claim_id,
+                                matter.client_matter_id,
+                                next,
+                              ),
+                            );
+                          }}
+                        >
+                          <option value="open">open (pending)</option>
+                          <option value="liability_accepted">
+                            liability_accepted
+                          </option>
+                          <option value="liability_disputed">
+                            liability_disputed
+                          </option>
+                          <option value="liability_denied">
+                            liability_denied
+                          </option>
+                          <option value="settled">settled</option>
+                          <option value="closed">closed</option>
+                          <option value="litigation">litigation</option>
+                        </select>
+                      </label>
                       <label className="block text-xs">
                         <span className="font-semibold text-muted">
                           LOR sent date

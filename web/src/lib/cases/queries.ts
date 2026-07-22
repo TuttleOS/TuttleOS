@@ -3,10 +3,13 @@ import type {
   CaseloadRow,
   ClaimRow,
   CmQueueCounts,
+  LiabilityPendingQueueRow,
   LorPendingQueueRow,
   MatterDetail,
   NewCaseQueueRow,
+  PdPendingQueueRow,
   ProviderCallDue,
+  RecordsPendingQueueRow,
   StalledRow,
   TaskRow,
   TeamMember,
@@ -15,6 +18,12 @@ import type {
 import { STAGE_LABEL } from "./types";
 
 export { STAGE_LABEL };
+
+const LIABILITY_CLAIM_ROLES = [
+  "dinsco_liability",
+  "pinsco_liability",
+  "umbrella",
+] as const;
 
 function daysBetween(isoDateOrTs: string, now = new Date()): number {
   const raw = isoDateOrTs.includes("T")
@@ -41,6 +50,68 @@ function claimRolesForLorTitle(title: string): string[] {
     return ["dinsco_liability", "pd_dinsco", "umbrella"];
   }
   return [];
+}
+
+type MatterLabel = {
+  client_matter_id: string;
+  matter_number: string | null;
+  incident_group_id: string;
+  display_name: string;
+  date_of_loss: string | null;
+};
+
+async function loadCmMatterLabels(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<MatterLabel[]> {
+  const supabase = createClient();
+
+  let assignQ = supabase
+    .schema("core")
+    .from("staff_assignment")
+    .select("client_matter_id")
+    .eq("assignment_role", "case_manager")
+    .is("ended_at", null);
+  if (opts.assignedOnly) {
+    assignQ = assignQ.eq("staff_id", opts.staffId);
+  }
+
+  const { data: assigns, error: aErr } = await assignQ;
+  if (aErr) throw new Error(aErr.message);
+  const matterIds = (assigns ?? []).map((a) => a.client_matter_id as string);
+  if (matterIds.length === 0) return [];
+
+  const { data: matters, error: mErr } = await supabase
+    .schema("core")
+    .from("client_matter")
+    .select(
+      `client_matter_id, matter_number, incident_group_id,
+       person:client_person_id(first_name, last_name),
+       incident:incident_group_id(date_of_loss)`,
+    )
+    .in("client_matter_id", matterIds)
+    .is("deleted_at", null)
+    .neq("representation_status", "declined");
+  if (mErr) throw new Error(mErr.message);
+
+  return (matters ?? []).map((m) => {
+    const person = m.person as unknown as {
+      first_name: string;
+      last_name: string;
+    } | null;
+    const incident = m.incident as unknown as {
+      date_of_loss: string | null;
+    } | null;
+    return {
+      client_matter_id: m.client_matter_id as string,
+      matter_number: (m.matter_number as string | null) ?? null,
+      incident_group_id: m.incident_group_id as string,
+      display_name: person
+        ? `${person.last_name}, ${person.first_name}`
+        : ((m.matter_number as string | null) ?? "Matter"),
+      date_of_loss: incident?.date_of_loss ?? null,
+    };
+  });
 }
 
 export async function listCaseload(opts?: {
@@ -907,13 +978,312 @@ export async function listLorPendingQueue(opts: {
   return rows;
 }
 
+/** Claims still awaiting a liability decision (status = open). */
+export async function listLiabilityPendingQueue(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<LiabilityPendingQueueRow[]> {
+  const labels = await loadCmMatterLabels(opts);
+  if (labels.length === 0) return [];
+
+  const supabase = createClient();
+  const byMatter = new Map(labels.map((m) => [m.client_matter_id, m]));
+  const byIncident = new Map<string, MatterLabel[]>();
+  for (const m of labels) {
+    const list = byIncident.get(m.incident_group_id) ?? [];
+    list.push(m);
+    byIncident.set(m.incident_group_id, list);
+  }
+
+  const matterIds = labels.map((m) => m.client_matter_id);
+  const incidentIds = Array.from(byIncident.keys());
+
+  const { data: matterClaims, error: mcErr } = await supabase
+    .schema("insurance")
+    .from("claim")
+    .select(
+      "claim_id, client_matter_id, incident_group_id, claim_role, claim_number, status, created_at, reported_date",
+    )
+    .in("client_matter_id", matterIds)
+    .in("claim_role", [...LIABILITY_CLAIM_ROLES])
+    .eq("status", "open")
+    .is("deleted_at", null);
+  if (mcErr) throw new Error(mcErr.message);
+
+  const { data: incidentClaims, error: icErr } = incidentIds.length
+    ? await supabase
+        .schema("insurance")
+        .from("claim")
+        .select(
+          "claim_id, client_matter_id, incident_group_id, claim_role, claim_number, status, created_at, reported_date",
+        )
+        .in("incident_group_id", incidentIds)
+        .in("claim_role", [...LIABILITY_CLAIM_ROLES])
+        .eq("status", "open")
+        .is("deleted_at", null)
+    : { data: [] as Record<string, unknown>[], error: null };
+  if (icErr) throw new Error(icErr.message);
+
+  const seen = new Set<string>();
+  const rows: LiabilityPendingQueueRow[] = [];
+
+  function pushClaim(c: {
+    claim_id: string;
+    client_matter_id: string | null;
+    incident_group_id: string | null;
+    claim_role: string;
+    claim_number: string | null;
+    status: string;
+    created_at: string | null;
+    reported_date: string | null;
+  }) {
+    if (seen.has(c.claim_id)) return;
+    seen.add(c.claim_id);
+
+    let matter: MatterLabel | undefined;
+    if (c.client_matter_id) {
+      matter = byMatter.get(c.client_matter_id);
+    } else if (c.incident_group_id) {
+      matter = byIncident.get(c.incident_group_id)?.[0];
+    }
+    if (!matter) return;
+
+    const anchor =
+      c.reported_date ?? c.created_at ?? new Date().toISOString();
+    rows.push({
+      claim_id: c.claim_id,
+      client_matter_id: matter.client_matter_id,
+      display_name: matter.display_name,
+      matter_number: matter.matter_number,
+      date_of_loss: matter.date_of_loss,
+      claim_role: c.claim_role,
+      claim_number: c.claim_number,
+      claim_status: c.status,
+      days_pending: daysBetween(anchor),
+    });
+  }
+
+  for (const c of matterClaims ?? []) {
+    pushClaim({
+      claim_id: c.claim_id as string,
+      client_matter_id: (c.client_matter_id as string | null) ?? null,
+      incident_group_id: (c.incident_group_id as string | null) ?? null,
+      claim_role: c.claim_role as string,
+      claim_number: (c.claim_number as string | null) ?? null,
+      status: c.status as string,
+      created_at: (c.created_at as string | null) ?? null,
+      reported_date: (c.reported_date as string | null) ?? null,
+    });
+  }
+  for (const c of incidentClaims ?? []) {
+    pushClaim({
+      claim_id: c.claim_id as string,
+      client_matter_id: (c.client_matter_id as string | null) ?? null,
+      incident_group_id: (c.incident_group_id as string | null) ?? null,
+      claim_role: c.claim_role as string,
+      claim_number: (c.claim_number as string | null) ?? null,
+      status: c.status as string,
+      created_at: (c.created_at as string | null) ?? null,
+      reported_date: (c.reported_date as string | null) ?? null,
+    });
+  }
+
+  rows.sort(
+    (a, b) =>
+      b.days_pending - a.days_pending ||
+      a.display_name.localeCompare(b.display_name),
+  );
+  return rows;
+}
+
+/** Unresolved PD claims on incidents for the CM's matters. */
+export async function listPdPendingQueue(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<PdPendingQueueRow[]> {
+  const labels = await loadCmMatterLabels(opts);
+  if (labels.length === 0) return [];
+
+  const supabase = createClient();
+  const byIncident = new Map<string, MatterLabel[]>();
+  for (const m of labels) {
+    const list = byIncident.get(m.incident_group_id) ?? [];
+    list.push(m);
+    byIncident.set(m.incident_group_id, list);
+  }
+  const incidentIds = Array.from(byIncident.keys());
+
+  const { data: aging, error } = await supabase
+    .schema("property")
+    .from("v_pd_aging")
+    .select(
+      `pd_claim_id, incident_group_id, year, make, model, status,
+       last_touch_date, days_since_touch, demand_blocker`,
+    )
+    .in("incident_group_id", incidentIds);
+  if (error) throw new Error(error.message);
+  if (!aging?.length) return [];
+
+  const rows: PdPendingQueueRow[] = [];
+  for (const p of aging) {
+    const ig = p.incident_group_id as string;
+    const matter = byIncident.get(ig)?.[0];
+    if (!matter) continue;
+    const vehicle_label =
+      [p.year, p.make, p.model].filter(Boolean).join(" ") || "Vehicle";
+    rows.push({
+      pd_claim_id: p.pd_claim_id as string,
+      client_matter_id: matter.client_matter_id,
+      display_name: matter.display_name,
+      matter_number: matter.matter_number,
+      date_of_loss: matter.date_of_loss,
+      vehicle_label,
+      status: p.status as string,
+      days_since_touch:
+        p.days_since_touch != null ? Number(p.days_since_touch) : null,
+      demand_blocker: Boolean(p.demand_blocker),
+    });
+  }
+
+  rows.sort(
+    (a, b) =>
+      (b.days_since_touch ?? -1) - (a.days_since_touch ?? -1) ||
+      a.display_name.localeCompare(b.display_name),
+  );
+  return rows;
+}
+
+/** Outstanding records/bills requests across the CM caseload. */
+export async function listRecordsPendingQueue(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<RecordsPendingQueueRow[]> {
+  const labels = await loadCmMatterLabels(opts);
+  if (labels.length === 0) return [];
+
+  const supabase = createClient();
+  const byMatter = new Map(labels.map((m) => [m.client_matter_id, m]));
+  const matterIds = labels.map((m) => m.client_matter_id);
+
+  const { data: episodes, error: eErr } = await supabase
+    .schema("medical")
+    .from("treatment_episode")
+    .select("treatment_episode_id, client_matter_id, provider_id")
+    .in("client_matter_id", matterIds)
+    .is("deleted_at", null);
+  if (eErr) throw new Error(eErr.message);
+  if (!episodes?.length) return [];
+
+  const epToMatter = new Map(
+    episodes.map((e) => [
+      e.treatment_episode_id as string,
+      e.client_matter_id as string,
+    ]),
+  );
+  const epIds = episodes.map((e) => e.treatment_episode_id as string);
+  const providerIds = Array.from(
+    new Set(episodes.map((e) => e.provider_id as string).filter(Boolean)),
+  );
+
+  const { data: providers } = providerIds.length
+    ? await supabase
+        .schema("medical")
+        .from("provider")
+        .select("provider_id, organization_id")
+        .in("provider_id", providerIds)
+    : { data: [] as { provider_id: string; organization_id: string }[] };
+
+  const orgIds = Array.from(
+    new Set(
+      (providers ?? [])
+        .map((p) => p.organization_id as string)
+        .filter(Boolean),
+    ),
+  );
+  const { data: orgs } = orgIds.length
+    ? await supabase
+        .schema("core")
+        .from("organization")
+        .select("organization_id, name")
+        .in("organization_id", orgIds)
+    : { data: [] as { organization_id: string; name: string }[] };
+
+  const orgName = new Map(
+    (orgs ?? []).map((o) => [o.organization_id, o.name] as const),
+  );
+  const providerName = new Map(
+    (providers ?? []).map((p) => [
+      p.provider_id as string,
+      orgName.get(p.organization_id as string) ?? null,
+    ]),
+  );
+  const epProvider = new Map(
+    episodes.map((e) => [
+      e.treatment_episode_id as string,
+      providerName.get(e.provider_id as string) ?? null,
+    ]),
+  );
+
+  const { data: reqs, error: rErr } = await supabase
+    .schema("medical")
+    .from("record_request")
+    .select(
+      `record_request_id, treatment_episode_id, request_type, status,
+       sent_date, follow_up_due, created_at`,
+    )
+    .in("treatment_episode_id", epIds)
+    .not("status", "in", "(received,cancelled)");
+  if (rErr) throw new Error(rErr.message);
+
+  const rows: RecordsPendingQueueRow[] = [];
+  for (const r of reqs ?? []) {
+    const mid = epToMatter.get(r.treatment_episode_id as string);
+    if (!mid) continue;
+    const matter = byMatter.get(mid);
+    if (!matter) continue;
+    const anchor =
+      (r.sent_date as string | null) ??
+      (r.created_at as string | null) ??
+      new Date().toISOString();
+    rows.push({
+      record_request_id: r.record_request_id as string,
+      client_matter_id: mid,
+      display_name: matter.display_name,
+      matter_number: matter.matter_number,
+      date_of_loss: matter.date_of_loss,
+      provider_name: epProvider.get(r.treatment_episode_id as string) ?? null,
+      request_type: r.request_type as string,
+      status: r.status as string,
+      sent_date: (r.sent_date as string | null) ?? null,
+      follow_up_due: (r.follow_up_due as string | null) ?? null,
+      days_pending: daysBetween(anchor),
+    });
+  }
+
+  rows.sort(
+    (a, b) =>
+      b.days_pending - a.days_pending ||
+      a.display_name.localeCompare(b.display_name),
+  );
+  return rows;
+}
+
 export async function countCmWorkQueues(opts: {
   staffId: string;
   assignedOnly?: boolean;
 }): Promise<CmQueueCounts> {
-  const [newCases, lors] = await Promise.all([
+  const [newCases, lors, liability, pd, records] = await Promise.all([
     listNewCasesQueue(opts),
     listLorPendingQueue(opts),
+    listLiabilityPendingQueue(opts),
+    listPdPendingQueue(opts),
+    listRecordsPendingQueue(opts),
   ]);
-  return { newCases: newCases.length, lors: lors.length };
+  return {
+    newCases: newCases.length,
+    lors: lors.length,
+    liability: liability.length,
+    pd: pd.length,
+    records: records.length,
+  };
 }

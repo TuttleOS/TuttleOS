@@ -168,9 +168,53 @@ export type ClaimRow = {
   lor_sent_date: string | null;
 };
 
+/** CM work queue: carrier liability decision still open. */
+export type LiabilityPendingQueueRow = {
+  claim_id: string;
+  client_matter_id: string;
+  display_name: string;
+  matter_number: string | null;
+  date_of_loss: string | null;
+  claim_role: string;
+  claim_number: string | null;
+  claim_status: string;
+  days_pending: number;
+};
+
+/** CM work queue: unresolved property.pd_claim. */
+export type PdPendingQueueRow = {
+  pd_claim_id: string;
+  client_matter_id: string;
+  display_name: string;
+  matter_number: string | null;
+  date_of_loss: string | null;
+  vehicle_label: string;
+  status: string;
+  days_since_touch: number | null;
+  demand_blocker: boolean;
+};
+
+/** CM work queue: outstanding medical.record_request. */
+export type RecordsPendingQueueRow = {
+  record_request_id: string;
+  client_matter_id: string;
+  display_name: string;
+  matter_number: string | null;
+  date_of_loss: string | null;
+  provider_name: string | null;
+  request_type: string;
+  status: string;
+  sent_date: string | null;
+  follow_up_due: string | null;
+  days_pending: number;
+};
+
 export type CmQueueCounts = {
   newCases: number;
   lors: number;
+  liability: number;
+  pd: number;
+  records: number;
 };
 
 export type TreatmentEpisodeRow = {
