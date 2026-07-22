@@ -14,6 +14,37 @@ export function caseTypeLabel(code: string | null | undefined): string {
   return CASE_TYPE_OPTIONS.find((c) => c.code === code)?.label ?? code;
 }
 
+/** Default contract “cause of action” phrase from case type. */
+export function defaultCausePhrase(
+  caseTypeCode: string | null | undefined,
+  caseTypeOther?: string | null,
+): string {
+  const other = caseTypeOther?.trim();
+  if (caseTypeCode === "other") {
+    return other || "______________________";
+  }
+  switch (caseTypeCode) {
+    case "auto":
+      return "car accident";
+    case "work_injury":
+      return "work injury";
+    case "premises":
+      return "slip and fall";
+    case "wrongful_death":
+      return "wrongful death";
+    case "dog_bite":
+      return "dog bite";
+    case "motorcycle":
+      return "motorcycle accident";
+    case "trucking":
+      return "truck accident";
+    case "pedestrian":
+      return "pedestrian accident";
+    default:
+      return other || "car accident";
+  }
+}
+
 export function defaultClientRole(caseTypeCode: string | null): string {
   if (caseTypeCode === "auto" || caseTypeCode === "motorcycle" || caseTypeCode === "trucking") {
     return "driver";

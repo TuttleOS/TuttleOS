@@ -17,7 +17,7 @@ import { estimateSolPreview } from "@/lib/intake/sol";
 import { LEAD_STATUS_META, type LeadRow } from "@/lib/intake/types";
 import { CopyContact } from "@/components/ui/CopyContact";
 import { LeadTemperatureSelect } from "./LeadTemperatureSelect";
-import { ContractPanel } from "./ContractPanel";
+import { ContractPanel, type NextFriendContact } from "./ContractPanel";
 import {
   EditableContact,
   type ContactHistoryRow,
@@ -30,6 +30,7 @@ import {
 import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { softDeleteLeadAction } from "@/lib/contacts/actions";
 import type { ContractPackage, ContractSigner } from "@/lib/contracts/types";
+import type { LeadContractPlan } from "@/lib/contracts/capacity";
 
 type Attempt = {
   communication_log_id: string;
@@ -63,6 +64,8 @@ export function LeadDetail({
   companionOptions = [],
   crashCompanions = [],
   locationGuess = "San Antonio",
+  nextFriend = null,
+  contractPlan = null,
 }: {
   lead: LeadRow;
   phone: string | null;
@@ -78,6 +81,8 @@ export function LeadDetail({
   companionOptions?: CompanionOption[];
   crashCompanions?: LeadRow[];
   locationGuess?: string;
+  nextFriend?: NextFriendContact | null;
+  contractPlan?: LeadContractPlan | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -133,6 +138,11 @@ export function LeadDetail({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold">{leadDisplayName(lead)}</h1>
+                {lead.is_minor ? (
+                  <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning-bg px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-warning">
+                    Minor
+                  </span>
+                ) : null}
                 <span
                   className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${meta.chip}`}
                 >
@@ -147,7 +157,11 @@ export function LeadDetail({
             <dl className="mt-4 grid grid-cols-[130px_1fr] gap-x-3 gap-y-2 text-sm">
               <dt className="text-muted">Incident</dt>
               <dd>
-                {caseTypeLabel(lead.case_type_code)} —{" "}
+                {caseTypeLabel(lead.case_type_code)}
+                {lead.case_type_code === "other" && lead.case_type_other
+                  ? ` — ${lead.case_type_other}`
+                  : ""}{" "}
+                —{" "}
                 {formatDate(lead.incident_date)}
               </dd>
               <dt className="text-muted">Location</dt>
@@ -199,6 +213,38 @@ export function LeadDetail({
                   "—"
                 )}
               </dd>
+              {lead.is_minor ? (
+                <>
+                  <dt className="text-muted">Adult on case</dt>
+                  <dd>
+                    {nextFriend ? (
+                      <span>
+                        {nextFriend.full_name}
+                        {nextFriend.email ? (
+                          <span className="text-muted">
+                            {" "}
+                            · {nextFriend.email}
+                          </span>
+                        ) : null}
+                        {lead.not_drivers_child ? (
+                          <span className="ml-2 text-xs font-semibold text-warning">
+                            Not driver’s child — parent must sign contract
+                          </span>
+                        ) : null}
+                        {lead.relationship_to_driver ? (
+                          <span className="block text-xs text-muted">
+                            Minor’s relationship to driver: {lead.relationship_to_driver}
+                          </span>
+                        ) : null}
+                      </span>
+                    ) : (
+                      <span className="text-danger">
+                        Missing — set parent/guardian before contract / convert
+                      </span>
+                    )}
+                  </dd>
+                </>
+              ) : null}
               <dt className="text-muted">Email</dt>
               <dd>
                 {lead.person_id ? (
@@ -352,6 +398,8 @@ export function LeadDetail({
             activePackage={contractPackage}
             companionOptions={companionOptions}
             gateReady={gate.ready}
+            nextFriend={nextFriend}
+            contractPlan={contractPlan}
           />
 
           <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">

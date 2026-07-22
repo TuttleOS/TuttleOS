@@ -54,6 +54,8 @@ export type LeadRow = {
   contact_date: string;
   incident_date: string | null;
   case_type_code: string | null;
+  /** Free text when case_type_code is "other" — seeds contract cause phrase. */
+  case_type_other?: string | null;
   description: string | null;
   intake_source: string | null;
   marketing_source: string | null;
@@ -65,6 +67,10 @@ export type LeadRow = {
   handled_by: string | null;
   resulting_matter_id: string | null;
   incident_group_id: string | null;
+  is_minor?: boolean;
+  not_drivers_child?: boolean;
+  relationship_to_driver?: string | null;
+  next_friend_person_id?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -73,12 +79,28 @@ export type LeadRow = {
   primary_phone?: string | null;
   /** Live primary email from contact_point (preferred over raw_email for gate/UI). */
   primary_email?: string | null;
+  next_friend?: {
+    person_id: string;
+    first_name: string;
+    last_name: string;
+  } | null;
 };
 
 export type CompanionFormInput = {
   full_name: string;
   email?: string;
   date_of_birth?: string;
+  /** Staff marks as minor when DOB missing. */
+  is_minor_toggle?: boolean;
+  /** Minor is not the driver’s child — parent must sign. */
+  not_drivers_child?: boolean;
+  /** Relationship of this person to the vehicle driver. */
+  relationship_to_driver?: string;
+  /** Who is the adult on this minor’s case. */
+  adult_on_case?: "primary" | "new";
+  adult_full_name?: string;
+  adult_email?: string;
+  adult_phone?: string;
 };
 
 export type LeadFormInput = {
@@ -88,7 +110,16 @@ export type LeadFormInput = {
   suffix?: string;
   goes_by?: string;
   date_of_birth?: string;
+  /** @deprecated Primary lead is never a minor — ignored; use companions. */
+  is_minor_toggle?: boolean;
+  not_drivers_child?: boolean;
+  relationship_to_driver?: string;
+  adult_full_name?: string;
+  adult_email?: string;
+  adult_phone?: string;
   case_type_code: string;
+  /** Required when case_type_code is "other" — pulls into contingent fee contract. */
+  case_type_other?: string;
   incident_date: string;
   location: string;
   phone_country: "US" | "MX";

@@ -11,6 +11,8 @@ import {
   type PhoneCountry,
 } from "@/lib/intake/phone";
 import { estimateSolPreview } from "@/lib/intake/sol";
+import { isMinorClient } from "@/lib/intake/minor";
+import { todayIsoLocal } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
 
 type CompanionRow = {
@@ -18,6 +20,13 @@ type CompanionRow = {
   full_name: string;
   email: string;
   date_of_birth: string;
+  is_minor_toggle: boolean;
+  not_drivers_child: boolean;
+  relationship_to_driver: string;
+  adult_on_case: "primary" | "new";
+  adult_full_name: string;
+  adult_email: string;
+  adult_phone: string;
 };
 
 export function NewLeadForm() {
@@ -32,6 +41,7 @@ export function NewLeadForm() {
   const [goesBy, setGoesBy] = useState("");
   const [dob, setDob] = useState("");
   const [type, setType] = useState("");
+  const [typeOther, setTypeOther] = useState("");
   const [doi, setDoi] = useState("");
   const [loc, setLoc] = useState("");
   const [country, setCountry] = useState<PhoneCountry>("US");
@@ -50,6 +60,7 @@ export function NewLeadForm() {
         first_name: first,
         last_name: last,
         case_type_code: type,
+        case_type_other: type === "other" ? typeOther : undefined,
         incident_date: doi,
         location: loc,
         phone_country: country,
@@ -58,7 +69,7 @@ export function NewLeadForm() {
         in_person_signing: inPerson,
         preferred_language: lang,
       }),
-    [first, last, type, doi, loc, country, digits, email, inPerson, lang],
+    [first, last, type, typeOther, doi, loc, country, digits, email, inPerson, lang],
   );
   const sol = estimateSolPreview(doi || null);
 
@@ -84,6 +95,13 @@ export function NewLeadForm() {
         full_name: "",
         email: "",
         date_of_birth: "",
+        is_minor_toggle: false,
+        not_drivers_child: false,
+        relationship_to_driver: "",
+        adult_on_case: "primary",
+        adult_full_name: "",
+        adult_email: "",
+        adult_phone: "",
       },
     ]);
   }
@@ -112,6 +130,7 @@ export function NewLeadForm() {
         goes_by: goesBy,
         date_of_birth: dob || undefined,
         case_type_code: type,
+        case_type_other: type === "other" ? typeOther.trim() || undefined : undefined,
         incident_date: doi,
         location: loc,
         phone_country: country,
@@ -122,11 +141,24 @@ export function NewLeadForm() {
         marketing_source: source,
         companions: companions
           .filter((c) => c.full_name.trim())
-          .map((c) => ({
-            full_name: c.full_name,
-            email: c.email,
-            date_of_birth: c.date_of_birth || undefined,
-          })),
+          .map((c) => {
+            const minor = isMinorClient({
+              date_of_birth: c.date_of_birth,
+              is_minor_toggle: c.is_minor_toggle,
+            });
+            return {
+              full_name: c.full_name,
+              email: minor ? undefined : c.email || undefined,
+              date_of_birth: c.date_of_birth || undefined,
+              is_minor_toggle: c.is_minor_toggle,
+              not_drivers_child: c.not_drivers_child,
+              relationship_to_driver: c.relationship_to_driver || undefined,
+              adult_on_case: c.adult_on_case,
+              adult_full_name: c.adult_full_name || undefined,
+              adult_email: c.adult_email || undefined,
+              adult_phone: c.adult_phone || undefined,
+            };
+          }),
         partial,
       });
       if (!res.ok) {
@@ -143,8 +175,8 @@ export function NewLeadForm() {
       <section className="rounded-panel border border-grid bg-surface p-6 shadow-soft">
         <h1 className="text-xl font-bold">New Lead — the six minimums</h1>
         <p className="mt-1 text-sm text-muted">
-          Primary person below. Add others on the same crash with name, email,
-          and optional DOB — each becomes their own linked lead.
+          Primary person must be an adult. Add minors and other people on the
+          same crash below — each becomes their own linked lead.
         </p>
 
         <div className="mt-4 grid gap-x-3 sm:grid-cols-2">
@@ -153,7 +185,7 @@ export function NewLeadForm() {
               id="f-first"
               value={first}
               onChange={(e) => setFirst(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1 h-10 w-full rounded-lg border border-grid bg-white px-3 text-sm text-ink shadow-sm outline-none placeholder:text-muted/80 focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Rosa"
             />
           </Field>
@@ -162,7 +194,7 @@ export function NewLeadForm() {
               id="f-middle"
               value={middle}
               onChange={(e) => setMiddle(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1 h-10 w-full rounded-lg border border-grid bg-white px-3 text-sm text-ink shadow-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </Field>
           <Field label="Last name" required>
@@ -170,7 +202,7 @@ export function NewLeadForm() {
               id="f-last"
               value={last}
               onChange={(e) => setLast(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1 h-10 w-full rounded-lg border border-grid bg-white px-3 text-sm text-ink shadow-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Delgado"
             />
           </Field>
@@ -179,7 +211,7 @@ export function NewLeadForm() {
               id="f-suffix"
               value={suffix}
               onChange={(e) => setSuffix(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3 text-sm outline-none focus:border-accent"
+              className="mt-1 h-10 w-full rounded-lg border border-grid bg-white px-3 text-sm text-ink shadow-sm outline-none focus:border-accent"
             >
               <option value="">—</option>
               <option>Jr.</option>
@@ -201,12 +233,13 @@ export function NewLeadForm() {
           />
         </Field>
 
-        <Field label="Date of birth" hint="optional · MM/DD/YYYY">
+        <Field label="Date of birth" hint="optional · MM/DD/YYYY · adult only">
           <DateField
             id="f-dob"
             value={dob}
             onChange={setDob}
             className={INPUT}
+            max={todayIsoLocal()}
           />
         </Field>
 
@@ -214,7 +247,11 @@ export function NewLeadForm() {
           <select
             id="f-type"
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setType(next);
+              if (next !== "other") setTypeOther("");
+            }}
             className={INPUT}
           >
             <option value="">— choose —</option>
@@ -226,13 +263,34 @@ export function NewLeadForm() {
           </select>
         </Field>
 
-        <Field label="Incident date" required hint="MM/DD/YYYY">
+        {type === "other" ? (
+          <Field
+            label="Describe the incident type"
+            required
+            hint="Pulls into the contingent fee contract as the cause of action"
+          >
+            <input
+              id="f-type-other"
+              value={typeOther}
+              onChange={(e) => setTypeOther(e.target.value)}
+              className={INPUT}
+              placeholder="e.g. motorcycle accident, ATV crash, product defect…"
+            />
+          </Field>
+        ) : null}
+
+        <Field
+          label="Incident date"
+          required
+          hint="MM/DD/YYYY · today or earlier"
+        >
           <DateField
             id="f-doi"
             value={doi}
             onChange={setDoi}
             className={INPUT}
             required
+            max={todayIsoLocal()}
           />
         </Field>
 
@@ -334,8 +392,8 @@ export function NewLeadForm() {
                 Others on this crash
               </h2>
               <p className="mt-1 text-xs text-muted">
-                Name + email (+ optional DOB). Each person gets their own lead,
-                linked to the same crash.
+                Name (+ email for adults, or guardian email for minors). Optional
+                DOB. Each person gets their own lead, linked to the same crash.
               </p>
             </div>
             <button
@@ -381,26 +439,180 @@ export function NewLeadForm() {
                       placeholder="Jordan Reyes"
                     />
                   </Field>
-                  <Field label="Email">
-                    <input
-                      type="email"
-                      value={c.email}
-                      onChange={(e) =>
-                        updateCompanion(c.key, { email: e.target.value })
-                      }
-                      className={INPUT}
-                      placeholder="jordan@example.com"
-                    />
-                  </Field>
+                  {!isMinorClient({
+                    date_of_birth: c.date_of_birth,
+                    is_minor_toggle: c.is_minor_toggle,
+                  }) ? (
+                    <Field label="Email">
+                      <input
+                        type="email"
+                        value={c.email}
+                        onChange={(e) =>
+                          updateCompanion(c.key, { email: e.target.value })
+                        }
+                        className={INPUT}
+                        placeholder="jordan@example.com"
+                      />
+                    </Field>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted">
+                      Minors usually don&apos;t have email — we&apos;ll use the
+                      adult / guardian email below for contact and signing.
+                    </p>
+                  )}
                   <Field label="Date of birth" hint="optional">
                     <DateField
                       value={c.date_of_birth}
                       onChange={(iso) =>
-                        updateCompanion(c.key, { date_of_birth: iso })
+                        updateCompanion(c.key, {
+                          date_of_birth: iso,
+                          is_minor_toggle: false,
+                        })
                       }
                       className={INPUT}
+                      max={todayIsoLocal()}
                     />
                   </Field>
+                  <label className="mt-2 flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={isMinorClient({
+                        date_of_birth: c.date_of_birth,
+                        is_minor_toggle: c.is_minor_toggle,
+                      })}
+                      disabled={!!c.date_of_birth}
+                      onChange={(e) =>
+                        updateCompanion(c.key, {
+                          is_minor_toggle: e.target.checked,
+                          ...(e.target.checked ? { email: "" } : {}),
+                        })
+                      }
+                    />
+                    <span className="font-semibold">This person is a minor</span>
+                  </label>
+                  {isMinorClient({
+                    date_of_birth: c.date_of_birth,
+                    is_minor_toggle: c.is_minor_toggle,
+                  }) ? (
+                    <div className="mt-2 rounded-lg border border-warning/40 bg-warning-bg/40 p-3">
+                      <p className="text-sm font-semibold text-warning">
+                        Who is going to be the adult on the case?
+                      </p>
+                      <p className="mt-1 text-xs text-muted">
+                        Choose the primary adult (Case A — minor rides on their
+                        contract) or add a parent/guardian who is not a client
+                        (Case B — they sign this minor&apos;s contract).
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-3 text-sm">
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="radio"
+                            name={`adult-${c.key}`}
+                            checked={c.adult_on_case === "primary"}
+                            onChange={() =>
+                              updateCompanion(c.key, {
+                                adult_on_case: "primary",
+                              })
+                            }
+                          />
+                          Primary lead (Person 1)
+                        </label>
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="radio"
+                            name={`adult-${c.key}`}
+                            checked={c.adult_on_case === "new"}
+                            onChange={() =>
+                              updateCompanion(c.key, { adult_on_case: "new" })
+                            }
+                          />
+                          Add parent / guardian
+                        </label>
+                      </div>
+                      {c.adult_on_case === "new" ? (
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <Field label="Adult full name" required>
+                            <input
+                              value={c.adult_full_name}
+                              onChange={(e) =>
+                                updateCompanion(c.key, {
+                                  adult_full_name: e.target.value,
+                                })
+                              }
+                              className={INPUT}
+                            />
+                          </Field>
+                          <Field
+                            label="Adult email"
+                            required
+                            hint="Used for this minor’s contact & contract"
+                          >
+                            <input
+                              type="email"
+                              value={c.adult_email}
+                              onChange={(e) =>
+                                updateCompanion(c.key, {
+                                  adult_email: e.target.value,
+                                })
+                              }
+                              className={INPUT}
+                              placeholder="parent@example.com"
+                            />
+                          </Field>
+                          <Field label="Adult phone">
+                            <input
+                              value={c.adult_phone}
+                              onChange={(e) =>
+                                updateCompanion(c.key, {
+                                  adult_phone: e.target.value,
+                                })
+                              }
+                              className={INPUT}
+                            />
+                          </Field>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted">
+                          Contact email for this minor will be the primary
+                          lead&apos;s email
+                          {email.trim() ? ` (${email.trim()})` : ""}.
+                        </p>
+                      )}
+                      <Field
+                        label="Minor’s relationship to the driver"
+                        hint="About this minor — not the parent (e.g. child, niece, friend’s child)"
+                      >
+                        <input
+                          value={c.relationship_to_driver}
+                          onChange={(e) =>
+                            updateCompanion(c.key, {
+                              relationship_to_driver: e.target.value,
+                            })
+                          }
+                          className={INPUT}
+                          placeholder="How is this minor related to the driver?"
+                        />
+                      </Field>
+                      <label className="mt-2 flex items-start gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={c.not_drivers_child}
+                          onChange={(e) =>
+                            updateCompanion(c.key, {
+                              not_drivers_child: e.target.checked,
+                            })
+                          }
+                        />
+                        <span>
+                          Minor&apos;s guardian/parent is not a client in this
+                          accident — the parent/guardian must sign this
+                          minor&apos;s contract.
+                        </span>
+                      </label>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -493,7 +705,7 @@ export function NewLeadForm() {
 }
 
 const INPUT_BASE =
-  "h-10 rounded-lg border border-grid bg-page px-3 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60";
+  "h-10 rounded-lg border border-grid bg-white px-3 text-sm text-ink shadow-sm outline-none placeholder:text-muted/80 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:bg-page disabled:opacity-60";
 const INPUT = `${INPUT_BASE} w-full`;
 
 function Field({

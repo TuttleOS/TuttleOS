@@ -3,10 +3,12 @@ import type { LeadRow, LeadStatus } from "./types";
 
 const LEAD_SELECT = `
   intake_lead_id, person_id, raw_name, raw_phone, raw_email, contact_date,
-  incident_date, case_type_code, description, intake_source, marketing_source,
+  incident_date, case_type_code, case_type_other, description, intake_source, marketing_source,
   estimated_sol_date, status, lead_temperature, rejected_reason, non_engagement_letter_sent_date,
-  handled_by, resulting_matter_id, incident_group_id, created_at, updated_at, deleted_at,
-  person:person_id(person_id, first_name, middle_name, last_name, suffix, goes_by, preferred_language)
+  handled_by, resulting_matter_id, incident_group_id, is_minor, not_drivers_child,
+  relationship_to_driver, next_friend_person_id, created_at, updated_at, deleted_at,
+  person:person_id(person_id, first_name, middle_name, last_name, suffix, goes_by, preferred_language),
+  next_friend:next_friend_person_id(person_id, first_name, last_name)
 `;
 
 export async function listLeads(status?: LeadStatus | "all"): Promise<LeadRow[]> {

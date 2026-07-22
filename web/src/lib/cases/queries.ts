@@ -1,7 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
   CaseloadRow,
+  ClaimRow,
+  CmQueueCounts,
+  LorPendingQueueRow,
   MatterDetail,
+  NewCaseQueueRow,
   ProviderCallDue,
   StalledRow,
   TaskRow,
@@ -11,6 +15,33 @@ import type {
 import { STAGE_LABEL } from "./types";
 
 export { STAGE_LABEL };
+
+function daysBetween(isoDateOrTs: string, now = new Date()): number {
+  const raw = isoDateOrTs.includes("T")
+    ? isoDateOrTs.slice(0, 10)
+    : isoDateOrTs;
+  const start = new Date(`${raw}T12:00:00`);
+  return Math.max(
+    0,
+    Math.floor((now.getTime() - start.getTime()) / 86400000),
+  );
+}
+
+function isLorTaskTitle(title: string): boolean {
+  const t = title.toLowerCase();
+  return t.includes("lor") && t.startsWith("send");
+}
+
+function claimRolesForLorTitle(title: string): string[] {
+  const t = title.toLowerCase();
+  if (t.includes("pinsco")) {
+    return ["pinsco_liability", "pip", "um_uim", "medpay", "pd_pinsco"];
+  }
+  if (t.includes("dinsco")) {
+    return ["dinsco_liability", "pd_dinsco", "umbrella"];
+  }
+  return [];
+}
 
 export async function listCaseload(opts?: {
   staffId?: string;
@@ -591,14 +622,298 @@ export async function listProviderCallsDue(opts?: {
   }));
 }
 
-export async function listClaims(matterId: string) {
+export async function listClaims(matterId: string): Promise<ClaimRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("insurance")
     .from("claim")
-    .select("claim_id, claim_number, claim_role, status, policy_id")
+    .select(
+      "claim_id, claim_number, claim_role, status, policy_id, lor_sent_date",
+    )
     .eq("client_matter_id", matterId)
     .is("deleted_at", null);
   if (error) return [];
-  return data ?? [];
+  return (data ?? []) as ClaimRow[];
+}
+
+/**
+ * New cases for a CM: active assignment + sign-up checklist untouched
+ * (no signup_checklist task done) and no completed welcome-call task.
+ */
+export async function listNewCasesQueue(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<NewCaseQueueRow[]> {
+  const supabase = createClient();
+
+  let assignQ = supabase
+    .schema("core")
+    .from("staff_assignment")
+    .select("client_matter_id, assigned_at, staff_id")
+    .eq("assignment_role", "case_manager")
+    .is("ended_at", null);
+  if (opts.assignedOnly) {
+    assignQ = assignQ.eq("staff_id", opts.staffId);
+  }
+
+  const { data: assigns, error: aErr } = await assignQ;
+  if (aErr) throw new Error(aErr.message);
+  if (!assigns?.length) return [];
+
+  const matterIds = assigns.map((a) => a.client_matter_id as string);
+  const assignedAt = new Map(
+    assigns.map((a) => [
+      a.client_matter_id as string,
+      a.assigned_at as string,
+    ]),
+  );
+
+  const { data: tasks, error: tErr } = await supabase
+    .schema("workflow")
+    .from("task")
+    .select("client_matter_id, title, status, task_type")
+    .in("client_matter_id", matterIds)
+    .is("deleted_at", null);
+  if (tErr) throw new Error(tErr.message);
+
+  const byMatter = new Map<
+    string,
+    { checklist: { title: string; status: string }[]; welcomeDone: boolean }
+  >();
+  for (const id of matterIds) {
+    byMatter.set(id, { checklist: [], welcomeDone: false });
+  }
+  for (const t of tasks ?? []) {
+    const mid = t.client_matter_id as string | null;
+    if (!mid) continue;
+    const slot = byMatter.get(mid);
+    if (!slot) continue;
+    const title = (t.title as string) ?? "";
+    if (/welcome/i.test(title) && t.status === "done") {
+      slot.welcomeDone = true;
+    }
+    if (t.task_type === "signup_checklist") {
+      slot.checklist.push({ title, status: t.status as string });
+    }
+  }
+
+  const newIds = matterIds.filter((id) => {
+    const slot = byMatter.get(id)!;
+    if (slot.welcomeDone) return false;
+    const anyDone = slot.checklist.some((c) => c.status === "done");
+    return !anyDone;
+  });
+  if (newIds.length === 0) return [];
+
+  const { data: matters, error: mErr } = await supabase
+    .schema("core")
+    .from("client_matter")
+    .select(
+      `client_matter_id, matter_number, client_person_id,
+       person:client_person_id(first_name, last_name),
+       incident:incident_group_id(date_of_loss)`,
+    )
+    .in("client_matter_id", newIds)
+    .is("deleted_at", null)
+    .neq("representation_status", "declined");
+  if (mErr) throw new Error(mErr.message);
+
+  const rows: NewCaseQueueRow[] = (matters ?? []).map((m) => {
+    const person = m.person as unknown as {
+      first_name: string;
+      last_name: string;
+    } | null;
+    const incident = m.incident as unknown as {
+      date_of_loss: string | null;
+    } | null;
+    const assigned = assignedAt.get(m.client_matter_id) ?? new Date().toISOString();
+    const slot = byMatter.get(m.client_matter_id)!;
+    const outstanding =
+      slot.checklist.length > 0
+        ? slot.checklist
+            .filter((c) => c.status !== "done" && c.status !== "cancelled")
+            .map((c) => c.title)
+        : ["Sign-up checklist not generated yet"];
+    return {
+      client_matter_id: m.client_matter_id,
+      display_name: person
+        ? `${person.last_name}, ${person.first_name}`
+        : (m.matter_number ?? "Matter"),
+      matter_number: m.matter_number,
+      date_of_loss: incident?.date_of_loss ?? null,
+      assigned_at: assigned,
+      days_since_assignment: daysBetween(assigned),
+      outstanding,
+    };
+  });
+
+  rows.sort(
+    (a, b) =>
+      b.days_since_assignment - a.days_since_assignment ||
+      a.display_name.localeCompare(b.display_name),
+  );
+  return rows;
+}
+
+/** Incomplete Send-LOR checklist tasks for the CM's matters. */
+export async function listLorPendingQueue(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<LorPendingQueueRow[]> {
+  const supabase = createClient();
+
+  let matterIds: string[] | null = null;
+  if (opts.assignedOnly) {
+    const { data: assigns, error: aErr } = await supabase
+      .schema("core")
+      .from("staff_assignment")
+      .select("client_matter_id")
+      .eq("staff_id", opts.staffId)
+      .eq("assignment_role", "case_manager")
+      .is("ended_at", null);
+    if (aErr) throw new Error(aErr.message);
+    matterIds = (assigns ?? []).map((a) => a.client_matter_id as string);
+    if (matterIds.length === 0) return [];
+  }
+
+  let taskQ = supabase
+    .schema("workflow")
+    .from("task")
+    .select(
+      "task_id, client_matter_id, title, due_date, created_at, status, task_type",
+    )
+    .in("status", ["open", "in_progress"])
+    .eq("task_type", "signup_checklist")
+    .is("deleted_at", null);
+  if (matterIds) taskQ = taskQ.in("client_matter_id", matterIds);
+
+  const { data: tasks, error: tErr } = await taskQ;
+  if (tErr) throw new Error(tErr.message);
+
+  const lorTasks = (tasks ?? []).filter((t) =>
+    isLorTaskTitle((t.title as string) ?? ""),
+  );
+  if (lorTasks.length === 0) return [];
+
+  const ids = Array.from(
+    new Set(
+      lorTasks
+        .map((t) => t.client_matter_id as string | null)
+        .filter(Boolean) as string[],
+    ),
+  );
+
+  const { data: matters, error: mErr } = await supabase
+    .schema("core")
+    .from("client_matter")
+    .select(
+      `client_matter_id, matter_number,
+       person:client_person_id(first_name, last_name),
+       incident:incident_group_id(date_of_loss)`,
+    )
+    .in("client_matter_id", ids)
+    .is("deleted_at", null);
+  if (mErr) throw new Error(mErr.message);
+
+  const matterMap = new Map(
+    (matters ?? []).map((m) => [m.client_matter_id as string, m] as const),
+  );
+
+  const { data: claims } = await supabase
+    .schema("insurance")
+    .from("claim")
+    .select("claim_id, client_matter_id, claim_role, claim_number, lor_sent_date")
+    .in("client_matter_id", ids)
+    .is("deleted_at", null);
+
+  const claimsByMatter = new Map<
+    string,
+    {
+      claim_id: string;
+      claim_role: string;
+      claim_number: string | null;
+      lor_sent_date: string | null;
+    }[]
+  >();
+  for (const c of claims ?? []) {
+    const mid = c.client_matter_id as string | null;
+    if (!mid) continue;
+    const list = claimsByMatter.get(mid) ?? [];
+    list.push({
+      claim_id: c.claim_id as string,
+      claim_role: c.claim_role as string,
+      claim_number: (c.claim_number as string | null) ?? null,
+      lor_sent_date: (c.lor_sent_date as string | null) ?? null,
+    });
+    claimsByMatter.set(mid, list);
+  }
+
+  const rows: LorPendingQueueRow[] = [];
+  for (const t of lorTasks) {
+    const mid = t.client_matter_id as string | null;
+    if (!mid) continue;
+    const m = matterMap.get(mid);
+    if (!m) continue;
+
+    const title = (t.title as string) ?? "";
+    const roles = claimRolesForLorTitle(title);
+    const matterClaims = claimsByMatter.get(mid) ?? [];
+    const matched =
+      matterClaims.find(
+        (c) =>
+          roles.includes(c.claim_role) && c.lor_sent_date == null,
+      ) ??
+      matterClaims.find((c) => roles.includes(c.claim_role)) ??
+      null;
+
+    // If matching claim already has lor_sent_date, trigger should have
+    // completed the task — still hide if sent date is set.
+    if (matched?.lor_sent_date) continue;
+
+    const person = m.person as unknown as {
+      first_name: string;
+      last_name: string;
+    } | null;
+    const incident = m.incident as unknown as {
+      date_of_loss: string | null;
+    } | null;
+    const anchor =
+      (t.created_at as string | null) ??
+      (t.due_date as string | null) ??
+      new Date().toISOString();
+
+    rows.push({
+      task_id: t.task_id as string,
+      client_matter_id: mid,
+      display_name: person
+        ? `${person.last_name}, ${person.first_name}`
+        : ((m.matter_number as string | null) ?? "Matter"),
+      matter_number: (m.matter_number as string | null) ?? null,
+      date_of_loss: incident?.date_of_loss ?? null,
+      task_title: title,
+      claim_role: matched?.claim_role ?? null,
+      claim_number: matched?.claim_number ?? null,
+      claim_id: matched?.claim_id ?? null,
+      days_pending: daysBetween(anchor),
+      due_date: (t.due_date as string | null) ?? null,
+    });
+  }
+
+  rows.sort(
+    (a, b) =>
+      b.days_pending - a.days_pending ||
+      a.display_name.localeCompare(b.display_name),
+  );
+  return rows;
+}
+
+export async function countCmWorkQueues(opts: {
+  staffId: string;
+  assignedOnly?: boolean;
+}): Promise<CmQueueCounts> {
+  const [newCases, lors] = await Promise.all([
+    listNewCasesQueue(opts),
+    listLorPendingQueue(opts),
+  ]);
+  return { newCases: newCases.length, lors: lors.length };
 }

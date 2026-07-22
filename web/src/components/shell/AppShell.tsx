@@ -22,6 +22,8 @@ type NavItem = {
   featured?: boolean;
   /** Group heading in the sidebar */
   section?: string;
+  /** Live queue count (CM work queues) */
+  badge?: number;
 };
 
 const HELP_NAV_ALL: NavItem[] = [
@@ -44,6 +46,8 @@ const FIRM_WIDE_NAV: NavItem[] = [
   { href: "/intake/new", label: "New lead", section: "Intake" },
   { href: "/intake/activity", label: "Activity", section: "Intake" },
   { href: "/cases", label: "Cases", section: "Case Manager" },
+  { href: "/cases/new-cases", label: "New cases", section: "Case Manager" },
+  { href: "/cases/lors", label: "LORs pending", section: "Case Manager" },
   { href: "/cases/calls", label: "Provider calls", section: "Case Manager" },
   { href: "/cases/tasks", label: "Tasks", section: "Case Manager" },
   { href: "/litigation", label: "Cases", section: "Litigation" },
@@ -79,6 +83,8 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
   ],
   "/cases": [
     { href: "/cases", label: "My Caseload" },
+    { href: "/cases/new-cases", label: "New cases" },
+    { href: "/cases/lors", label: "LORs pending" },
     { href: "/cases/calls", label: "Provider Calls" },
     { href: "/cases/tasks", label: "My Tasks" },
     {
@@ -134,10 +140,30 @@ function helpNavFor(staff: StaffProfile): NavItem[] {
   );
 }
 
-function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
+function withQueueBadges(
+  items: NavItem[],
+  counts: { newCases: number; lors: number } | null | undefined,
+): NavItem[] {
+  if (!counts) return items;
+  return items.map((item) => {
+    if (item.href === "/cases/new-cases") {
+      return { ...item, badge: counts.newCases };
+    }
+    if (item.href === "/cases/lors") {
+      return { ...item, badge: counts.lors };
+    }
+    return item;
+  });
+}
+
+function navForPath(
+  pathname: string,
+  staff: StaffProfile,
+  cmQueueCounts?: { newCases: number; lors: number } | null,
+): NavItem[] {
   const help = helpNavFor(staff);
   if (usesFirmWideNav(staff)) {
-    return FIRM_WIDE_NAV;
+    return withQueueBadges(FIRM_WIDE_NAV, cmQueueCounts);
   }
   if (
     pathname === "/test" ||
@@ -145,7 +171,7 @@ function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
     pathname === "/updates" ||
     pathname.startsWith("/updates/")
   ) {
-    return FIRM_WIDE_NAV;
+    return withQueueBadges(FIRM_WIDE_NAV, cmQueueCounts);
   }
   if (
     pathname.startsWith("/litigation") &&
@@ -155,7 +181,7 @@ function navForPath(pathname: string, staff: StaffProfile): NavItem[] {
   }
   const key = Object.keys(NAV_BY_PREFIX).find((p) => pathname.startsWith(p));
   const base = NAV_BY_PREFIX[key ?? "/cases"] ?? NAV_BY_PREFIX["/cases"];
-  return [...base, ...help];
+  return [...withQueueBadges(base, cmQueueCounts), ...help];
 }
 
 function isNavActive(pathname: string, href: string): boolean {
@@ -169,13 +195,15 @@ function isNavActive(pathname: string, href: string): boolean {
 export function AppShell({
   staff,
   children,
+  cmQueueCounts = null,
 }: {
   staff: StaffProfile;
   children: React.ReactNode;
+  cmQueueCounts?: { newCases: number; lors: number } | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const nav = navForPath(pathname, staff);
+  const nav = navForPath(pathname, staff, cmQueueCounts);
   const name = displayName(staff);
   const banner = identityBannerCopy(staff, pathname);
 
@@ -322,13 +350,24 @@ export function AppShell({
                 {sectionEl}
                 <Link
                   href={item.href}
-                  className={`block rounded-lg px-2.5 py-1.5 text-[13px] no-underline transition ${
+                  className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-[13px] no-underline transition ${
                     active
                       ? "!bg-white/12 !font-semibold !text-white"
                       : "!text-white/70 hover:!bg-white/8 hover:!text-white"
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.badge != null && (
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                        item.badge > 0
+                          ? "bg-accent/30 text-white"
+                          : "bg-white/10 text-white/50"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </div>
             );

@@ -5,8 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { defaultClientRole } from "./case-types";
 import { formToGate } from "./gate";
+import { isMinorClient } from "./minor";
 import { digitsOnly, phoneForStorage, type PhoneCountry } from "./phone";
 import { estimateSolIso } from "./sol";
+import { isDateAfterToday } from "@/lib/dates";
 import type { LeadFormInput, LeadStatus, LeadTemperature } from "./types";
 
 async function requireStaff() {
@@ -27,16 +29,72 @@ export async function createLeadAction(
     const supabase = createClient();
     const gate = formToGate(input);
 
-    if (!input.partial && !gate.ready) {
+    if (input.incident_date && isDateAfterToday(input.incident_date)) {
+      return { ok: false, error: "Incident date cannot be in the future" };
+    }
+
+    const caseTypeOther =
+      input.case_type_code === "other"
+        ? input.case_type_other?.trim() || null
+        : null;
+    if (
+      !input.partial &&
+      input.case_type_code === "other" &&
+      !caseTypeOther
+    ) {
       return {
         ok: false,
-        error: `Gate incomplete: ${gate.missing.map((m) => m.label).join(", ")}`,
+        error: "Describe the incident type (Other) — this text goes on the contract",
+      };
+    }
+
+    const primaryWouldBeMinor = isMinorClient({
+      date_of_birth: input.date_of_birth,
+      is_minor_toggle: input.is_minor_toggle,
+    });
+    if (primaryWouldBeMinor) {
+      return {
+        ok: false,
+        error:
+          "Primary lead must be an adult. Add minors as companions on the same crash.",
       };
     }
 
     const companions = (input.companions ?? []).filter((c) =>
       c.full_name.trim(),
     );
+    if (!input.partial) {
+      for (const c of companions) {
+        const cMinor = isMinorClient({
+          date_of_birth: c.date_of_birth,
+          is_minor_toggle: c.is_minor_toggle,
+        });
+        if (!cMinor) continue;
+        if (c.adult_on_case === "primary") {
+          continue;
+        }
+        if (!c.adult_email?.trim()) {
+          return {
+            ok: false,
+            error: `${c.full_name}: adult / guardian email is required for a minor`,
+          };
+        }
+        const adultOk = requireAdultContact({
+          adult_full_name: c.adult_full_name,
+          adult_email: c.adult_email,
+          adult_phone: c.adult_phone,
+          label: c.full_name,
+        });
+        if (!adultOk.ok) return adultOk;
+      }
+    }
+
+    if (!input.partial && !gate.ready) {
+      return {
+        ok: false,
+        error: `Gate incomplete: ${gate.missing.map((m) => m.label).join(", ")}`,
+      };
+    }
 
     let incidentGroupId: string | null = null;
     if (input.same_crash_as_lead_id) {
@@ -82,6 +140,7 @@ export async function createLeadAction(
         goes_by: input.goes_by?.trim() || null,
         date_of_birth: dob,
         preferred_language: lang,
+        is_minor_override: null,
       })
       .select("person_id")
       .single();
@@ -137,12 +196,17 @@ export async function createLeadAction(
         raw_email: input.email.trim() || null,
         incident_date: input.incident_date || null,
         case_type_code: input.case_type_code || null,
+        case_type_other: caseTypeOther,
         description,
         marketing_source: input.marketing_source?.trim() || null,
         estimated_sol_date: estimateSolIso(input.incident_date || null),
         status: "open",
         handled_by: staff.staff_id,
         incident_group_id: incidentGroupId,
+        is_minor: false,
+        not_drivers_child: false,
+        relationship_to_driver: null,
+        next_friend_person_id: null,
       })
       .select("intake_lead_id")
       .single();
@@ -155,6 +219,10 @@ export async function createLeadAction(
     for (const c of companions) {
       const names = splitFullName(c.full_name);
       const cDob = normalizeDob(c.date_of_birth);
+      const cMinor = isMinorClient({
+        date_of_birth: c.date_of_birth,
+        is_minor_toggle: c.is_minor_toggle,
+      });
       const { data: cPerson, error: cpErr } = await supabase
         .schema("core")
         .from("person")
@@ -163,6 +231,7 @@ export async function createLeadAction(
           last_name: names.last,
           date_of_birth: cDob,
           preferred_language: lang,
+          is_minor_override: c.is_minor_toggle && !cDob ? true : null,
         })
         .select("person_id")
         .single();
@@ -173,7 +242,27 @@ export async function createLeadAction(
         };
       }
 
-      const cEmail = c.email?.trim() || "";
+      let cNextFriendId: string | null = null;
+      if (cMinor && !input.partial) {
+        if (c.adult_on_case === "primary") {
+          cNextFriendId = person.person_id as string;
+        } else {
+          const nf = await createNextFriendPerson(supabase, {
+            full_name: c.adult_full_name ?? "",
+            email: c.adult_email,
+            phone: c.adult_phone,
+            preferred_language: lang,
+          });
+          if (!nf.ok) return nf;
+          cNextFriendId = nf.personId;
+        }
+      }
+
+      const cEmail = cMinor
+        ? c.adult_on_case === "primary"
+          ? input.email.trim()
+          : c.adult_email?.trim() || ""
+        : c.email?.trim() || "";
       if (cEmail) {
         const { error: cemErr } = await supabase
           .schema("core")
@@ -196,12 +285,19 @@ export async function createLeadAction(
           raw_email: cEmail || null,
           incident_date: input.incident_date || null,
           case_type_code: input.case_type_code || null,
+          case_type_other: caseTypeOther,
           description,
           marketing_source: input.marketing_source?.trim() || null,
           estimated_sol_date: estimateSolIso(input.incident_date || null),
           status: "open",
           handled_by: staff.staff_id,
           incident_group_id: incidentGroupId,
+          is_minor: cMinor,
+          not_drivers_child: cMinor ? !!c.not_drivers_child : false,
+          relationship_to_driver: cMinor
+            ? c.relationship_to_driver?.trim() || null
+            : null,
+          next_friend_person_id: cNextFriendId,
         })
         .select("intake_lead_id")
         .single();
@@ -266,6 +362,87 @@ function splitFullName(full: string): { first: string; last: string } {
   if (parts.length === 0) return { first: "Unknown", last: "Unknown" };
   if (parts.length === 1) return { first: parts[0], last: "Unknown" };
   return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+async function createNextFriendPerson(
+  supabase: Sb,
+  input: {
+    full_name: string;
+    email?: string | null;
+    phone?: string | null;
+    preferred_language?: string;
+  },
+): Promise<{ ok: true; personId: string } | { ok: false; error: string }> {
+  const names = splitFullName(input.full_name);
+  if (!names.first.trim() || names.last === "Unknown") {
+    return {
+      ok: false,
+      error: "Adult on the case needs a full name (first and last)",
+    };
+  }
+  const { data: person, error } = await supabase
+    .schema("core")
+    .from("person")
+    .insert({
+      first_name: names.first,
+      last_name: names.last,
+      preferred_language: input.preferred_language ?? "en",
+    })
+    .select("person_id")
+    .single();
+  if (error || !person) {
+    return { ok: false, error: error?.message ?? "Could not create adult person" };
+  }
+  const email = input.email?.trim();
+  if (email) {
+    const { error: emErr } = await supabase
+      .schema("core")
+      .from("contact_point")
+      .insert({
+        person_id: person.person_id,
+        kind: "email",
+        email,
+        is_primary: true,
+      });
+    if (emErr) return { ok: false, error: emErr.message };
+  }
+  const digits = digitsOnly(input.phone ?? "");
+  if (digits.length >= 10) {
+    const { error: phErr } = await supabase
+      .schema("core")
+      .from("contact_point")
+      .insert({
+        person_id: person.person_id,
+        kind: "phone",
+        phone: phoneForStorage("US", digits),
+        is_primary: true,
+      });
+    if (phErr) return { ok: false, error: phErr.message };
+  }
+  return { ok: true, personId: person.person_id as string };
+}
+
+function requireAdultContact(input: {
+  adult_full_name?: string;
+  adult_email?: string;
+  adult_phone?: string;
+  label: string;
+}): { ok: true } | { ok: false; error: string } {
+  if (!input.adult_full_name?.trim()) {
+    return {
+      ok: false,
+      error: `${input.label}: who is going to be the adult on the case? (name required)`,
+    };
+  }
+  const hasEmail = !!input.adult_email?.trim();
+  const hasPhone = digitsOnly(input.adult_phone ?? "").length >= 10;
+  if (!hasEmail && !hasPhone) {
+    return {
+      ok: false,
+      error: `${input.label}: adult needs an email or phone`,
+    };
+  }
+  return { ok: true };
 }
 
 async function createIncidentGroupFromForm(
@@ -566,7 +743,7 @@ export async function convertLeadToMatterAction(
       .schema("core")
       .from("intake_lead")
       .select(
-        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email, incident_group_id",
+        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email, incident_group_id, is_minor, next_friend_person_id",
       )
       .eq("intake_lead_id", leadId)
       .single();
@@ -581,6 +758,13 @@ export async function convertLeadToMatterAction(
     if (!lead.person_id) return { ok: false, error: "Lead has no person record" };
     if (!lead.incident_date || !lead.case_type_code) {
       return { ok: false, error: "Incident date and type required to open a matter" };
+    }
+    if (lead.is_minor && !lead.next_friend_person_id) {
+      return {
+        ok: false,
+        error:
+          "Minor client needs an adult on the case (parent/guardian) before opening a matter",
+      };
     }
 
     const { data: contacts } = await supabase
@@ -654,6 +838,8 @@ export async function convertLeadToMatterAction(
         contract_signed_date: new Date().toISOString().slice(0, 10),
         sol_date: estimateSolIso(lead.incident_date),
         sol_status: "needs_review",
+        minor_or_incapacitated: !!lead.is_minor,
+        next_friend_person_id: lead.next_friend_person_id ?? null,
       })
       .select("client_matter_id")
       .single();

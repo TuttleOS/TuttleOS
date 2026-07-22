@@ -5,13 +5,19 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
-import { formatDate } from "@/lib/dates";
+import { formatDate, isDateAfterToday } from "@/lib/dates";
+import {
+  FEE_APPEAL_FIXED,
+  validateContractFees,
+} from "@/lib/contracts/fees";
 import { getPgPool } from "@/lib/db/pg";
 import type { PoolClient } from "pg";
 import { buildContractPdfBase64 } from "./pdf";
 import { buildContractBody, buildMergeFields } from "./template";
 import { publicAppUrl } from "./urls";
 import type { SignerInput } from "./types";
+import { resolveLeadContractPlan } from "./plan";
+import { formatIndividuallyAndOnBehalfOf } from "./capacity";
 
 export type ActionResult =
   | { ok: true; message?: string; token?: string; packageId?: string }
@@ -68,6 +74,8 @@ export async function createOrUpdateContractDraftAction(input: {
   feePreSuit: number;
   feePostFiling: number;
   feeAppeal: number;
+  /** Capacity-aware party language (Case A/B). Falls back to signer names. */
+  clientDisplayNames?: string;
   signers: SignerInput[];
 }): Promise<ActionResult> {
   try {
@@ -78,11 +86,148 @@ export async function createOrUpdateContractDraftAction(input: {
     if (!input.location.trim() || !input.incidentDate) {
       return { ok: false, error: "Location and incident date required" };
     }
+    if (isDateAfterToday(input.incidentDate)) {
+      return { ok: false, error: "Incident date cannot be in the future" };
+    }
+
+    const fees = validateContractFees({
+      feePreSuit: input.feePreSuit,
+      feePostFiling: input.feePostFiling,
+      feeAppeal: input.feeAppeal,
+    });
+    if (!fees.ok) return fees;
+
+    // Always persist locked appeal tier.
+    const feeAppeal = FEE_APPEAL_FIXED;
+
+    const supabasePreview = createClient();
+    const { data: leadRow } = await supabasePreview
+      .schema("core")
+      .from("intake_lead")
+      .select(
+        `intake_lead_id, person_id, is_minor, next_friend_person_id, not_drivers_child,
+         incident_group_id, raw_name,
+         person:person_id(first_name, last_name),
+         next_friend:next_friend_person_id(person_id, first_name, last_name)`,
+      )
+      .eq("intake_lead_id", input.leadId)
+      .maybeSingle();
+
+    if (!leadRow) {
+      return { ok: false, error: "Lead not found" };
+    }
+
+    const nfRaw = leadRow.next_friend as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const nf = Array.isArray(nfRaw) ? nfRaw[0] : nfRaw;
+    const nextFriendName = nf
+      ? `${nf.first_name} ${nf.last_name}`.trim()
+      : null;
+
+    const plan = await resolveLeadContractPlan(
+      leadRow as never,
+      nextFriendName,
+    );
+
+    if (plan.kind === "minor_case_a") {
+      return {
+        ok: false,
+        error: `Case A: this minor rides on ${plan.guardianName}'s contract. Open that lead to draft / send.`,
+      };
+    }
+    if (plan.kind === "minor_incomplete") {
+      return { ok: false, error: plan.message };
+    }
+
+    if (plan.kind === "minor_case_b") {
+      const nonGuardian = input.signers.find((s) => {
+        const cap = s.signer_capacity;
+        return cap !== "next_friend" && cap !== "parent_guardian";
+      });
+      if (nonGuardian) {
+        return {
+          ok: false,
+          error:
+            "Case B: only the parent/guardian signs this minor's contract — remove other signers",
+        };
+      }
+      if (
+        !input.signers.some(
+          (s) =>
+            s.signer_capacity === "next_friend" ||
+            s.signer_capacity === "parent_guardian",
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            "Case B: the parent/guardian must be the signer on this minor's contract",
+        };
+      }
+    }
+
+    if (plan.kind === "adult_with_wards") {
+      // Adult signs; ward minors must not be separate signers on this package
+      const wardLeadIds = new Set(plan.wards.map((w) => w.intake_lead_id));
+      const wardPersonIds = new Set(
+        plan.wards.map((w) => w.person_id).filter(Boolean) as string[],
+      );
+      const bad = input.signers.find(
+        (s) =>
+          (s.intake_lead_id && wardLeadIds.has(s.intake_lead_id)) ||
+          (s.person_id && wardPersonIds.has(s.person_id)),
+      );
+      if (bad) {
+        return {
+          ok: false,
+          error:
+            "Case A: minors ride on this contract in name only — do not add them as separate signers",
+        };
+      }
+    }
+
+    let clientNames =
+      input.clientDisplayNames?.trim() ||
+      (plan.kind === "adult_plain" ||
+      plan.kind === "adult_with_wards" ||
+      plan.kind === "minor_case_b"
+        ? plan.clientDisplayNames
+        : "");
+
+    if (!clientNames) {
+      const names = input.signers.map((s) => s.full_name.trim()).filter(Boolean);
+      clientNames = names.join(" and ");
+    }
+
+    // Prefer capacity language if caller sent plain signer dump on Case A/B
+    if (
+      plan.kind === "adult_with_wards" &&
+      !input.clientDisplayNames?.includes("on behalf of")
+    ) {
+      const person = leadRow.person as
+        | { first_name: string; last_name: string }
+        | { first_name: string; last_name: string }[]
+        | null;
+      const p = Array.isArray(person) ? person[0] : person;
+      const adult =
+        (p ? `${p.first_name} ${p.last_name}`.trim() : null) ||
+        (leadRow.raw_name as string | null) ||
+        clientNames;
+      clientNames = formatIndividuallyAndOnBehalfOf(
+        adult,
+        plan.wards.map((w) => w.display_name),
+      );
+    }
+    if (
+      plan.kind === "minor_case_b" &&
+      !input.clientDisplayNames?.includes("on behalf of")
+    ) {
+      clientNames = plan.clientDisplayNames;
+    }
 
     const supabase = createClient();
-    const names = input.signers.map((s) => s.full_name.trim()).filter(Boolean);
-    const clientNames = names.join(" and ");
-
     const merge = buildMergeFields({
       clientNames,
       location: input.location,
@@ -90,7 +235,7 @@ export async function createOrUpdateContractDraftAction(input: {
       causePhrase: input.causePhrase || "car accident",
       feePreSuit: input.feePreSuit,
       feePostFiling: input.feePostFiling,
-      feeAppeal: input.feeAppeal,
+      feeAppeal,
     });
     const body = buildContractBody(merge);
 
@@ -127,7 +272,7 @@ export async function createOrUpdateContractDraftAction(input: {
           cause_phrase: input.causePhrase.trim() || "car accident",
           fee_pre_suit: input.feePreSuit,
           fee_post_filing: input.feePostFiling,
-          fee_appeal: input.feeAppeal,
+          fee_appeal: feeAppeal,
           rendered_body: body,
         })
         .eq("contract_package_id", packageId);
@@ -153,7 +298,7 @@ export async function createOrUpdateContractDraftAction(input: {
           cause_phrase: input.causePhrase.trim() || "car accident",
           fee_pre_suit: input.feePreSuit,
           fee_post_filing: input.feePostFiling,
-          fee_appeal: input.feeAppeal,
+          fee_appeal: feeAppeal,
           rendered_body: body,
           created_by: staff.staff_id,
           expires_at: new Date(
@@ -174,6 +319,7 @@ export async function createOrUpdateContractDraftAction(input: {
       phone: s.phone?.trim() || null,
       intake_lead_id: s.intake_lead_id || null,
       person_id: s.person_id || null,
+      signer_capacity: s.signer_capacity || "client",
       status: "pending" as const,
     }));
 
@@ -202,6 +348,39 @@ export async function sendContractPackageAction(
   try {
     const staff = await requireStaff();
     const supabase = createClient();
+
+    const { data: leadRow } = await supabase
+      .schema("core")
+      .from("intake_lead")
+      .select(
+        `intake_lead_id, person_id, is_minor, next_friend_person_id, not_drivers_child,
+         incident_group_id, raw_name,
+         person:person_id(first_name, last_name),
+         next_friend:next_friend_person_id(person_id, first_name, last_name)`,
+      )
+      .eq("intake_lead_id", leadId)
+      .maybeSingle();
+
+    if (leadRow) {
+      const nfRaw = leadRow.next_friend as
+        | { first_name: string; last_name: string }
+        | { first_name: string; last_name: string }[]
+        | null;
+      const nf = Array.isArray(nfRaw) ? nfRaw[0] : nfRaw;
+      const plan = await resolveLeadContractPlan(
+        leadRow as never,
+        nf ? `${nf.first_name} ${nf.last_name}`.trim() : null,
+      );
+      if (plan.kind === "minor_case_a") {
+        return {
+          ok: false,
+          error: `Case A: send from ${plan.guardianName}'s lead instead — this minor rides on that contract.`,
+        };
+      }
+      if (plan.kind === "minor_incomplete") {
+        return { ok: false, error: plan.message };
+      }
+    }
 
     const { data: pkg, error } = await supabase
       .schema("workflow")

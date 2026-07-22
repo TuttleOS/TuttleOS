@@ -29,7 +29,7 @@ export async function getActivePackageForLead(
     .schema("workflow")
     .from("contract_signer")
     .select(
-      "contract_signer_id, contract_package_id, sort_order, full_name, email, phone, intake_lead_id, person_id, status, signed_at, signature_typed_name",
+      "contract_signer_id, contract_package_id, sort_order, full_name, email, phone, intake_lead_id, person_id, status, signed_at, signature_typed_name, signer_capacity",
     )
     .eq("contract_package_id", data.contract_package_id)
     .is("deleted_at", null)
@@ -122,7 +122,7 @@ export async function getContractPackageForStaffView(packageId: string): Promise
     .schema("workflow")
     .from("contract_signer")
     .select(
-      "contract_signer_id, contract_package_id, sort_order, full_name, email, phone, intake_lead_id, person_id, status, signed_at, signature_typed_name, signature_data",
+      "contract_signer_id, contract_package_id, sort_order, full_name, email, phone, intake_lead_id, person_id, status, signed_at, signature_typed_name, signature_data, signer_capacity",
     )
     .eq("contract_package_id", packageId)
     .is("deleted_at", null)

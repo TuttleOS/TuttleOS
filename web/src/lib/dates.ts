@@ -73,3 +73,17 @@ export function isoToDisplay(iso: string | null | undefined): string {
   if (!d) return "";
   return format(d, "MM/dd/yyyy");
 }
+
+/** Local calendar today as `yyyy-MM-dd` (for incident date max / comparisons). */
+export function todayIsoLocal(now = new Date()): string {
+  return format(now, "yyyy-MM-dd");
+}
+
+/** True when the calendar date is after today (future DOI is invalid). */
+export function isDateAfterToday(
+  value: Date | string | null | undefined,
+): boolean {
+  const iso = toIsoDate(value);
+  if (!iso) return false;
+  return iso > todayIsoLocal();
+}

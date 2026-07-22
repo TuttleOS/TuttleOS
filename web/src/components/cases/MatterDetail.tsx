@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { DateField } from "@/components/ui/DateField";
 import { ExpandableNote } from "@/components/ui/ExpandableNote";
@@ -20,8 +20,16 @@ import {
   completeTaskAction,
   createFollowUpTaskAction,
   reopenTaskAction,
+  setClaimLorSentAction,
 } from "@/lib/cases/actions";
-import { STAGE_LABEL, type MatterDetail, type TaskRow, type TeamMember, type TreatmentEpisodeRow } from "@/lib/cases/types";
+import {
+  STAGE_LABEL,
+  type ClaimRow,
+  type MatterDetail,
+  type TaskRow,
+  type TeamMember,
+  type TreatmentEpisodeRow,
+} from "@/lib/cases/types";
 import { flagList, type StalledRow } from "@/lib/cases/types";
 import {
   CoverageBoxesCard,
@@ -98,6 +106,7 @@ export function MatterDetailView({
   showDocuments = true,
   documents = [],
   documentAccessLog = [],
+  deepLinkCard = null,
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -107,7 +116,7 @@ export function MatterDetailView({
   tasks: TaskRow[];
   notes: { note_id: string; body: string; pinned: boolean; created_at: string }[];
   episodes: TreatmentEpisodeRow[];
-  claims: { claim_id: string; claim_number: string | null; claim_role: string; status: string | null }[];
+  claims: ClaimRow[];
   companions: {
     client_matter_id: string;
     matter_number: string | null;
@@ -132,6 +141,8 @@ export function MatterDetailView({
   showDocuments?: boolean;
   documents?: DocumentRow[];
   documentAccessLog?: AccessLogRow[];
+  /** JUMP key from ?focus= (checklist | insurance | …) — expand + scroll + highlight */
+  deepLinkCard?: string | null;
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -142,7 +153,26 @@ export function MatterDetailView({
   const [shareNoteToCompanions, setShareNoteToCompanions] = useState(false);
   const [followTitle, setFollowTitle] = useState("");
   const [followDue, setFollowDue] = useState("");
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({});
+  const deepId = deepLinkCard && JUMP[deepLinkCard] ? JUMP[deepLinkCard] : null;
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>(
+    deepId ? { [deepId]: true } : {},
+  );
+
+  useEffect(() => {
+    if (!deepLinkCard || !JUMP[deepLinkCard]) return;
+    const id = JUMP[deepLinkCard];
+    setOpenCards((s) => ({ ...s, [id]: true }));
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-accent", "ring-offset-2");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-accent", "ring-offset-2");
+      }, 1800);
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [deepLinkCard]);
 
   const cm = team.find((t) => t.assignment_role === "case_manager");
   const pl = team.find(
@@ -736,16 +766,59 @@ export function MatterDetailView({
                 Intake sign-up checklist path.
               </p>
             ) : (
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-4 text-sm">
                 {claims.map((c) => (
-                  <li key={c.claim_id}>
-                    <span className="font-semibold">
-                      {c.claim_number ?? "Claim"}
-                    </span>
-                    <span className="text-muted">
-                      {" "}
-                      · {c.claim_role} · {c.status ?? "—"}
-                    </span>
+                  <li
+                    key={c.claim_id}
+                    className="rounded-lg border border-grid px-3 py-3"
+                  >
+                    <div>
+                      <span className="font-semibold">
+                        {c.claim_number ?? "Claim"}
+                      </span>
+                      <span className="text-muted">
+                        {" "}
+                        · {c.claim_role} · {c.status ?? "—"}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-end gap-3">
+                      <label className="block text-xs">
+                        <span className="font-semibold text-muted">
+                          LOR sent date
+                        </span>
+                        <div className="mt-1">
+                          <DateField
+                            value={c.lor_sent_date ?? ""}
+                            onChange={(iso) => {
+                              if (!iso) {
+                                setErr(
+                                  "LOR sent date is required (generated ≠ sent)",
+                                );
+                                return;
+                              }
+                              if (iso === (c.lor_sent_date ?? "")) return;
+                              run(() =>
+                                setClaimLorSentAction(
+                                  c.claim_id,
+                                  matter.client_matter_id,
+                                  iso,
+                                ),
+                              );
+                            }}
+                            disabled={pending}
+                          />
+                        </div>
+                      </label>
+                      {c.lor_sent_date ? (
+                        <span className="pb-2 text-xs font-semibold text-success">
+                          Sent {formatDate(c.lor_sent_date)}
+                        </span>
+                      ) : (
+                        <span className="pb-2 text-xs text-warning">
+                          Required to complete Send-LOR checklist
+                        </span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -885,7 +958,7 @@ function Card({
   return (
     <section
       id={id}
-      className="rounded-panel border border-grid bg-surface shadow-soft"
+      className="rounded-panel border border-grid bg-surface shadow-soft transition ring-offset-2 ring-offset-page"
     >
       <button
         type="button"

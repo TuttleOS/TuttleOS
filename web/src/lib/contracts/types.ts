@@ -7,6 +7,12 @@ export type ContractPackageStatus =
 
 export type ContractSignerStatus = "pending" | "signed";
 
+export type SignerCapacity =
+  | "client"
+  | "next_friend"
+  | "parent_guardian"
+  | "other";
+
 export type ContractSigner = {
   contract_signer_id: string;
   contract_package_id: string;
@@ -19,6 +25,7 @@ export type ContractSigner = {
   status: ContractSignerStatus;
   signed_at: string | null;
   signature_typed_name: string | null;
+  signer_capacity?: SignerCapacity | null;
 };
 
 export type ContractPackage = {
@@ -56,4 +63,5 @@ export type SignerInput = {
   phone?: string | null;
   intake_lead_id?: string | null;
   person_id?: string | null;
+  signer_capacity?: SignerCapacity | null;
 };

@@ -43,6 +43,8 @@ export async function completeTaskAction(
       revalidatePath(`/cases/${data.client_matter_id}`);
     }
     revalidatePath("/cases");
+    revalidatePath("/cases/new-cases");
+    revalidatePath("/cases/lors");
     return { ok: true, message: "Task completed" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -781,6 +783,39 @@ export async function assignCaseManagerAction(
       ok: true,
       message: newStaffId ? "Case manager assigned" : "Case manager cleared",
     };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+/** Enter LOR sent date on a claim — completes matching Send-LOR checklist tasks (DB trigger). */
+export async function setClaimLorSentAction(
+  claimId: string,
+  matterId: string,
+  lorSentDate: string,
+): Promise<ActionResult> {
+  try {
+    await requireStaff();
+    const iso = lorSentDate.trim();
+    if (!iso) {
+      return { ok: false, error: "LOR sent date is required (generated ≠ sent)" };
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .schema("insurance")
+      .from("claim")
+      .update({ lor_sent_date: iso })
+      .eq("claim_id", claimId)
+      .is("deleted_at", null);
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath(`/cases/${matterId}`);
+    revalidatePath("/cases/lors");
+    revalidatePath("/cases/new-cases");
+    revalidatePath("/cases/tasks");
+    revalidatePath("/cases");
+    return { ok: true, message: "LOR sent date saved" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }

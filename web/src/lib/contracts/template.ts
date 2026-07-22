@@ -1,3 +1,5 @@
+import { formatFeePercent } from "./fees";
+
 /** Verbatim contingent fee body with merge placeholders (C2). Typo "seize" retained. */
 
 export type ContractMergeFields = {
@@ -49,6 +51,10 @@ const TENS = [
 ];
 
 export function percentToWords(n: number): string {
+  // One-third contingent fee floor (33.333%)
+  if (Math.abs(n - 100 / 3) < 0.01 || Math.abs(n - 33.333) < 0.01) {
+    return "thirty-three and one-third";
+  }
   const v = Math.round(n);
   if (v < 20) return ONES[v];
   const t = Math.floor(v / 10);
@@ -142,10 +148,10 @@ export function buildMergeFields(input: {
     location: input.location.trim(),
     incidentDateDisplay: input.incidentDateDisplay,
     feePreSuitWords: percentToWords(input.feePreSuit),
-    feePreSuitNum: String(Math.round(input.feePreSuit)),
+    feePreSuitNum: formatFeePercent(input.feePreSuit),
     feePostFilingWords: percentToWords(input.feePostFiling),
-    feePostFilingNum: String(Math.round(input.feePostFiling)),
+    feePostFilingNum: formatFeePercent(input.feePostFiling),
     feeAppealWords: percentToWords(input.feeAppeal),
-    feeAppealNum: String(Math.round(input.feeAppeal)),
+    feeAppealNum: formatFeePercent(input.feeAppeal),
   };
 }

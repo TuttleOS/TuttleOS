@@ -11,6 +11,7 @@ import {
   getActivePackageForLead,
   listCompanionLeadOptions,
 } from "@/lib/contracts/queries";
+import { resolveLeadContractPlan } from "@/lib/contracts/plan";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { leadDisplayName } from "@/lib/intake/display";
 
@@ -57,7 +58,32 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [attempts, contractPackage, companionOptions, crashCompanions] =
+  let nextFriend: {
+    person_id: string;
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+  } | null = null;
+  if (lead.next_friend_person_id) {
+    const nfRaw = lead.next_friend as
+      | { person_id: string; first_name: string; last_name: string }
+      | { person_id: string; first_name: string; last_name: string }[]
+      | null
+      | undefined;
+    const nf = Array.isArray(nfRaw) ? nfRaw[0] : nfRaw;
+    if (nf) {
+      const nfContacts = await getPersonContacts(lead.next_friend_person_id);
+      nextFriend = {
+        person_id: nf.person_id,
+        full_name: `${nf.first_name} ${nf.last_name}`.trim(),
+        email: nfContacts.email?.email ?? null,
+        phone:
+          nfContacts.phone?.phone ?? nfContacts.phone?.phone_e164 ?? null,
+      };
+    }
+  }
+
+  const [attempts, contractPackage, companionOptions, crashCompanions, contractPlan] =
     await Promise.all([
       listLeadAttempts(lead.intake_lead_id),
       getActivePackageForLead(lead.intake_lead_id),
@@ -68,6 +94,7 @@ export default async function LeadDetailPage({
             lead.intake_lead_id,
           )
         : Promise.resolve([]),
+      resolveLeadContractPlan(lead, nextFriend?.full_name ?? null),
     ]);
 
   const canSoftDelete =
@@ -101,6 +128,8 @@ export default async function LeadDetailPage({
       companionOptions={companionOptions}
       crashCompanions={crashCompanions}
       locationGuess={locationGuess}
+      nextFriend={nextFriend}
+      contractPlan={contractPlan}
     />
   );
 }

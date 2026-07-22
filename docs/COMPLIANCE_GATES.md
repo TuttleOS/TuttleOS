@@ -2,7 +2,10 @@
 
 Owner-approval and engineering gates. A phase is **not done** until its security gate passes, even if UI looks complete.
 
-Related: [SECURITY_PROTOCOLS.md](SECURITY_PROTOCOLS.md), [SECURITY_TEST_PLAN.md](SECURITY_TEST_PLAN.md), [SECURITY_ADDONS_BACKLOG.md](SECURITY_ADDONS_BACKLOG.md).
+Related: [SECURITY_PROTOCOLS.md](SECURITY_PROTOCOLS.md), [SECURITY_TEST_PLAN.md](SECURITY_TEST_PLAN.md), [SECURITY_ADDONS_BACKLOG.md](SECURITY_ADDONS_BACKLOG.md), [SECURITY_COMPLIANCE_ROADMAP_MAP.md](SECURITY_COMPLIANCE_ROADMAP_MAP.md).
+
+**External roadmap (source):** Dropbox `TUTTLEOS/TUTTLE_OS_SECURITY_COMPLIANCE_ROADMAP.md` (L / I / A / AI / O / D / V IDs).  
+This file is the **in-repo gate checklist**; the map doc ties roadmap IDs → gate numbers.
 
 Legend: **E** = engineering · **O** = owner (Michael) · **V** = vendor/contract
 
@@ -104,7 +107,7 @@ Apply **every** workspace phase:
 | # | Gate | Owner | Done |
 |---|---|---|---|
 | 8.1 | Owner approves adopting v2.2 storage | O | ☐ |
-| 8.2 | Apply `06_upgrade_v2.2_documents.sql` on scratch → prod path; rollback proven | E | ☐ |
+| 8.2 | Apply documents SQL (`sql/16` / historical `06`) on scratch → prod path; rollback proven | E | ☐ |
 | 8.3 | Private `case-documents` bucket + storage policies from script comments | E | ☐ |
 | 8.4 | Signed URL issuance logs to `workflow.document_access_log` | E | ☐ |
 | 8.5 | Intake cannot read restricted doc metadata **or** file bytes | E | ☐ |
@@ -142,16 +145,53 @@ Runbook: [CASEPEER_MIGRATION.md](CASEPEER_MIGRATION.md). Engineering scaffold sh
 
 ---
 
+## Go-live / real-data pack (roadmap gaps not tied to one phase)
+
+These sit **across** phases. Real client PHI / CasePeer load stays blocked until the BAA + hygiene subset is done (see map doc).
+
+| # | Gate | Owner | Done | Roadmap |
+|---|---|---|---|---|
+| G.1 | **Vercel BAA** executed (Pro/Enterprise add-on) | O / V | ☐ | L2 |
+| G.2 | **Firm ↔ builder BAA** (or equivalent HIPAA arrangement) executed | O / V | ☐ | L4 |
+| G.3 | DPA + current subprocessor list + breach-notification terms on file | O / V | ☐ | L5 |
+| G.4 | Client engagement disclosures trackable for cloud (+ AI when enabled) | O / E | ☐ | L6 |
+| G.5 | TLS 1.2+ / at-rest encryption verified on chosen Supabase + Vercel tiers | E | ☐ | I1, I2 |
+| G.6 | No public Postgres exposure; pooler + restricted network access audited | E | ☐ | I3 |
+| G.7 | Backups + **PITR enabled**; restore tested and dated | E / O | ☐ | I5 |
+| G.8 | Supabase region pinned **US** (Texas/US clients) | E / O | ☐ | I6 |
+| G.9 | Extend audit beyond writes: sensitive **read/access** logging where required | E | ☐ | A4 |
+| G.10 | Session hardening: idle timeout + secure cookie posture reviewed | E | ☐ | A9 |
+| G.11 | Rate limit / brute-force protection on login + **public `/sign`** | E | ☐ | A11 |
+| G.12 | Dependency scanning in CI (`npm audit` / Dependabot) | E | ☐ | A12 |
+| G.13 | Formal HIPAA Security Risk Assessment documented | O | ☐ | O1 |
+| G.14 | Written policies (WISP / HIPAA P&Ps) + IR/breach runbook (HIPAA + Tex. ch. 521) | O | ☐ | O2, O4 |
+| G.15 | Workforce security training scheduled; access-review + offboarding SOP | O | ☐ | O3, O5 |
+| G.16 | Cyber liability insurance status confirmed | O | ☐ | O6 |
+| G.17 | Retention & destruction policy (+ legal-hold carve-outs) | O | ☐ | D3 |
+| G.18 | Heavy-media decision (DEC-DBX): videos out of Supabase vs docs-of-record in | O | ☐ | D4 |
+| G.19 | Independent pen test / security assessment before go-live | O / V | ☐ | V1 |
+| G.20 | Continuous monitoring plan (log review, vuln scan, dependency alerts) | E / O | ☐ | V2, V3 |
+| G.21 | SOC 2 Type II — decide yes/no (optional trust artifact) | O | ☐ | V4 |
+| G.22 | Vercel Secure Compute / VPC — decide if Enterprise network isolation needed | O / E | ☐ | I7 |
+
+**Hard stop for production PHI:** `0.6` (Supabase BAA) + `G.1`–`G.3` as counsel requires + `1.1`/`1.11` MFA + `1.8`/`1.9` hygiene + `G.7` tested backups. Pen test (`G.19`) before treating go-live as complete.
+
+---
+
 ## Standing owner decisions (track in DECISIONS_NEEDED.md if open)
 
-| Topic | Status needed |
-|---|---|
-| Supabase BAA | Required before PHI |
-| OCR + Claude BAAs | Required before Phase 8 PHI processing |
-| Formal retention schedule | Attorney policy |
-| Trust-account SOPs | Attorney policy |
-| Call recording / TCPA posture | Firm ops |
-| Brand theme vs Parchment | Cosmetic; not a security gate |
+| Topic | Status needed | Roadmap |
+|---|---|---|
+| Supabase BAA | Required before PHI | L1 → 0.6 |
+| Vercel BAA | Required before PHI on Vercel | L2 → G.1 |
+| Firm ↔ builder BAA | Counsel-driven | L4 → G.2 |
+| OCR + Claude BAAs | Required before Phase 8 PHI processing | L3 → 8.7, 8.8 |
+| Formal retention schedule | Attorney policy | D3 → G.17 |
+| Trust-account SOPs | Attorney policy | — |
+| Call recording / TCPA posture | Firm ops | — |
+| Heavy media / Dropbox (DEC-DBX) | Owner decision | D4 → G.18 |
+| SOC 2 certification | Optional | V4 → G.21 |
+| Brand theme vs Parchment | Cosmetic; not a security gate | — |
 
 ---
 
@@ -163,6 +203,7 @@ Date: ____
 Engineering: battery / RLS matrix / Playwright: PASS | FAIL
 Owner approvals required this phase: ____
 Vendor/BAA items: ____
+Go-live pack (G.*): ____
 Blocked items: ____
 Signed (eng): ____
 Signed (owner, if required): ____

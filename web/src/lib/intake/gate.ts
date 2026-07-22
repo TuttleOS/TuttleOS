@@ -1,3 +1,4 @@
+import { isDateAfterToday } from "@/lib/dates";
 import type { GateItem, LeadFormInput, LeadRow } from "./types";
 import { isPhoneComplete } from "./phone";
 import { caseTypeLabel } from "./case-types";
@@ -6,6 +7,7 @@ export function evaluateGate(input: {
   first_name?: string | null;
   last_name?: string | null;
   case_type_code?: string | null;
+  case_type_other?: string | null;
   incident_date?: string | null;
   location?: string | null;
   phone_digits?: string | null;
@@ -13,8 +15,11 @@ export function evaluateGate(input: {
   in_person_signing?: boolean;
 }): { items: GateItem[]; ready: boolean; missing: GateItem[] } {
   const nameOk = !!(input.first_name?.trim() && input.last_name?.trim());
-  const typeOk = !!input.case_type_code;
-  const doiOk = !!input.incident_date;
+  const otherOk =
+    input.case_type_code !== "other" || !!input.case_type_other?.trim();
+  const typeOk = !!input.case_type_code && otherOk;
+  const doiFuture = isDateAfterToday(input.incident_date);
+  const doiOk = !!input.incident_date && !doiFuture;
   const locOk = !!input.location?.trim();
   const phoneOk = isPhoneComplete(input.phone_digits ?? "");
   const emailOk = !!input.email?.trim() || !!input.in_person_signing;
@@ -33,15 +38,28 @@ export function evaluateGate(input: {
       key: "type",
       label: "Incident type",
       ok: typeOk,
-      fieldId: "f-type",
-      value: typeOk ? caseTypeLabel(input.case_type_code) : "— required",
+      fieldId:
+        input.case_type_code === "other" && !input.case_type_other?.trim()
+          ? "f-type-other"
+          : "f-type",
+      value: !input.case_type_code
+        ? "— required"
+        : input.case_type_code === "other"
+          ? input.case_type_other?.trim()
+            ? input.case_type_other.trim()
+            : "— describe Other (contract text)"
+          : caseTypeLabel(input.case_type_code),
     },
     {
       key: "doi",
       label: "Incident date",
       ok: doiOk,
       fieldId: "f-doi",
-      value: doiOk ? String(input.incident_date) : "— required",
+      value: doiOk
+        ? String(input.incident_date)
+        : doiFuture
+          ? "— cannot be in the future"
+          : "— required",
     },
     {
       key: "location",
@@ -88,6 +106,7 @@ export function gateFromLead(
     first_name: lead.person?.first_name ?? lead.raw_name?.split(" ")[0],
     last_name: lead.person?.last_name ?? lead.raw_name?.split(" ").slice(-1)[0],
     case_type_code: lead.case_type_code,
+    case_type_other: lead.case_type_other,
     incident_date: lead.incident_date,
     location,
     phone_digits: extras.phone ?? lead.raw_phone,
@@ -101,6 +120,7 @@ export function formToGate(input: LeadFormInput) {
     first_name: input.first_name,
     last_name: input.last_name,
     case_type_code: input.case_type_code,
+    case_type_other: input.case_type_other,
     incident_date: input.incident_date,
     location: input.location,
     phone_digits: input.phone_digits,

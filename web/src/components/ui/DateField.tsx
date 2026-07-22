@@ -15,6 +15,8 @@ export function DateField({
   required,
   disabled,
   name,
+  max,
+  min,
 }: {
   id?: string;
   /** ISO yyyy-MM-dd or empty */
@@ -24,8 +26,13 @@ export function DateField({
   required?: boolean;
   disabled?: boolean;
   name?: string;
+  /** ISO yyyy-MM-dd — reject later dates on commit */
+  max?: string;
+  /** ISO yyyy-MM-dd — reject earlier dates on commit */
+  min?: string;
 }) {
   const [text, setText] = useState(() => isoToDisplay(value));
+  const [rangeErr, setRangeErr] = useState<string | null>(null);
 
   useEffect(() => {
     setText(isoToDisplay(value));
@@ -36,37 +43,61 @@ export function DateField({
     if (!trimmed) {
       onChange("");
       setText("");
+      setRangeErr(null);
       return;
     }
     const iso = toIsoDate(trimmed);
-    if (iso) {
-      onChange(iso);
-      setText(isoToDisplay(iso));
+    if (!iso) {
+      setText(isoToDisplay(value));
+      setRangeErr(null);
+      return;
     }
+    if (max && iso > max) {
+      setText(isoToDisplay(value));
+      setRangeErr("Date cannot be in the future");
+      return;
+    }
+    if (min && iso < min) {
+      setText(isoToDisplay(value));
+      setRangeErr("Date is before the allowed range");
+      return;
+    }
+    setRangeErr(null);
+    onChange(iso);
+    setText(isoToDisplay(iso));
   }
 
   return (
-    <input
-      id={id}
-      name={name}
-      type="text"
-      inputMode="numeric"
-      placeholder="MM/DD/YYYY"
-      autoComplete="off"
-      required={required}
-      disabled={disabled}
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => commit(text)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          commit(text);
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-      className={className}
-      aria-label={name ?? id ?? "Date MM/DD/YYYY"}
-    />
+    <div className="min-w-0">
+      <input
+        id={id}
+        name={name}
+        type="text"
+        inputMode="numeric"
+        placeholder="MM/DD/YYYY"
+        autoComplete="off"
+        required={required}
+        disabled={disabled}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (rangeErr) setRangeErr(null);
+        }}
+        onBlur={() => commit(text)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit(text);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className={className}
+        aria-label={name ?? id ?? "Date MM/DD/YYYY"}
+        aria-invalid={rangeErr ? true : undefined}
+      />
+      {rangeErr ? (
+        <p className="mt-1 text-xs text-danger">{rangeErr}</p>
+      ) : null}
+    </div>
   );
 }

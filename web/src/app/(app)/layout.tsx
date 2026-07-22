@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell/AppShell";
+import { countCmWorkQueues } from "@/lib/cases/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
 
 export default async function WorkspaceLayout({
@@ -11,5 +12,20 @@ export default async function WorkspaceLayout({
   if (!staff) {
     redirect("/login?next=/cases");
   }
-  return <AppShell staff={staff}>{children}</AppShell>;
+
+  let cmQueueCounts: { newCases: number; lors: number } | null = null;
+  try {
+    cmQueueCounts = await countCmWorkQueues({
+      staffId: staff.staff_id,
+      assignedOnly: staff.role_code === "case_manager",
+    });
+  } catch {
+    cmQueueCounts = null;
+  }
+
+  return (
+    <AppShell staff={staff} cmQueueCounts={cmQueueCounts}>
+      {children}
+    </AppShell>
+  );
 }

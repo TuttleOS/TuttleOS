@@ -32,8 +32,10 @@ import type { StalledRow } from "@/lib/cases/types";
 
 export default async function MatterPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { focus?: string };
 }) {
   const staff = await getCurrentStaff();
   if (!staff) redirect("/login");
@@ -41,6 +43,7 @@ export default async function MatterPage({
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
+  const deepLinkCard = searchParams?.focus?.trim() || null;
   const showDocuments = documentsEnabled();
 
   const [
@@ -148,6 +151,7 @@ export default async function MatterPage({
       showDocuments={showDocuments}
       documents={documents}
       documentAccessLog={documentAccessLog}
+      deepLinkCard={deepLinkCard}
     />
   );
 }

@@ -133,6 +133,46 @@ export type ProviderCallDue = {
   episode_status: string;
 };
 
+/** CM work queue: new cases awaiting sign-up processing (Michael 2026-07-22). */
+export type NewCaseQueueRow = {
+  client_matter_id: string;
+  display_name: string;
+  matter_number: string | null;
+  date_of_loss: string | null;
+  assigned_at: string;
+  days_since_assignment: number;
+  outstanding: string[];
+};
+
+/** CM work queue: incomplete Send-LOR checklist tasks. */
+export type LorPendingQueueRow = {
+  task_id: string;
+  client_matter_id: string;
+  display_name: string;
+  matter_number: string | null;
+  date_of_loss: string | null;
+  task_title: string;
+  claim_role: string | null;
+  claim_number: string | null;
+  claim_id: string | null;
+  days_pending: number;
+  due_date: string | null;
+};
+
+export type ClaimRow = {
+  claim_id: string;
+  claim_number: string | null;
+  claim_role: string;
+  status: string | null;
+  policy_id: string | null;
+  lor_sent_date: string | null;
+};
+
+export type CmQueueCounts = {
+  newCases: number;
+  lors: number;
+};
+
 export type TreatmentEpisodeRow = {
   treatment_episode_id: string;
   status: string;
