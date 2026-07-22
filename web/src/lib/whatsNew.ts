@@ -5,14 +5,38 @@ export type WhatsNewItem = {
   hrefLabel?: string;
 };
 
+/** Structured testing guide shown on /updates (Michael / staff smoke tests). */
+export type TestingGuideQueueRow = {
+  queue: string;
+  shows: string;
+  opens: string;
+  clearsWhen: string;
+};
+
+export type TestingGuide = {
+  /** Short status line under the Testing guide heading */
+  statusNote?: string;
+  /** What is live vs preview */
+  liveVsPreview?: string[];
+  queuesIntro?: string;
+  queues?: TestingGuideQueueRow[];
+  /** Extra bullets (deep-link rule, no schema, etc.) */
+  rules?: string[];
+  walkthroughTitle?: string;
+  walkthrough?: string[];
+  afterHappy?: string;
+};
+
 export type VersionUpdate = {
   id: string;
   dateLabel: string;
   title: string;
   summary: string;
   items: WhatsNewItem[];
-  /** Step-by-step smoke test for reviewers (shown on /updates). */
+  /** Step-by-step smoke test (simple list; optional if testingGuide.walkthrough is set). */
   howToTest?: string[];
+  /** Rich testing guide (tables + walkthrough) for Version updates. */
+  testingGuide?: TestingGuide;
 };
 
 /** Stable Vercel preview for branch `cm-work-queues` (not production). */
@@ -30,13 +54,26 @@ export type ReleaseReviewScreenshot = {
   dataUrl: string;
 };
 
+/** Per feature / queue link under a release. */
+export type ItemReviewState = {
+  vote: ReleaseReviewVote;
+  notes: string;
+};
+
 /** Browser-local review state for a Version updates release. */
 export type ReleaseReviewState = {
   vote: ReleaseReviewVote;
   happy: boolean;
   notes: string;
   screenshots: ReleaseReviewScreenshot[];
+  /** Keyed by item title */
+  items: Record<string, ItemReviewState>;
   updatedAt: string | null;
+};
+
+export const EMPTY_ITEM_REVIEW: ItemReviewState = {
+  vote: null,
+  notes: "",
 };
 
 export const EMPTY_RELEASE_REVIEW: ReleaseReviewState = {
@@ -44,6 +81,7 @@ export const EMPTY_RELEASE_REVIEW: ReleaseReviewState = {
   happy: false,
   notes: "",
   screenshots: [],
+  items: {},
   updatedAt: null,
 };
 
@@ -58,7 +96,67 @@ export const VERSION_UPDATES: VersionUpdate[] = [
     dateLabel: "07/22/2026",
     title: "CM work queues — preview (all five)",
     summary:
-      "All five CM assembly-line queues are on a preview branch — not live on production yet. Use the links below to try them.",
+      "Five Case Manager assembly-line queues (derived rows, live counts, deep-links). Queues live on the preview branch — not merged to production yet. Use the Testing guide below, then record your review.",
+    testingGuide: {
+      statusNote:
+        "Built July 22, 2026 on branch cm-work-queues. Production Version updates can open these links; the queue tabs themselves are only on the preview until we merge.",
+      liveVsPreview: [
+        "Production (live app): Version updates + these preview links — not the five queue tabs yet.",
+        "Preview: the actual New cases / LORs / Liability / PD / Records tabs. Sign in with your usual staff account; Vercel may ask for SSO first.",
+      ],
+      queuesIntro:
+        "Tabs sit next to My Caseload / Provider Calls / My Tasks. Each shows a live count. Rows are derived — nobody adds or removes them by hand. A healthy case appears in no queue.",
+      queues: [
+        {
+          queue: "New cases",
+          shows: "Assigned to you; sign-up checklist not started yet",
+          opens: "Checklist card",
+          clearsWhen: "First checklist work is done",
+        },
+        {
+          queue: "LORs pending",
+          shows: "Incomplete Send-LOR checklist tasks",
+          opens: "Insurance & claims",
+          clearsWhen: "You enter LOR sent date on the claim",
+        },
+        {
+          queue: "Liability pending",
+          shows: "Liability claims still status open",
+          opens: "Insurance & claims",
+          clearsWhen: "You set accepted / disputed / denied (etc.)",
+        },
+        {
+          queue: "PD pending",
+          shows: "Unresolved property-damage claims",
+          opens: "PD card",
+          clearsWhen: "You mark PD resolved (or N/A)",
+        },
+        {
+          queue: "Records pending",
+          shows: "Outstanding records / bills requests",
+          opens: "Records card",
+          clearsWhen: "You mark the request received",
+        },
+      ],
+      rules: [
+        "Deep-link (rule 12a): clicking a row expands the right card, scrolls to it, and briefly highlights it — not just the top of the case.",
+        "No database schema changes for this slice — queues read existing tables/views.",
+        "Your review below (thumbs, notes, screenshots) saves in this browser only for now.",
+      ],
+      walkthroughTitle: "10-minute walkthrough (as a Case Manager)",
+      walkthrough: [
+        "Open Preview home (link above) → sign in.",
+        "Confirm the five new tabs appear with count badges.",
+        "New cases → click a row → checklist expands and flashes.",
+        "LORs → open a row → enter LOR sent date → refresh queue → row gone.",
+        "Liability → change claim status off open → refresh → row gone.",
+        "PD → Mark resolved → refresh → row gone.",
+        "Records → Mark received → refresh → row gone.",
+        "Thumbs up, check Happy with testing, add a note if anything felt off.",
+      ],
+      afterHappy:
+        "When you are happy, tell Brett to merge cm-work-queues into main so the queues go live on the real app.",
+    },
     howToTest: [
       "Open the Preview home link (Vercel may ask for SSO). Sign in as a case manager.",
       "Confirm the sidebar shows New cases, LORs, Liability, PD, and Records pending — each with a live count badge.",
