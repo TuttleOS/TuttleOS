@@ -13,8 +13,49 @@ export type VersionUpdate = {
   items: WhatsNewItem[];
 };
 
+/** Stable Vercel preview for branch `cm-work-queues` (not production). */
+export const CM_WORK_QUEUES_PREVIEW_BASE =
+  "https://tuttle-os-git-cm-work-queues-tuttle-os.vercel.app";
+
+export function isExternalHref(href: string): boolean {
+  return /^https?:\/\//i.test(href);
+}
+
 /** Newest first — used by What’s New modal (current) and /updates history. */
 export const VERSION_UPDATES: VersionUpdate[] = [
+  {
+    id: "2026-07-22-cm-work-queues-preview",
+    dateLabel: "07/22/2026",
+    title: "CM work queues — preview (New cases + LORs)",
+    summary:
+      "Day 2 of the CM assembly-line queues is on a preview branch — not live on production yet. Use the links below to try them.",
+    items: [
+      {
+        title: "Preview home (branch cm-work-queues)",
+        body: "Vercel preview for this work. Sign in with your usual staff account. If Vercel asks for SSO, use the firm’s Vercel access.",
+        href: CM_WORK_QUEUES_PREVIEW_BASE,
+        hrefLabel: "Open preview",
+      },
+      {
+        title: "New cases queue",
+        body: "Cases assigned to you whose sign-up checklist has not started. Click a client to land on the checklist card (expanded + highlighted).",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/cases/new-cases`,
+        hrefLabel: "Open New cases",
+      },
+      {
+        title: "LORs pending queue",
+        body: "Incomplete Send-LOR checklist tasks. Enter the LOR sent date on the claim card — the row leaves the queue on refresh.",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/cases/lors`,
+        hrefLabel: "Open LORs pending",
+      },
+      {
+        title: "Version updates on the preview",
+        body: "Same notes, hosted on the preview deployment.",
+        href: `${CM_WORK_QUEUES_PREVIEW_BASE}/updates`,
+        hrefLabel: "Open Version updates (preview)",
+      },
+    ],
+  },
   {
     id: "2026-07-19-documents-storage",
     dateLabel: "07/19/2026",

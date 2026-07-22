@@ -6,6 +6,7 @@ import {
   WHATS_NEW_ID,
   WHATS_NEW_ITEMS,
   WHATS_NEW_STORAGE_KEY,
+  isExternalHref,
 } from "@/lib/whatsNew";
 
 export function WhatsNewModal() {
@@ -46,23 +47,38 @@ export function WhatsNewModal() {
           Review these updates
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Shipped for intake and contingent fee contracts. Dismiss once — you
-          won’t see this again until the next release notes.
+          Preview links open in a new tab. Dismiss once — you won’t see this
+          again until the next release notes.
         </p>
 
         <ul className="mt-5 space-y-4">
           {WHATS_NEW_ITEMS.map((item) => (
-            <li key={item.title} className="border-t border-grid pt-4 first:border-t-0 first:pt-0">
+            <li
+              key={item.title}
+              className="border-t border-grid pt-4 first:border-t-0 first:pt-0"
+            >
               <h3 className="text-sm font-bold text-ink">{item.title}</h3>
               <p className="mt-1 text-sm text-muted">{item.body}</p>
               {item.href ? (
-                <Link
-                  href={item.href}
-                  onClick={dismiss}
-                  className="mt-2 inline-block text-xs font-semibold text-accent-dk hover:underline"
-                >
-                  {item.hrefLabel ?? "Open"} →
-                </Link>
+                isExternalHref(item.href) ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={dismiss}
+                    className="mt-2 inline-block text-xs font-semibold text-accent-dk hover:underline"
+                  >
+                    {item.hrefLabel ?? "Open"} →
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={dismiss}
+                    className="mt-2 inline-block text-xs font-semibold text-accent-dk hover:underline"
+                  >
+                    {item.hrefLabel ?? "Open"} →
+                  </Link>
+                )
               ) : null}
             </li>
           ))}
