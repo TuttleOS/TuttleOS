@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VERSION_UPDATES } from "@/lib/whatsNew";
+import { VERSION_UPDATES, isExternalHref } from "@/lib/whatsNew";
 
 export default function VersionUpdatesPage() {
   return (
@@ -31,12 +31,23 @@ export default function VersionUpdatesPage() {
                   <h3 className="text-sm font-bold text-ink">{item.title}</h3>
                   <p className="mt-1 text-sm text-muted">{item.body}</p>
                   {item.href ? (
-                    <Link
-                      href={item.href}
-                      className="mt-1 inline-block text-xs font-semibold text-accent-dk hover:underline"
-                    >
-                      {item.hrefLabel ?? "Open"} →
-                    </Link>
+                    isExternalHref(item.href) ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-xs font-semibold text-accent-dk hover:underline"
+                      >
+                        {item.hrefLabel ?? "Open"} →
+                      </a>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className="mt-1 inline-block text-xs font-semibold text-accent-dk hover:underline"
+                      >
+                        {item.hrefLabel ?? "Open"} →
+                      </Link>
+                    )
                   ) : null}
                 </li>
               ))}
