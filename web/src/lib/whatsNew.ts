@@ -43,6 +43,10 @@ export type VersionUpdate = {
 export const CM_WORK_QUEUES_PREVIEW_BASE =
   "https://tuttle-os-git-cm-work-queues-tuttle-os.vercel.app";
 
+/** Stable Vercel preview for branch `role-partition` (not production). */
+export const ROLE_PARTITION_PREVIEW_BASE =
+  "https://tuttle-os-git-role-partition-tuttle-os.vercel.app";
+
 export function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href);
 }
@@ -91,6 +95,57 @@ export function releaseReviewStorageKey(releaseId: string): string {
 
 /** Newest first — used by What’s New modal (current) and /updates history. */
 export const VERSION_UPDATES: VersionUpdate[] = [
+  {
+    id: "2026-07-28-role-partition-preview",
+    dateLabel: "07/28/2026",
+    title: "Role partition & attorney role preview",
+    summary:
+      "Hardened role access († gates, multi-role grants, demand/lien read-only matters) plus a header Role roster so Michael can preview any workspace without signing out. Live on the role-partition preview — not merged to production yet.",
+    testingGuide: {
+      statusNote:
+        "Built July 27–28, 2026 on branch role-partition (includes CM work queues too). Use Open preview below; production /updates will show this card after we ship the Version updates entry to main.",
+      liveVsPreview: [
+        "Preview: full role roster under your name, CM/Lit attention boards, demand/lien read-only matter links, † Approvals lock for senior PL without flags.",
+        "Production: not yet — stay on the preview until Michael is happy.",
+      ],
+      walkthroughTitle: "5-minute walkthrough (as attorney)",
+      walkthrough: [
+        "Open Preview home → sign in as Michael.",
+        "Click your name / attorney ▾ in the header → Role roster opens.",
+        "Click case manager (or Camila Manager) → nav becomes CM; amber Previewing banner appears.",
+        "Exit preview → back to owner nav. Writes still audited as Michael the whole time.",
+        "Optional: open Demands or Liens queues → matter links open read-only.",
+      ],
+      afterHappy:
+        "When happy, tell Brett to merge role-partition (and/or open a PR) after CM queues Day 4 sign-off — do not merge to main early.",
+    },
+    howToTest: [
+      "Open the Preview home link (Vercel may ask for SSO). Sign in as attorney.",
+      "Click name / role in the header → confirm Role roster lists roles and people.",
+      "Preview as case manager → sidebar matches CM; banner says preview; Exit preview returns to owner.",
+      "Optional: preview as intake → Cases/Litigation show 🔒 in nav.",
+    ],
+    items: [
+      {
+        title: "Preview home (branch role-partition)",
+        body: "Vercel preview for role partition + role roster. Sign in with your usual staff account. Includes CM work queues from the parent branch.",
+        href: ROLE_PARTITION_PREVIEW_BASE,
+        hrefLabel: "Open preview",
+      },
+      {
+        title: "Version updates / testing on preview",
+        body: "Same Testing guide UI on the preview app — thumbs, notes, and this card once deployed.",
+        href: `${ROLE_PARTITION_PREVIEW_BASE}/updates`,
+        hrefLabel: "Open Version updates",
+      },
+      {
+        title: "Role roster (header)",
+        body: "Attorney/admin only: click your name/role → see who holds each role → preview that workspace. Audit stays you.",
+        href: ROLE_PARTITION_PREVIEW_BASE,
+        hrefLabel: "Open preview",
+      },
+    ],
+  },
   {
     id: "2026-07-22-cm-work-queues-preview",
     dateLabel: "07/22/2026",
