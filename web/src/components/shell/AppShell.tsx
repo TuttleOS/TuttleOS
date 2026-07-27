@@ -7,11 +7,19 @@ import { GlobalSearch } from "./GlobalSearch";
 import { IdentityBanner } from "./IdentityBanner";
 import { WhatsNewModal } from "./WhatsNewModal";
 import type { StaffProfile } from "@/lib/staff";
-import { displayName } from "@/lib/staff";
+import { displayName, staffCanApproveLevel } from "@/lib/staff";
 import {
   identityBannerCopy,
   canOpenFullLitigationWorkspace,
 } from "@/lib/workspace";
+import { RolePreviewMenu } from "@/components/shell/RolePreviewMenu";
+import { RolePreviewBanner } from "@/components/shell/RolePreviewBanner";
+import {
+  canUseRolePreview,
+  type RolePreviewState,
+  type RoleRosterGroup,
+} from "@/lib/role-preview";
+import { setRolePreviewAction } from "@/lib/role-preview-actions";
 
 type NavItem = {
   href: string;
@@ -36,9 +44,18 @@ const HELP_NAV_OWNER: NavItem[] = [
 ];
 
 /** Full firm menu for attorney / admin / senior PL (Michael’s view). */
-const FIRM_WIDE_NAV: NavItem[] = [
+function firmWideNav(staff: StaffProfile): NavItem[] {
+  const canApprove = staffCanApproveLevel(staff);
+  return [
   { href: "/owner", label: "Dashboard", section: "Owner" },
-  { href: "/owner/approvals", label: "Approvals", section: "Owner" },
+  {
+    href: "/owner/approvals",
+    label: "Approvals",
+    section: "Owner",
+    locked: !canApprove,
+    lockReason:
+      "Requires can_approve_level or attorney († — ROLES §8.1#3)",
+  },
   { href: "/owner/sol", label: "SOL Watch", section: "Owner" },
   { href: "/owner/calendar", label: "Calendar", section: "Owner" },
   { href: "/owner/migration", label: "Migration", section: "Owner" },
@@ -63,8 +80,9 @@ const FIRM_WIDE_NAV: NavItem[] = [
   { href: "/demands", label: "Demands", section: "Specialty" },
   { href: "/liens", label: "Liens", section: "Specialty" },
   { href: "/review", label: "Viability", section: "Specialty" },
-  ...HELP_NAV_OWNER,
-];
+  ...helpNavFor(staff),
+  ];
+}
 
 const NAV_BY_PREFIX: Record<string, NavItem[]> = {
   "/intake": [
@@ -105,7 +123,6 @@ const NAV_BY_PREFIX: Record<string, NavItem[]> = {
     { href: "/litigation/tasks", label: "My Tasks" },
     { href: "/litigation/deadlines", label: "Deadline Horizon" },
   ],
-  "/owner": FIRM_WIDE_NAV,
   "/demands": [{ href: "/demands", label: "Demand queue" }],
   "/liens": [{ href: "/liens", label: "Lien worklist" }],
   "/review": [{ href: "/review", label: "Viability reviews" }],
@@ -190,7 +207,7 @@ function navForPath(
 ): NavItem[] {
   const help = helpNavFor(staff);
   if (usesFirmWideNav(staff)) {
-    return withQueueBadges(FIRM_WIDE_NAV, cmQueueCounts);
+    return withQueueBadges(firmWideNav(staff), cmQueueCounts);
   }
   if (
     pathname === "/test" ||
@@ -198,7 +215,17 @@ function navForPath(
     pathname === "/updates" ||
     pathname.startsWith("/updates/")
   ) {
-    return withQueueBadges(FIRM_WIDE_NAV, cmQueueCounts);
+    return withQueueBadges(firmWideNav(staff), cmQueueCounts);
+  }
+  if (
+    pathname.startsWith("/owner") ||
+    pathname.startsWith("/demands") ||
+    pathname.startsWith("/liens") ||
+    pathname.startsWith("/review")
+  ) {
+    if (usesFirmWideNav(staff)) {
+      return withQueueBadges(firmWideNav(staff), cmQueueCounts);
+    }
   }
   if (
     pathname.startsWith("/litigation") &&
@@ -221,10 +248,20 @@ function isNavActive(pathname: string, href: string): boolean {
 
 export function AppShell({
   staff,
+  viewStaff,
+  preview = null,
+  roster = [],
+  previewScopedName = null,
   children,
   cmQueueCounts = null,
 }: {
+  /** Real signed-in staff (audit actor) */
   staff: StaffProfile;
+  /** Role used for nav / workspace chrome (may be preview) */
+  viewStaff?: StaffProfile;
+  preview?: RolePreviewState | null;
+  roster?: RoleRosterGroup[];
+  previewScopedName?: string | null;
   children: React.ReactNode;
   cmQueueCounts?: {
     newCases: number;
@@ -236,11 +273,15 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const nav = navForPath(pathname, staff, cmQueueCounts);
-  const name = displayName(staff);
-  const banner = identityBannerCopy(staff, pathname);
+  const navStaff = viewStaff ?? staff;
+  const nav = navForPath(pathname, navStaff, cmQueueCounts);
+  const banner = preview ? null : identityBannerCopy(navStaff, pathname);
+  const showRoleMenu = canUseRolePreview(staff);
 
   async function signOut() {
+    if (preview) {
+      await setRolePreviewAction({ role: null });
+    }
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
@@ -280,12 +321,20 @@ export function AppShell({
           >
             ◐
           </button>
-          <div className="text-right leading-tight">
-            <div className="font-semibold">{name}</div>
-            <div className="text-xs text-muted">
-              {staff.role_code.replaceAll("_", " ")}
+          {showRoleMenu ? (
+            <RolePreviewMenu
+              realStaff={staff}
+              preview={preview}
+              roster={roster}
+            />
+          ) : (
+            <div className="text-right leading-tight">
+              <div className="font-semibold">{displayName(staff)}</div>
+              <div className="text-xs text-muted">
+                {staff.role_code.replaceAll("_", " ")}
+              </div>
             </div>
-          </div>
+          )}
           <button
             type="button"
             onClick={signOut}
@@ -409,6 +458,13 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-col bg-page">
+        {preview && (
+          <RolePreviewBanner
+            realStaff={staff}
+            preview={preview}
+            scopedName={previewScopedName}
+          />
+        )}
         {banner && (
           <IdentityBanner
             title={banner.title}

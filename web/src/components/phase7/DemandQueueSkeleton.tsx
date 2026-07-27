@@ -47,7 +47,7 @@ export function DemandQueueSkeleton({ rows }: { rows: DemandReadinessRow[] }) {
                 >
                   <td className="px-4 py-3">
                     <Link
-                      href={`/cases/${r.client_matter_id}`}
+                      href={`/cases/${r.client_matter_id}?mode=readonly`}
                       className="font-semibold text-accent-dk no-underline hover:underline"
                     >
                       {r.display_name ?? "Matter"}

@@ -104,6 +104,7 @@ export function MatterDetailView({
   emailHistory = [],
   addressHistory = [],
   canSoftDelete = false,
+  readOnly = false,
   showDocuments = true,
   documents = [],
   documentAccessLog = [],
@@ -139,6 +140,8 @@ export function MatterDetailView({
   emailHistory?: ContactHistoryRow[];
   addressHistory?: AddressHistoryRow[];
   canSoftDelete?: boolean;
+  /** Demand writer / lien specialist — view only (ROLES §8.1#2) */
+  readOnly?: boolean;
   showDocuments?: boolean;
   documents?: DocumentRow[];
   documentAccessLog?: AccessLogRow[];
@@ -228,8 +231,22 @@ export function MatterDetailView({
 
   return (
     <div className="space-y-4">
+      {readOnly && (
+        <div className="rounded-panel border border-accent/40 bg-accent/5 px-4 py-3 text-sm">
+          <strong className="font-semibold">Read-only matter view.</strong>{" "}
+          Demand Writer and Lien Specialist can review the file; edits stay with
+          the case manager or attorney. Escalate blockers rather than drafting
+          around gaps.
+        </div>
+      )}
       <Link
-        href="/cases"
+        href={
+          viewerRole === "demand_writer"
+            ? "/demands"
+            : viewerRole === "lien_disbursement"
+              ? "/liens"
+              : "/cases"
+        }
         className="inline-block text-sm text-accent-dk no-underline hover:underline"
       >
         ← Back to caseload
@@ -293,7 +310,9 @@ export function MatterDetailView({
                   currentStaffId={cm?.staff_id ?? null}
                   currentName={cm?.name}
                   options={cmCandidates}
-                  canAssign={canAssignCm(viewerRole, viewerIsAttorney)}
+                  canAssign={
+                    !readOnly && canAssignCm(viewerRole, viewerIsAttorney)
+                  }
                 />{" "}
                 · PL: {pl?.name ?? (
                   <span className="text-warning">UNASSIGNED</span>
@@ -369,7 +388,7 @@ export function MatterDetailView({
           </div>
         </div>
 
-        {canSoftDelete ? (
+        {canSoftDelete && !readOnly ? (
           <div className="mt-4">
             <ConfirmDeleteDialog
               title="Soft-delete this matter?"

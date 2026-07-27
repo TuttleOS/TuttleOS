@@ -2,18 +2,18 @@ import { redirect } from "next/navigation";
 import { NewCasesQueue } from "@/components/cases/NewCasesQueue";
 import { listNewCasesQueue } from "@/lib/cases/queries";
 import type { NewCaseQueueRow } from "@/lib/cases/types";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { getStaffViewContext } from "@/lib/staff-view";
 
 export default async function NewCasesPage() {
-  const staff = await getCurrentStaff();
-  if (!staff) redirect("/login");
+  const ctx = await getStaffViewContext();
+  if (!ctx) redirect("/login");
 
-  const assignedOnly = staff.role_code === "case_manager";
+  const assignedOnly = ctx.assignedOnlyCm;
   let rows: NewCaseQueueRow[] = [];
   let error: string | null = null;
   try {
     rows = await listNewCasesQueue({
-      staffId: staff.staff_id,
+      staffId: ctx.queryStaffId,
       assignedOnly,
     });
   } catch (e) {

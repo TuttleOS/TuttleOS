@@ -3,20 +3,12 @@ import { formatDate } from "@/lib/dates";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import {
   flagList,
-  needsAttention,
   STAGE_LABEL,
   type CaseloadRow,
 } from "@/lib/cases/types";
+import { NeedsAttentionBoard } from "@/components/workspace/NeedsAttentionBoard";
 
 export function Caseload({ rows }: { rows: CaseloadRow[] }) {
-  const tiles = {
-    active: rows.length,
-    provider: rows.filter((r) => r.flag_provider_check_overdue).length,
-    checklist: rows.filter((r) => r.open_checklist > 0).length,
-    flags: rows.filter((r) => needsAttention(r)).length,
-    reviews: rows.filter((r) => r.current_stage_code === "viability").length,
-  };
-
   return (
     <div className="space-y-5">
       <div>
@@ -24,26 +16,20 @@ export function Caseload({ rows }: { rows: CaseloadRow[] }) {
           Case Manager workspace
         </p>
         <h1 className="text-2xl font-bold">My Caseload</h1>
+        <p className="mt-1 text-sm text-muted">
+          Assigned matters only — start with what needs attention, then the full
+          list.
+        </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Tile label="Active cases" value={tiles.active} />
-        <Tile
-          label="Provider calls due"
-          value={tiles.provider}
-          tone={tiles.provider ? "warn" : undefined}
-          href="/cases/calls"
-        />
-        <Tile label="Open checklist items" value={tiles.checklist} />
-        <Tile
-          label="Red flags"
-          value={tiles.flags}
-          tone={tiles.flags ? "crit" : undefined}
-        />
-        <Tile label="7-day reviews" value={tiles.reviews} />
-      </div>
+      <NeedsAttentionBoard rows={rows} hrefBase="/cases" />
 
       <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
+        <div className="border-b border-grid px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
+            All assigned ({rows.length})
+          </h2>
+        </div>
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-grid text-xs text-muted">
@@ -163,41 +149,6 @@ export function Caseload({ rows }: { rows: CaseloadRow[] }) {
       </section>
     </div>
   );
-}
-
-function Tile({
-  label,
-  value,
-  tone,
-  href,
-}: {
-  label: string;
-  value: number;
-  tone?: "warn" | "crit";
-  href?: string;
-}) {
-  const inner = (
-    <>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-muted">{label}</div>
-    </>
-  );
-  const cls = `rounded-panel border border-grid bg-surface px-4 py-3 shadow-soft ${
-    tone === "crit"
-      ? "border-danger/40"
-      : tone === "warn"
-        ? "border-warning/40"
-        : ""
-  } ${href ? "block no-underline transition hover:bg-surface-2/60" : ""}`;
-
-  if (href) {
-    return (
-      <Link href={href} className={cls}>
-        {inner}
-      </Link>
-    );
-  }
-  return <div className={cls}>{inner}</div>;
 }
 
 function Badge({

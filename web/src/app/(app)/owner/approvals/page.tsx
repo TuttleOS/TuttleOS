@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ApprovalsQueue } from "@/components/owner/ApprovalsQueue";
 import { listPendingApprovals } from "@/lib/owner/queries";
+import { staffCanApproveLevel } from "@/lib/staff";
 import { getCurrentStaff } from "@/lib/staff-server";
 
 export default async function OwnerApprovalsPage() {
@@ -9,6 +10,6 @@ export default async function OwnerApprovalsPage() {
 
   const items = await listPendingApprovals();
   return (
-    <ApprovalsQueue items={items} canApprove={!!staff.can_approve_level} />
+    <ApprovalsQueue items={items} canApprove={staffCanApproveLevel(staff)} />
   );
 }

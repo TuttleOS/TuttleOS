@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell/AppShell";
 import { countCmWorkQueues } from "@/lib/cases/queries";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { getStaffViewContext } from "@/lib/staff-view";
 
 export default async function WorkspaceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const staff = await getCurrentStaff();
-  if (!staff) {
+  const ctx = await getStaffViewContext();
+  if (!ctx) {
     redirect("/login?next=/cases");
   }
 
@@ -22,15 +22,22 @@ export default async function WorkspaceLayout({
   } | null = null;
   try {
     cmQueueCounts = await countCmWorkQueues({
-      staffId: staff.staff_id,
-      assignedOnly: staff.role_code === "case_manager",
+      staffId: ctx.queryStaffId,
+      assignedOnly: ctx.assignedOnlyCm,
     });
   } catch {
     cmQueueCounts = null;
   }
 
   return (
-    <AppShell staff={staff} cmQueueCounts={cmQueueCounts}>
+    <AppShell
+      staff={ctx.staff}
+      viewStaff={ctx.viewStaff}
+      preview={ctx.preview}
+      roster={ctx.roster}
+      previewScopedName={ctx.previewScopedName}
+      cmQueueCounts={cmQueueCounts}
+    >
       {children}
     </AppShell>
   );

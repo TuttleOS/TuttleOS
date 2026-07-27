@@ -6,17 +6,16 @@ import type { LitCaseloadRow } from "@/lib/litigation/types";
 
 export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
   const today = new Date().toISOString().slice(0, 10);
-  const tiles = {
-    active: rows.length,
-    jxSoon: rows.filter(
+  const hot = rows
+    .filter(
       (r) =>
-        r.next_deadline_jx &&
-        r.next_deadline_date &&
-        r.next_deadline_date <= today,
-    ).length,
-    noCause: rows.filter((r) => !r.cause_number).length,
-    unassignedPl: rows.filter((r) => !r.pl_name).length,
-  };
+        !r.cause_number ||
+        !r.pl_name ||
+        (r.next_deadline_jx &&
+          r.next_deadline_date &&
+          r.next_deadline_date <= today),
+    )
+    .slice(0, 12);
 
   return (
     <div className="space-y-5">
@@ -25,26 +24,82 @@ export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
           Litigation Paralegal workspace
         </p>
         <h1 className="text-2xl font-bold">My Cases</h1>
+        <p className="mt-1 text-sm text-muted">
+          Assigned litigation only — deadline risk first, then the full list.
+        </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile label="Active litigation" value={tiles.active} />
-        <Tile
-          label="JX overdue / due"
-          value={tiles.jxSoon}
-          tone={tiles.jxSoon ? "crit" : undefined}
-        />
-        <Tile label="No cause number" value={tiles.noCause} tone="warn" />
-        <Tile label="PL unassigned" value={tiles.unassignedPl} tone="warn" />
-      </div>
+      <section className="rounded-panel border border-grid bg-surface shadow-soft">
+        <div className="border-b border-grid px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-accent-dk">
+            Needs attention
+          </h2>
+          <p className="mt-0.5 text-xs text-muted">
+            Jurisdictional deadlines due, missing cause number, or unassigned
+            PL — open the file.
+          </p>
+        </div>
+        {hot.length === 0 ? (
+          <p className="px-4 py-8 text-sm text-muted">
+            Nothing flagged on your assigned litigation caseload.
+          </p>
+        ) : (
+          <ul className="divide-y divide-grid">
+            {hot.map((r) => (
+              <li key={r.client_matter_id}>
+                <Link
+                  href={`/litigation/${r.client_matter_id}`}
+                  className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 no-underline hover:bg-surface-2/60"
+                >
+                  <div>
+                    <div className="font-semibold text-accent-dk">
+                      {r.display_name}
+                    </div>
+                    <div className="text-xs text-muted">
+                      {r.cause_number ?? "No cause number"}
+                      {r.next_deadline_date
+                        ? ` · Next ${formatDate(r.next_deadline_date)}`
+                        : ""}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {r.next_deadline_jx &&
+                      r.next_deadline_date &&
+                      r.next_deadline_date <= today && (
+                        <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-danger">
+                          JX due
+                        </span>
+                      )}
+                    {!r.cause_number && (
+                      <span className="rounded bg-warning-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                        No cause
+                      </span>
+                    )}
+                    {!r.pl_name && (
+                      <span className="rounded bg-warning-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                        PL unassigned
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
+        <div className="border-b border-grid px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
+            All assigned ({rows.length})
+          </h2>
+        </div>
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-grid text-xs text-muted">
               <th className="px-4 py-2.5 font-semibold">Client</th>
               <th className="px-4 py-2.5 font-semibold">Cause / court</th>
-              <th className="px-4 py-2.5 font-semibold">Level</th>
+              <th className="px-4 py-2.5 font-semibold">Discovery</th>
               <th className="px-4 py-2.5 font-semibold">Next deadline</th>
               <th className="px-4 py-2.5 font-semibold">SOL</th>
             </tr>
@@ -88,46 +143,38 @@ export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
                   </td>
                   <td className="px-4 py-3 text-xs">
                     <div className="font-semibold">
-                      {r.cause_number ?? "— not filed —"}
+                      {r.cause_number ?? (
+                        <span className="text-warning">No cause #</span>
+                      )}
                     </div>
                     <div className="text-muted">{r.court_name ?? "—"}</div>
-                    {r.filed_date && (
-                      <div className="text-muted">
-                        Filed {formatDate(r.filed_date)}
-                      </div>
-                    )}
                   </td>
                   <td className="px-4 py-3">
-                    {r.discovery_level != null ? `L${r.discovery_level}` : "—"}
+                    {r.discovery_level != null ? `D${r.discovery_level}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {r.next_deadline_date ? (
                       <>
-                        <div className="font-semibold">
+                        <div
+                          className={
+                            r.next_deadline_jx &&
+                            r.next_deadline_date <= today
+                              ? "font-bold text-danger"
+                              : ""
+                          }
+                        >
                           {formatDate(r.next_deadline_date)}
-                          {r.next_deadline_jx && (
-                            <span className="ml-1 rounded bg-danger-bg px-1 text-[10px] font-bold text-danger">
-                              JX
-                            </span>
-                          )}
                         </div>
-                        <div className="text-muted">{r.next_deadline_label}</div>
+                        <div className="text-muted">
+                          {r.next_deadline_label ?? "Deadline"}
+                        </div>
                       </>
                     ) : (
                       "—"
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {r.sol_date ? (
-                      <>
-                        {formatDate(r.sol_date)}
-                        <div className="font-bold uppercase text-danger">
-                          ATTORNEY-VERIFY
-                        </div>
-                      </>
-                    ) : (
-                      "—"
-                    )}
+                    {r.sol_date ? formatDate(r.sol_date) : "—"}
                   </td>
                 </tr>
               ))
@@ -135,31 +182,6 @@ export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
           </tbody>
         </table>
       </section>
-    </div>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "warn" | "crit";
-}) {
-  return (
-    <div
-      className={`rounded-panel border border-grid bg-surface px-4 py-3 shadow-soft ${
-        tone === "crit"
-          ? "border-danger/40"
-          : tone === "warn"
-            ? "border-warning/40"
-            : ""
-      }`}
-    >
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }

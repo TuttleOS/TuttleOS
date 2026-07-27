@@ -3,14 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
+import { isMatterReadOnlyRole } from "@/lib/staff";
+import type { StaffProfile } from "@/lib/staff";
 
 export type ActionResult =
   | { ok: true; message?: string }
   | { ok: false; error: string };
 
-async function requireStaff() {
+async function requireStaff(opts?: { mutate?: boolean }): Promise<StaffProfile> {
   const staff = await getCurrentStaff();
   if (!staff) throw new Error("Not signed in or staff not linked");
+  if (opts?.mutate && isMatterReadOnlyRole(staff)) {
+    throw new Error(
+      "Read-only for demand_writer / lien_disbursement — escalate writes to CM or attorney",
+    );
+  }
   return staff;
 }
 
@@ -19,7 +26,7 @@ export async function completeTaskAction(
   opts?: { override_reason?: string },
 ): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     const patch: Record<string, unknown> = {
       status: "done",
@@ -53,7 +60,7 @@ export async function completeTaskAction(
 
 export async function reopenTaskAction(taskId: string): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const supabase = createClient();
     const { data, error } = await supabase
       .schema("workflow")
@@ -89,7 +96,7 @@ export async function createFollowUpTaskAction(input: {
   owner_staff_id?: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     if (!input.title.trim()) return { ok: false, error: "Title required" };
     if (!input.due_date) return { ok: false, error: "Due date required" };
 
@@ -123,7 +130,7 @@ export async function addNoteAction(
   opts?: { pinned?: boolean; shareToCompanions?: boolean },
 ): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     if (!body.trim()) return { ok: false, error: "Note required" };
     const pinned = opts?.pinned ?? false;
     const shareToCompanions = opts?.shareToCompanions ?? false;
@@ -237,7 +244,7 @@ export async function logProviderCallAction(input: {
   method?: "phone" | "portal" | "fax" | "email" | "in_person";
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
 
     const { error: logErr } = await supabase
@@ -312,7 +319,7 @@ export async function declareCoverageNaAction(input: {
   category: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase.schema("medical").from("coverage_na").upsert(
       {
@@ -336,7 +343,7 @@ export async function clearCoverageNaAction(input: {
   category: string;
 }): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase
       .schema("medical")
@@ -365,7 +372,7 @@ export async function addProviderEpisodeAction(input: {
   coverage_category?: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     let providerId = input.provider_id ?? null;
 
@@ -454,7 +461,7 @@ export async function startPdClaimAction(input: {
   storage_accruing?: boolean;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     if (!input.make.trim() || !input.model.trim()) {
       return { ok: false, error: "Make and model required" };
     }
@@ -516,7 +523,7 @@ export async function updatePdClaimAction(input: {
   notes?: string;
 }): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const supabase = createClient();
     const today = new Date().toISOString().slice(0, 10);
     const patch: Record<string, unknown> = { last_touch_date: today };
@@ -573,7 +580,7 @@ export async function createRecordRequestAction(input: {
   notes?: string;
 }): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase.schema("medical").from("record_request").insert({
       treatment_episode_id: input.treatment_episode_id,
@@ -600,7 +607,7 @@ export async function updateRecordRequestAction(input: {
   follow_up_due?: string | null;
 }): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const supabase = createClient();
     const patch: Record<string, unknown> = { status: input.status };
     if (input.received_date !== undefined) patch.received_date = input.received_date;
@@ -625,7 +632,7 @@ export async function createDemandAction(input: {
   notes?: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase.schema("resolution").from("demand").insert({
       client_matter_id: input.client_matter_id,
@@ -647,7 +654,7 @@ export async function markDemandReviewedAction(input: {
   demand_id: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase
       .schema("resolution")
@@ -675,7 +682,7 @@ export async function logNegotiationAction(input: {
   note?: string;
 }): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     const supabase = createClient();
     const { error } = await supabase
       .schema("resolution")
@@ -719,7 +726,7 @@ export async function assignCaseManagerAction(
   newStaffId: string | null,
 ): Promise<ActionResult> {
   try {
-    const staff = await requireStaff();
+    const staff = await requireStaff({ mutate: true });
     if (!canAssignCaseManager(staff)) {
       return {
         ok: false,
@@ -800,7 +807,7 @@ export async function setClaimLorSentAction(
   lorSentDate: string,
 ): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const iso = lorSentDate.trim();
     if (!iso) {
       return { ok: false, error: "LOR sent date is required (generated ≠ sent)" };
@@ -834,7 +841,7 @@ export async function setClaimStatusAction(
   status: string,
 ): Promise<ActionResult> {
   try {
-    await requireStaff();
+    await requireStaff({ mutate: true });
     const allowed = new Set([
       "open",
       "liability_accepted",

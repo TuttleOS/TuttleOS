@@ -26,7 +26,8 @@ import {
   listMatterDocuments,
 } from "@/lib/documents/queries";
 import { documentsEnabled } from "@/lib/documents/enabled";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { isMatterReadOnlyRole } from "@/lib/staff";
+import { getStaffViewContext } from "@/lib/staff-view";
 import { createClient } from "@/lib/supabase/server";
 import type { StalledRow } from "@/lib/cases/types";
 
@@ -35,15 +36,18 @@ export default async function MatterPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams?: { focus?: string };
+  searchParams?: { focus?: string; mode?: string };
 }) {
-  const staff = await getCurrentStaff();
-  if (!staff) redirect("/login");
+  const ctx = await getStaffViewContext();
+  if (!ctx) redirect("/login");
+  const { staff, viewStaff } = ctx;
 
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
   const deepLinkCard = searchParams?.focus?.trim() || null;
+  const readOnly =
+    searchParams?.mode === "readonly" || isMatterReadOnlyRole(viewStaff);
   const showDocuments = documentsEnabled();
 
   const [
@@ -113,7 +117,7 @@ export default async function MatterPage({
     .maybeSingle();
 
   const canSoftDelete =
-    staff.is_attorney || staff.role_code === "admin";
+    !readOnly && (staff.is_attorney || staff.role_code === "admin");
 
   return (
     <MatterDetailView
@@ -138,9 +142,10 @@ export default async function MatterPage({
         }[]
       }
       stalled={(stalled as StalledRow | null) ?? null}
-      viewerRole={staff.role_code}
-      viewerIsAttorney={staff.is_attorney}
+      viewerRole={viewStaff.role_code}
+      viewerIsAttorney={staff.is_attorney && !ctx.preview}
       canSoftDelete={canSoftDelete}
+      readOnly={readOnly}
       pdClaims={pdClaims}
       coverageBoxes={coverageBoxes}
       recordRequests={recordRequests}

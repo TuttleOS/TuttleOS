@@ -2,18 +2,18 @@ import { redirect } from "next/navigation";
 import { RecordsPendingQueue } from "@/components/cases/RecordsPendingQueue";
 import { listRecordsPendingQueue } from "@/lib/cases/queries";
 import type { RecordsPendingQueueRow } from "@/lib/cases/types";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { getStaffViewContext } from "@/lib/staff-view";
 
 export default async function RecordsPendingPage() {
-  const staff = await getCurrentStaff();
-  if (!staff) redirect("/login");
+  const ctx = await getStaffViewContext();
+  if (!ctx) redirect("/login");
 
-  const assignedOnly = staff.role_code === "case_manager";
+  const assignedOnly = ctx.assignedOnlyCm;
   let rows: RecordsPendingQueueRow[] = [];
   let error: string | null = null;
   try {
     rows = await listRecordsPendingQueue({
-      staffId: staff.staff_id,
+      staffId: ctx.queryStaffId,
       assignedOnly,
     });
   } catch (e) {

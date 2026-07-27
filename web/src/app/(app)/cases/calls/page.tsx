@@ -2,18 +2,18 @@ import { redirect } from "next/navigation";
 import { ProviderCalls } from "@/components/cases/ProviderCalls";
 import { listProviderCallsDue } from "@/lib/cases/queries";
 import type { ProviderCallDue } from "@/lib/cases/types";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { getStaffViewContext } from "@/lib/staff-view";
 
 export default async function ProviderCallsPage() {
-  const staff = await getCurrentStaff();
-  if (!staff) redirect("/login");
+  const ctx = await getStaffViewContext();
+  if (!ctx) redirect("/login");
 
-  const ownedOnly = staff.role_code === "case_manager";
+  const ownedOnly = ctx.assignedOnlyCm;
   let rows: ProviderCallDue[] = [];
   let error: string | null = null;
   try {
     rows = await listProviderCallsDue({
-      staffId: staff.staff_id,
+      staffId: ctx.queryStaffId,
       ownedOnly,
     });
   } catch (e) {

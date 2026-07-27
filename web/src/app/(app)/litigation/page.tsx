@@ -1,16 +1,15 @@
 import { redirect } from "next/navigation";
 import { LitCaseload } from "@/components/litigation/LitCaseload";
 import { listLitigationCaseload } from "@/lib/litigation/queries";
-import { getCurrentStaff } from "@/lib/staff-server";
+import { getStaffViewContext } from "@/lib/staff-view";
 
 export default async function LitigationPage() {
-  const staff = await getCurrentStaff();
-  if (!staff) redirect("/login");
+  const ctx = await getStaffViewContext();
+  if (!ctx) redirect("/login");
 
-  const assignedOnly = staff.role_code === "litigation_paralegal";
   const rows = await listLitigationCaseload({
-    staffId: staff.staff_id,
-    assignedOnly,
+    staffId: ctx.queryStaffId,
+    assignedOnly: ctx.assignedOnlyLit,
   });
 
   return <LitCaseload rows={rows} />;

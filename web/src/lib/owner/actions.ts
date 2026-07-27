@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
+import { staffCanApproveLevel } from "@/lib/staff";
 
 export type ActionResult =
   | { ok: true; message?: string }
@@ -30,7 +31,7 @@ export async function approveLevelAction(
 ): Promise<ActionResult> {
   try {
     const staff = await requireStaff();
-    if (!staff.can_approve_level) {
+    if (!staffCanApproveLevel(staff)) {
       return { ok: false, error: "You are not authorized to approve Level" };
     }
     if (level < 0 || level > 3) {
@@ -61,7 +62,7 @@ export async function approveDemandAction(
 ): Promise<ActionResult> {
   try {
     const staff = await requireStaff();
-    if (!staff.is_attorney && !staff.can_approve_level) {
+    if (!staffCanApproveLevel(staff)) {
       return { ok: false, error: "Attorney approval required for L3 demand" };
     }
 
