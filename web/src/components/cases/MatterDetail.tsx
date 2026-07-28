@@ -586,7 +586,7 @@ export function MatterDetailView({
                             : completeTaskAction(t.task_id),
                         )
                       }
-                      className="mt-1 h-4 w-4 cursor-pointer accent-blue-700 disabled:cursor-wait"
+                      className="checkbox-prominent mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-grid accent-[var(--accent-dk)] disabled:cursor-wait"
                     />
                     <div>
                       <div
@@ -712,6 +712,7 @@ export function MatterDetailView({
               matterId={matter.client_matter_id}
               incidentGroupId={matter.incident_group_id}
               rows={pdClaims}
+              documents={documents}
               pending={pending}
               run={run}
             />

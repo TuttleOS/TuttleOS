@@ -65,6 +65,7 @@ export function MyTasks({ tasks }: { tasks: TaskRow[] }) {
                     checked={t.status === "done"}
                     disabled={pending}
                     onChange={() => toggle(t)}
+                    className="checkbox-prominent"
                   />
                 </td>
                 <td className="px-5 py-3 font-semibold">{t.title}</td>

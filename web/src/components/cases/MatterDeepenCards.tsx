@@ -10,6 +10,7 @@ import {
   declareCoverageNaAction,
   logNegotiationAction,
   markDemandReviewedAction,
+  softDeletePdClaimAction,
   startPdClaimAction,
   updatePdClaimAction,
   updateRecordRequestAction,
@@ -28,22 +29,78 @@ import type {
   RecordRequestRow,
 } from "@/lib/cases/matterExtras";
 import type { TreatmentEpisodeRow } from "@/lib/cases/types";
+import {
+  defaultSideForEventType,
+  requiredSideForEventType,
+  sideLockedForEventType,
+} from "@/lib/cases/negotiation";
 import { SectionDocumentUpload } from "@/components/cases/SectionDocumentUpload";
+import { SectionPhotoGallery } from "@/components/cases/SectionPhotoGallery";
+import type { DocumentRow } from "@/lib/documents/types";
 
 type RunFn = (
   fn: () => Promise<{ ok: boolean; error?: string; message?: string }>,
 ) => void;
 
+/** Bold filled check / empty box — unicode ☑ was too thin on screen. */
+function CoverageStatusMark({
+  status,
+}: {
+  status: CoverageBoxState["status"];
+}) {
+  if (status === "covered") {
+    return (
+      <span
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] bg-success text-white shadow-sm"
+        title="Covered"
+        aria-hidden
+      >
+        <svg
+          viewBox="0 0 16 16"
+          className="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 8.5 6.5 12 13 4" />
+        </svg>
+      </span>
+    );
+  }
+  if (status === "n_a") {
+    return (
+      <span
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border-2 border-muted/50 bg-surface-2 text-[9px] font-bold leading-none text-muted"
+        title="No treatment in this category"
+        aria-hidden
+      >
+        —
+      </span>
+    );
+  }
+  return (
+    <span
+      className="mt-0.5 inline-flex h-5 w-5 shrink-0 rounded-[4px] border-2 border-danger/70 bg-surface"
+      title="Unanswered"
+      aria-hidden
+    />
+  );
+}
+
 export function PropertyDamageCard({
   matterId,
   incidentGroupId,
   rows,
+  documents = [],
   pending,
   run,
 }: {
   matterId: string;
   incidentGroupId: string;
   rows: PdClaimRow[];
+  documents?: DocumentRow[];
   pending: boolean;
   run: RunFn;
 }) {
@@ -52,6 +109,21 @@ export function PropertyDamageCard({
   const [model, setModel] = useState("");
   const [location, setLocation] = useState("");
   const [storage, setStorage] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editYear, setEditYear] = useState("");
+  const [editMake, setEditMake] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editStorage, setEditStorage] = useState(false);
+
+  function beginEdit(r: PdClaimRow) {
+    setEditingId(r.pd_claim_id);
+    setEditYear(r.year != null ? String(r.year) : "");
+    setEditMake(r.make ?? "");
+    setEditModel(r.model ?? "");
+    setEditLocation(r.current_location ?? "");
+    setEditStorage(Boolean(r.storage_accruing));
+  }
 
   return (
     <div className="space-y-4 text-sm">
@@ -59,6 +131,11 @@ export function PropertyDamageCard({
         matterId={matterId}
         defaultDocType="photos_video"
         hint="Photos, estimates, repair bills — saved under Case documents."
+      />
+      <SectionPhotoGallery
+        documents={documents}
+        docTypeCode="photos_video"
+        heading="PD photos"
       />
       {rows.length === 0 ? (
         <p className="text-muted">
@@ -72,73 +149,195 @@ export function PropertyDamageCard({
               key={r.pd_claim_id}
               className="rounded-lg border border-grid bg-page px-3 py-2"
             >
-              <div className="font-semibold">
-                {[r.year, r.make, r.model].filter(Boolean).join(" ") || "Vehicle"}
-              </div>
-              <div className="text-xs text-muted">
-                {r.current_location ?? "—"} · {r.status}
-                {r.storage_accruing ? " · STORAGE ACCRUING" : ""}
-                {r.last_touch_date
-                  ? ` · touched ${formatDate(r.last_touch_date)}`
-                  : ""}
-              </div>
-              {r.demand_blocker && (
-                <p className="mt-1 text-xs font-bold text-danger">
-                  Demand blocker — PD unresolved at demand stage
-                </p>
+              {editingId === r.pd_claim_id ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase text-muted">
+                    Edit vehicle
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      placeholder="Year"
+                      value={editYear}
+                      onChange={(e) => setEditYear(e.target.value)}
+                      className="h-9 rounded-lg border border-grid bg-surface px-2"
+                      disabled={pending}
+                    />
+                    <input
+                      placeholder="Make *"
+                      value={editMake}
+                      onChange={(e) => setEditMake(e.target.value)}
+                      className="h-9 rounded-lg border border-grid bg-surface px-2"
+                      disabled={pending}
+                    />
+                    <input
+                      placeholder="Model *"
+                      value={editModel}
+                      onChange={(e) => setEditModel(e.target.value)}
+                      className="h-9 rounded-lg border border-grid bg-surface px-2"
+                      disabled={pending}
+                    />
+                    <input
+                      placeholder="Current location *"
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      className="h-9 rounded-lg border border-grid bg-surface px-2 sm:col-span-2"
+                      disabled={pending}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={editStorage}
+                      onChange={(e) => setEditStorage(e.target.checked)}
+                      disabled={pending}
+                    />
+                    Storage accruing
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={
+                        pending ||
+                        !editMake.trim() ||
+                        !editModel.trim() ||
+                        !editLocation.trim()
+                      }
+                      className="rounded-lg bg-accent-dk px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                      onClick={() =>
+                        run(async () => {
+                          const res = await updatePdClaimAction({
+                            client_matter_id: matterId,
+                            pd_claim_id: r.pd_claim_id,
+                            vehicle_id: r.vehicle_id,
+                            year: editYear ? Number(editYear) : null,
+                            make: editMake,
+                            model: editModel,
+                            current_location: editLocation,
+                            storage_accruing: editStorage,
+                          });
+                          if (res.ok) setEditingId(null);
+                          return res;
+                        })
+                      }
+                    >
+                      Save changes
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="font-semibold">
+                    {[r.year, r.make, r.model].filter(Boolean).join(" ") ||
+                      "Vehicle"}
+                  </div>
+                  <div className="text-xs text-muted">
+                    {r.current_location ?? "—"} · {r.status}
+                    {r.storage_accruing ? " · STORAGE ACCRUING" : ""}
+                    {r.last_touch_date
+                      ? ` · touched ${formatDate(r.last_touch_date)}`
+                      : ""}
+                  </div>
+                  {r.demand_blocker && (
+                    <p className="mt-1 text-xs font-bold text-danger">
+                      Demand blocker — PD unresolved at demand stage
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
+                      onClick={() => beginEdit(r)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
+                      onClick={() =>
+                        run(() =>
+                          updatePdClaimAction({
+                            client_matter_id: matterId,
+                            pd_claim_id: r.pd_claim_id,
+                            vehicle_id: r.vehicle_id,
+                            status: "resolved",
+                          }),
+                        )
+                      }
+                    >
+                      Mark resolved
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
+                      onClick={() =>
+                        run(() =>
+                          updatePdClaimAction({
+                            client_matter_id: matterId,
+                            pd_claim_id: r.pd_claim_id,
+                            vehicle_id: r.vehicle_id,
+                            demand_blocker: !r.demand_blocker,
+                          }),
+                        )
+                      }
+                    >
+                      Toggle demand blocker
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
+                      onClick={() =>
+                        run(() =>
+                          updatePdClaimAction({
+                            client_matter_id: matterId,
+                            pd_claim_id: r.pd_claim_id,
+                            vehicle_id: r.vehicle_id,
+                          }),
+                        )
+                      }
+                    >
+                      Touch (reset aging)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="rounded-md border border-danger/40 px-2 py-1 text-xs font-semibold text-danger"
+                      onClick={() => {
+                        const label =
+                          [r.year, r.make, r.model].filter(Boolean).join(" ") ||
+                          "this vehicle";
+                        if (
+                          !window.confirm(
+                            `Remove ${label} from this matter? This soft-deletes the PD track (can be recovered in the database).`,
+                          )
+                        ) {
+                          return;
+                        }
+                        run(() =>
+                          softDeletePdClaimAction({
+                            client_matter_id: matterId,
+                            pd_claim_id: r.pd_claim_id,
+                            vehicle_id: r.vehicle_id,
+                          }),
+                        );
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </>
               )}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={pending}
-                  className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
-                  onClick={() =>
-                    run(() =>
-                      updatePdClaimAction({
-                        client_matter_id: matterId,
-                        pd_claim_id: r.pd_claim_id,
-                        vehicle_id: r.vehicle_id,
-                        status: "resolved",
-                      }),
-                    )
-                  }
-                >
-                  Mark resolved
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
-                  onClick={() =>
-                    run(() =>
-                      updatePdClaimAction({
-                        client_matter_id: matterId,
-                        pd_claim_id: r.pd_claim_id,
-                        vehicle_id: r.vehicle_id,
-                        demand_blocker: !r.demand_blocker,
-                      }),
-                    )
-                  }
-                >
-                  Toggle demand blocker
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  className="rounded-md border border-grid px-2 py-1 text-xs font-semibold"
-                  onClick={() =>
-                    run(() =>
-                      updatePdClaimAction({
-                        client_matter_id: matterId,
-                        pd_claim_id: r.pd_claim_id,
-                        vehicle_id: r.vehicle_id,
-                      }),
-                    )
-                  }
-                >
-                  Touch (reset aging)
-                </button>
-              </div>
             </li>
           ))}
         </ul>
@@ -244,10 +443,11 @@ export function CoverageBoxesCard({
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-muted">
-        Every box must be answered — add a provider or mark N/A.{" "}
+        Every box must be answered — add a provider or mark{" "}
+        <span className="font-semibold text-ink">No treatment</span>.{" "}
         {unanswered > 0 && (
           <span className="font-bold text-danger">
-            {unanswered} unchecked
+            {unanswered} unanswered
           </span>
         )}
       </p>
@@ -263,20 +463,20 @@ export function CoverageBoxesCard({
                   : "border-success/40 bg-success-bg/30"
             }`}
           >
-            <div className="text-xs font-bold uppercase tracking-wide">
-              {b.status === "covered"
-                ? "☑"
-                : b.status === "n_a"
-                  ? "N/A"
-                  : "☐"}{" "}
-              {b.label}
-            </div>
-            <div className="mt-1 text-[11px] text-muted">
-              {b.status === "covered"
-                ? `${b.episodeCount} episode${b.episodeCount === 1 ? "" : "s"}`
-                : b.status === "n_a"
-                  ? "Declared N/A"
-                  : "Unanswered"}
+            <div className="flex items-start gap-2">
+              <CoverageStatusMark status={b.status} />
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold uppercase tracking-wide text-ink">
+                  {b.label}
+                </div>
+                <div className="mt-1 text-[11px] text-muted">
+                  {b.status === "covered"
+                    ? `${b.episodeCount} episode${b.episodeCount === 1 ? "" : "s"}`
+                    : b.status === "n_a"
+                      ? "No treatment in this category"
+                      : "Unanswered"}
+                </div>
+              </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               {b.status !== "covered" && (
@@ -302,7 +502,7 @@ export function CoverageBoxesCard({
                     )
                   }
                 >
-                  N/A
+                  No treatment
                 </button>
               )}
               {b.status === "n_a" && (
@@ -319,7 +519,7 @@ export function CoverageBoxesCard({
                     )
                   }
                 >
-                  Undo N/A
+                  Undo
                 </button>
               )}
             </div>
@@ -629,7 +829,15 @@ export function DemandNegotiationCard({
   const [amount, setAmount] = useState("");
   const [negAmount, setNegAmount] = useState("");
   const [negType, setNegType] = useState("offer");
-  const [bySide, setBySide] = useState("defense");
+  const [bySide, setBySide] = useState<string>(defaultSideForEventType("offer"));
+  const sideLocked = sideLockedForEventType(negType);
+  const requiredSide = requiredSideForEventType(negType);
+
+  function onNegTypeChange(next: string) {
+    setNegType(next);
+    const locked = requiredSideForEventType(next);
+    if (locked) setBySide(locked);
+  }
 
   return (
     <div className="space-y-4 text-sm">
@@ -714,6 +922,10 @@ export function DemandNegotiationCard({
 
       <div className="border-t border-grid pt-3">
         <p className="text-xs font-bold uppercase text-muted">Negotiation</p>
+        <p className="mt-1 text-[11px] text-muted">
+          Offers / counters = defense (insurer). Counter-demands = plaintiff
+          (firm). Client authority = client.
+        </p>
         {negotiations.length === 0 ? (
           <p className="mt-1 text-muted">No negotiation events logged.</p>
         ) : (
@@ -732,7 +944,7 @@ export function DemandNegotiationCard({
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <select
             value={negType}
-            onChange={(e) => setNegType(e.target.value)}
+            onChange={(e) => onNegTypeChange(e.target.value)}
             className="h-9 rounded-lg border border-grid bg-page px-2"
           >
             <option value="offer">Offer</option>
@@ -743,12 +955,18 @@ export function DemandNegotiationCard({
             <option value="acceptance">Acceptance</option>
           </select>
           <select
-            value={bySide}
+            value={sideLocked && requiredSide ? requiredSide : bySide}
             onChange={(e) => setBySide(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            disabled={sideLocked}
+            title={
+              sideLocked
+                ? "Side is fixed for this event type"
+                : "Who originated this event"
+            }
+            className="h-9 rounded-lg border border-grid bg-page px-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <option value="defense">Defense</option>
-            <option value="plaintiff">Plaintiff</option>
+            <option value="defense">Defense (insurer)</option>
+            <option value="plaintiff">Plaintiff (firm)</option>
             <option value="client">Client</option>
             <option value="mediator">Mediator</option>
           </select>
@@ -763,17 +981,19 @@ export function DemandNegotiationCard({
             type="button"
             disabled={pending}
             className="rounded-lg border border-grid px-3 py-1.5 text-xs font-bold disabled:opacity-50"
-            onClick={() =>
+            onClick={() => {
+              const side =
+                requiredSideForEventType(negType) ?? bySide;
               run(() =>
                 logNegotiationAction({
                   client_matter_id: matterId,
                   demand_id: demands[0]?.demand_id,
                   event_type: negType,
-                  by_side: bySide,
+                  by_side: side,
                   amount: negAmount ? Number(negAmount) : null,
                 }),
-              )
-            }
+              );
+            }}
           >
             Log event
           </button>

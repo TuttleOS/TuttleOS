@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { isMatterReadOnlyRole } from "@/lib/staff";
 import type { StaffProfile } from "@/lib/staff";
+import { validateNegotiationDirectionality } from "@/lib/cases/negotiation";
 
 export type ActionResult =
   | { ok: true; message?: string }
@@ -332,7 +333,7 @@ export async function declareCoverageNaAction(input: {
     );
     if (error) return { ok: false, error: error.message };
     revalidateMatter(input.client_matter_id);
-    return { ok: true, message: "Marked N/A" };
+    return { ok: true, message: "Marked no treatment in this category" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
@@ -353,7 +354,7 @@ export async function clearCoverageNaAction(input: {
       .eq("category", input.category);
     if (error) return { ok: false, error: error.message };
     revalidateMatter(input.client_matter_id);
-    return { ok: true, message: "N/A cleared" };
+    return { ok: true, message: "Cleared — category unanswered again" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
@@ -518,6 +519,9 @@ export async function updatePdClaimAction(input: {
   repairable_or_total?: string | null;
   estimate_amount?: number | null;
   demand_blocker?: boolean;
+  year?: number | null;
+  make?: string;
+  model?: string;
   current_location?: string;
   storage_accruing?: boolean;
   notes?: string;
@@ -544,26 +548,82 @@ export async function updatePdClaimAction(input: {
       .schema("property")
       .from("pd_claim")
       .update(patch)
-      .eq("pd_claim_id", input.pd_claim_id);
+      .eq("pd_claim_id", input.pd_claim_id)
+      .is("deleted_at", null);
     if (error) return { ok: false, error: error.message };
 
-    if (input.current_location !== undefined || input.storage_accruing !== undefined) {
-      const vPatch: Record<string, unknown> = {};
-      if (input.current_location !== undefined) {
-        vPatch.current_location = input.current_location;
+    const vPatch: Record<string, unknown> = {};
+    if (input.year !== undefined) vPatch.year = input.year;
+    if (input.make !== undefined) vPatch.make = input.make.trim();
+    if (input.model !== undefined) vPatch.model = input.model.trim();
+    if (input.current_location !== undefined) {
+      vPatch.current_location = input.current_location.trim();
+    }
+    if (input.storage_accruing !== undefined) {
+      vPatch.storage_accruing = input.storage_accruing;
+    }
+    if (Object.keys(vPatch).length > 0) {
+      if (input.make !== undefined && !input.make.trim()) {
+        return { ok: false, error: "Make is required" };
       }
-      if (input.storage_accruing !== undefined) {
-        vPatch.storage_accruing = input.storage_accruing;
+      if (input.model !== undefined && !input.model.trim()) {
+        return { ok: false, error: "Model is required" };
       }
-      await supabase
+      if (input.current_location !== undefined && !input.current_location.trim()) {
+        return { ok: false, error: "Current location is required" };
+      }
+      const { error: vErr } = await supabase
         .schema("property")
         .from("vehicle")
         .update(vPatch)
-        .eq("vehicle_id", input.vehicle_id);
+        .eq("vehicle_id", input.vehicle_id)
+        .is("deleted_at", null);
+      if (vErr) return { ok: false, error: vErr.message };
     }
 
     revalidateMatter(input.client_matter_id);
     return { ok: true, message: "PD updated — aging clock reset" };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+/** Soft-delete a mistaken PD claim + vehicle (never hard delete). */
+export async function softDeletePdClaimAction(input: {
+  client_matter_id: string;
+  pd_claim_id: string;
+  vehicle_id: string;
+}): Promise<ActionResult> {
+  try {
+    const staff = await requireStaff({ mutate: true });
+    const supabase = createClient();
+    const now = new Date().toISOString();
+
+    const { error: pErr } = await supabase
+      .schema("property")
+      .from("pd_claim")
+      .update({ deleted_at: now })
+      .eq("pd_claim_id", input.pd_claim_id)
+      .is("deleted_at", null);
+    if (pErr) return { ok: false, error: pErr.message };
+
+    const { error: vErr } = await supabase
+      .schema("property")
+      .from("vehicle")
+      .update({ deleted_at: now })
+      .eq("vehicle_id", input.vehicle_id)
+      .is("deleted_at", null);
+    if (vErr) return { ok: false, error: vErr.message };
+
+    await supabase.schema("workflow").from("note").insert({
+      entity_id: input.client_matter_id,
+      author_staff_id: staff.staff_id,
+      note_type: "pd",
+      body: `PD vehicle track removed (soft-delete). Claim ${input.pd_claim_id}.`,
+    });
+
+    revalidateMatter(input.client_matter_id);
+    return { ok: true, message: "Vehicle / PD track removed" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
@@ -683,6 +743,12 @@ export async function logNegotiationAction(input: {
 }): Promise<ActionResult> {
   try {
     const staff = await requireStaff({ mutate: true });
+    const directionErr = validateNegotiationDirectionality(
+      input.event_type,
+      input.by_side,
+    );
+    if (directionErr) return { ok: false, error: directionErr };
+
     const supabase = createClient();
     const { error } = await supabase
       .schema("resolution")

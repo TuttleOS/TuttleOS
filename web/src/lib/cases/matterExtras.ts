@@ -84,7 +84,8 @@ export async function listPdClaimsForIncident(
     .select(
       "vehicle_id, year, make, model, current_location, drivable, storage_accruing",
     )
-    .eq("incident_group_id", incidentGroupId);
+    .eq("incident_group_id", incidentGroupId)
+    .is("deleted_at", null);
   if (error) throw new Error(error.message);
   if (!vehicles?.length) return [];
 
@@ -96,7 +97,8 @@ export async function listPdClaimsForIncident(
       `pd_claim_id, vehicle_id, status, last_touch_date, repairable_or_total,
        estimate_amount, valuation_amount, demand_blocker, notes`,
     )
-    .in("vehicle_id", ids);
+    .in("vehicle_id", ids)
+    .is("deleted_at", null);
   if (cErr) throw new Error(cErr.message);
 
   const vMap = new Map(vehicles.map((v) => [v.vehicle_id, v]));

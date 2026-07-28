@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import { DateField } from "@/components/ui/DateField";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -18,9 +18,14 @@ function todayIso(): string {
 
 const ALL_TYPES = DOC_TYPE_GROUPS.flatMap((g) => g.options);
 
+function titleFromFilename(name: string): string {
+  return name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ");
+}
+
 /**
  * Compact uploader for matter cards (Records / PD / Demand).
  * Files still land in the shared case-documents vault with a pre-filled type.
+ * Supports click + drag-and-drop onto the dashed zone.
  */
 export function SectionDocumentUpload({
   matterId,
@@ -34,6 +39,7 @@ export function SectionDocumentUpload({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [pending, start] = useTransition();
   const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState(defaultDocType);
@@ -42,6 +48,7 @@ export function SectionDocumentUpload({
   const [eventDate, setEventDate] = useState(todayIso());
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const dragDepth = useRef(0);
 
   function reset() {
     setFile(null);
@@ -50,6 +57,48 @@ export function SectionDocumentUpload({
     setEventDate(todayIso());
     setDocType(defaultDocType);
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  const acceptFile = useCallback((f: File | null) => {
+    setMsg(null);
+    setErr(null);
+    if (!f) return;
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setErr(`Max ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))} MB`);
+      return;
+    }
+    setFile(f);
+    setOpen(true);
+    setTitle((t) => (t.trim() ? t : titleFromFilename(f.name)));
+  }, []);
+
+  function onDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current += 1;
+    if (e.dataTransfer.types.includes("Files")) setDragging(true);
+  }
+
+  function onDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current = 0;
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0] ?? null;
+    acceptFile(f);
   }
 
   function upload() {
@@ -133,11 +182,29 @@ export function SectionDocumentUpload({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-accent/40 bg-accent/5 px-3 py-2">
+    <div
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`rounded-lg border border-dashed px-3 py-2 transition ${
+        dragging
+          ? "border-accent bg-accent/15 ring-2 ring-accent/30"
+          : "border-accent/40 bg-accent/5"
+      }`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-bold text-ink">Upload file to this case</p>
-          {hint ? <p className="text-[11px] text-muted">{hint}</p> : null}
+          <p className="text-xs font-bold text-ink">
+            {dragging ? "Drop file to upload" : "Upload file to this case"}
+          </p>
+          <p className="text-[11px] text-muted">
+            {dragging
+              ? "Release to attach — then confirm title and Save to case."
+              : hint
+                ? `${hint} Drag a file here or use Upload…`
+                : "Drag a file here or use Upload…"}
+          </p>
         </div>
         <button
           type="button"
@@ -165,22 +232,22 @@ export function SectionDocumentUpload({
             type="button"
             disabled={pending}
             onClick={() => fileRef.current?.click()}
-            className="w-full rounded-lg border border-dashed border-grid bg-surface px-3 py-3 text-left text-xs"
+            className={`w-full rounded-lg border border-dashed px-3 py-3 text-left text-xs ${
+              dragging
+                ? "border-accent bg-accent/10"
+                : "border-grid bg-surface"
+            }`}
           >
             {file
               ? `${file.name} (${formatBytes(file.size)})`
-              : "Choose file…"}
+              : "Choose file… or drop one on this box"}
           </button>
           <input
             ref={fileRef}
             type="file"
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              setFile(f);
-              if (f && !title.trim()) {
-                setTitle(f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " "));
-              }
+              acceptFile(e.target.files?.[0] ?? null);
             }}
           />
           <label className="block text-xs">
