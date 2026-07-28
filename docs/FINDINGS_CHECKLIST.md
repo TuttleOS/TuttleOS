@@ -2,7 +2,9 @@
 
 **Source:** [claude workflow-findings-2026-07-19.md](file:///Users/iohmarketing/Dropbox/TUTTLEOS/claude%20workflow-findings-2026-07-19.md)  
 **Checked against:** Tuttle OS kit (`web/`, `sql/`, `docs/`) as of **2026-07-20**  
-**Note:** Findings doc was written against schema v2.5; kit has since advanced (contracts, documents, minors, etc.). Treat this as a living backlog.
+**P1 consolidation:** **2026-07-28** on branch `role-partition` (Stage 0 pass — P1 only; P2/P3 not re-walked)
+
+**Note:** Findings doc was written against schema v2.5; kit has since advanced (contracts, documents, minors, role partition, CM queues). Treat this as a living backlog.
 
 ---
 
@@ -24,15 +26,61 @@
 
 ---
 
-## Scoreboard
+## Scoreboard (all priorities)
+
+| Status | Count (2026-07-28) |
+|---|---|
+| DONE | 3 |
+| PARTIAL | 25 *(+1: F-21)* |
+| DESIGNED | 16 *(−1: F-21)* |
+| NOT STARTED | 11 |
+| **Total** | **55** |
+
+### P1 only (go-live blockers from this list)
 
 | Status | Count |
 |---|---|
-| DONE | 3 |
-| PARTIAL | 24 |
-| DESIGNED | 17 |
-| NOT STARTED | 11 |
-| **Total** | **55** |
+| DONE | **0** |
+| PARTIAL | 16 |
+| DESIGNED | 9 |
+| NOT STARTED | 9 |
+| **P1 total** | **34** |
+
+**Bottom line for CM beta:** No Jul 19 **P1** finding is fully DONE. Stage 1 screen-recording integrity + role dashboards shipped **adjacent** to this list (see § Consolidation). Safe path for Stage 3 is “CM workspace beta with known P1 gaps,” not “findings checklist cleared.”
+
+---
+
+## Stage 0 — P1 consolidation (2026-07-28)
+
+### Status changes since Jul 20 baseline
+| ID | Change | Note |
+|---|---|---|
+| F-21 | DESIGNED → **PARTIAL** | Live `/liens` read-only worklist + finance banner; still no day-one CMS/lien inquiry workflow |
+| F-37 | PARTIAL (enriched) | Negotiation **directionality** shipped (UI + action + SQL v2.20); still no `time_request` type |
+
+No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core intent incomplete.
+
+### Adjacent shipped (not a Jul 19 P1 ID, but Stage 1 / role work)
+- PD edit / soft-delete / duplicate year+make+model guard / photo↔vehicle tagging  
+- Negotiation side lock (offers = defense, counter-demand = plaintiff)  
+- Coverage “No treatment” labels  
+- Per-role **Needs attention** story cards (CM / Lit / Intake / Demand / Liens) + attorney firm-wide board  
+- CM work queues + Project map on `/updates`
+
+### Known gaps before CM beta (P1 clusters)
+1. **Intake / contract policy** — F-01, F-04, F-05 still need Michael decisions + build  
+2. **Sign-up spine** — F-14 rotation, F-16 facility, F-18 welcome = Tier-2 (all NOT STARTED)  
+3. **CM medical / records** — F-25, F-27–F-29, F-31 incomplete  
+4. **Demand P1** — F-33–F-36 thin; F-37 ledger OK minus `time_request`  
+5. **File-suit / lit P1** — F-39–F-45 largely NOT STARTED / DESIGNED (OK to stagger after CM beta)
+
+### Recommended next (unchanged order, still valid)
+1. Lock Michael decisions: F-01 · F-04 · F-05 (and F-14 rotation policy)  
+2. Intake/contract P1 slice  
+3. Sign-up spine (rotation + facility)  
+4. CM medical/records P1  
+5. Demand P1  
+6. File-suit / lit P1 (can follow CM beta)
 
 ---
 
@@ -88,7 +136,7 @@
 | F-18 | P1 | NOT STARTED | Welcome call = Tier-2 gaps | — |
 | F-19 | AD/P2 | PARTIAL | Claim opening / LOR | Checklist + DB hooks; limited claim open UI |
 | F-20 | P2 | NOT STARTED | Carrier intelligence KB | — |
-| F-21 | P1 | DESIGNED | CMS / lien inquiry early | Lien schema; `/liens` skeleton |
+| F-21 | P1 | PARTIAL | CMS / lien inquiry early | Lien schema + `/liens` read-only worklist (2026-07-28); **no day-one CMS inquiry workflow** |
 
 ---
 
@@ -96,7 +144,7 @@
 
 | ID | Pri | Status | Finding (short) | Gap / next |
 |---|---|---|---|---|
-| F-22 | AD | DONE | PD first fire / demand blocker | Optional: first-party permission talking point |
+| F-22 | AD | DONE | PD first fire / demand blocker | Optional: first-party permission talking point. **Adjacent (2026-07-28):** edit/remove, duplicate guard, photo↔vehicle tags |
 | F-23 | P2 | DESIGNED | Loss of use engine | Columns parked; no LOU UI/compute |
 
 ---
@@ -105,7 +153,7 @@
 
 | ID | Pri | Status | Finding (short) | Gap / next |
 |---|---|---|---|---|
-| F-24 | AD | DONE | Treatment monitoring / provider calls | Optional: days-since-DOI no first appt flag |
+| F-24 | AD | DONE | Treatment monitoring / provider calls | Optional: days-since-DOI no first appt flag. Coverage UI: **No treatment** label (2026-07-28) |
 | F-25 | P1 | NOT STARTED | Future medicals verification | — |
 | F-26 | P3 | DESIGNED | AI records extraction | Parked AI layer; fields empty until pipeline |
 
@@ -132,7 +180,7 @@
 | F-34 | P1 | PARTIAL | Proof of transmission multi-channel | Method/confirm; not full proof artifacts |
 | F-35 | P1 | PARTIAL | Verify adjuster receipt task | Flag only |
 | F-36 | P1 | NOT STARTED | 3-day counter task (CM + Kate) | — |
-| F-37 | P1 | PARTIAL | Negotiation ledger | Ledger UI; add `time_request` type |
+| F-37 | P1 | PARTIAL | Negotiation ledger | Ledger UI + **directionality lock (2026-07-28)**; still need `time_request` type |
 | F-38 | P2 | NOT STARTED | Attorney negotiations board | — |
 
 ---

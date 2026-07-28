@@ -7,8 +7,8 @@ Ordered so data integrity and testability come before features, and the one-time
 ## Stage 0 — Foundation (do first, blocks verifying everything else)
 - [x] Add dummy/test logins per role (intake, case manager, litigation paralegal) — nothing below can be properly reviewed while everything previews as attorney.
   - **Done:** `cm.demo`, `lit.demo`, `intake.demo`, plus `demand.demo` / `liens.demo` / `review.demo`. Matrix: `docs/ROLE_TEST_ACCOUNTS.md`. Provision: `scripts/provision_role_test_accounts.cjs` + `sql/seeds/seed_role_test_staff.sql`. Attorney/admin also get **Role roster preview** (header) without signing out.
-- [ ] Confirm whether all incremental feedback from earlier rounds is actually incorporated into the current build, or run a consolidation pass against the original spec. Building further stages on an uncertain baseline compounds rework.
-  - **Partial:** Roles SoT locked (`docs/ROLES_AND_PERMISSIONS.md` + section map). CM queues on preview. Full consolidation vs every Jul 19 finding / earlier round feedback **not** done — keep open.
+- [x] Confirm whether all incremental feedback from earlier rounds is actually incorporated into the current build, or run a consolidation pass against the original spec. Building further stages on an uncertain baseline compounds rework.
+  - **P1 consolidation done (2026-07-28):** Walked all Jul 19 **P1** findings vs `role-partition`. Result: **0 P1 DONE**; F-21 DESIGNED→PARTIAL; F-37 enriched (directionality). Full write-up in `docs/FINDINGS_CHECKLIST.md` § Stage 0. **P2/P3 not re-walked.** Stage 3 CM beta = ship with known P1 gaps, not “findings cleared.” Michael decisions (F-01/F-04/F-05/F-14) still block intake/contract depth.
 
 ## Stage 1 — Data Integrity & Validation
 Fix before more real cases flow through these paths — much harder to clean up after the fact than to prevent.
@@ -34,8 +34,16 @@ The piece Brett specifically wants ready before wider access — drives adoption
 
 ## Stage 3 — Case Manager Beta Rollout
 - [ ] Ship the CM workspace to real case managers once Stages 0–2 are stable.
-  - Preview only (`role-partition` / earlier `cm-work-queues`). Production still lacks queue tabs until merge + Michael/Day-4 sign-off.
-- [ ] Decide whether litigation rollout should be staggered after CM or launched together — Brett is open to delaying litigation if it simplifies things.
+  - **In progress (2026-07-28):** Runbook + known gaps → `docs/CM_BETA_RUNBOOK.md`. Preview: `role-partition`. **Production merge gated on Michael sign-off** (Day-4) + CM Auth provisioning. PR `role-partition` → `main` when ready — do not merge early.
+- [x] Decide whether litigation rollout should be staggered after CM or launched together — Brett is open to delaying litigation if it simplifies things.
+  - **Proposed default (2026-07-28):** **Stagger** — CM beta now; lit remains Stage 5. Confirm with Michael in runbook §1.
+
+### Stage 3 checklist
+- [ ] Michael confirms lit stagger + pilot size (1–2 CMs recommended)
+- [ ] Known gaps (§2 of runbook) sent to pilot CMs
+- [ ] Real CM Auth + `staff.auth_user_id` + assignments (or week-1 preview-only pilot)
+- [ ] PR opened / merged `role-partition` → `main` after sign-off
+- [ ] Post-deploy smoke on production (`/cases` queues + Needs attention)
 
 ## Stage 4 — New Workflow: Settlements Pending / Disbursement
 Needs to exist before any case actually reaches settlement in the new system, but isn't needed for the initial CM beta.
@@ -64,4 +72,6 @@ Last, and only once the schema above is stable — migrating into a build that's
 - `docs/ROLE_TEST_ACCOUNTS.md` — demo logins
 - `docs/ROLES_AND_PERMISSIONS.md` — partition SoT + §8 build status
 - `docs/PROJECT_SECTIONS_BY_ROLE.md` — section × role map
+- `docs/FINDINGS_CHECKLIST.md` — Jul 19 findings + P1 consolidation
+- `docs/CM_BETA_RUNBOOK.md` — **Stage 3** CM beta known gaps + ship path
 - Preview: https://tuttle-os-git-role-partition-tuttle-os.vercel.app

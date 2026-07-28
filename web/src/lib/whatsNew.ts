@@ -117,13 +117,14 @@ export const VERSION_UPDATES: VersionUpdate[] = [
         "Optional: open Demands or Liens queues → matter links open read-only.",
       ],
       afterHappy:
-        "When happy, tell Brett to merge role-partition (and/or open a PR) after CM queues Day 4 sign-off — do not merge to main early.",
+        "When happy with CM beta prep, follow docs/CM_BETA_RUNBOOK.md — Michael sign-off, then merge role-partition to main. Do not merge early.",
     },
     howToTest: [
       "Open the Preview home link (Vercel may ask for SSO). Sign in as attorney.",
       "Click name / role in the header → confirm Role roster lists roles and people.",
       "Preview as case manager → sidebar matches CM; banner says preview; Exit preview returns to owner.",
       "Optional: preview as intake → Cases/Litigation show 🔒 in nav.",
+      "CM beta: read docs/CM_BETA_RUNBOOK.md known gaps; smoke /cases Needs attention + queues.",
     ],
     items: [
       {
@@ -131,6 +132,12 @@ export const VERSION_UPDATES: VersionUpdate[] = [
         body: "Vercel preview for role partition + role roster. Sign in with your usual staff account. Includes CM work queues from the parent branch.",
         href: ROLE_PARTITION_PREVIEW_BASE,
         hrefLabel: "Open preview",
+      },
+      {
+        title: "CM beta runbook (Stage 3)",
+        body: "Known gaps for case managers, lit stagger proposal, Auth provisioning, and merge gate before production. See docs/CM_BETA_RUNBOOK.md in the repo.",
+        href: `${ROLE_PARTITION_PREVIEW_BASE}/updates#project-map`,
+        hrefLabel: "Open Version updates",
       },
       {
         title: "Version updates / testing on preview",

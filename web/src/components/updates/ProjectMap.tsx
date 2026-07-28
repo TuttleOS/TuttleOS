@@ -716,7 +716,11 @@ export function ProjectMap() {
         <code className="rounded bg-page px-1 py-0.5 text-[10px]">
           docs/BUILD_PRIORITY_REVIEW_TODOS.md
         </code>
-        . Demo logins:{" "}
+        ,{" "}
+        <code className="rounded bg-page px-1 py-0.5 text-[10px]">
+          docs/CM_BETA_RUNBOOK.md
+        </code>{" "}
+        (Stage 3). Demo logins:{" "}
         <code className="rounded bg-page px-1 py-0.5 text-[10px]">
           docs/ROLE_TEST_ACCOUNTS.md
         </code>

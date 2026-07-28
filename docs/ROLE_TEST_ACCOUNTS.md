@@ -62,8 +62,9 @@ Requires `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `web/.env.l
 
 ---
 
-## Related
-
+**Related:**  
+- Demo logins: [ROLE_TEST_ACCOUNTS.md](ROLE_TEST_ACCOUNTS.md)  
+- **CM beta (Stage 3):** [CM_BETA_RUNBOOK.md](CM_BETA_RUNBOOK.md) — known gaps + ship path  
 - Phases: `docs/PROJECT_PHASES.md` (1–6 done; 7 skeletons)  
 - Security tiers: `docs/SECURITY_PROTOCOLS.md`  
 - Seed: `sql/seeds/seed_role_test_staff.sql`  
