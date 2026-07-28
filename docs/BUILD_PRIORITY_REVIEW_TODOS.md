@@ -12,12 +12,14 @@ Ordered so data integrity and testability come before features, and the one-time
 
 ## Stage 1 — Data Integrity & Validation
 Fix before more real cases flow through these paths — much harder to clean up after the fact than to prevent.
-- [ ] Bug: duplicate property damage / second-vehicle entries can be created when there should only be one. Add validation to block it.
+- [x] Bug: duplicate property damage / second-vehicle entries can be created when there should only be one. Add validation to block it.
+  - **Done (2026-07-28):** `startPdClaimAction` / vehicle edit reject same year+make+model on the incident (case-insensitive); soft-deleted vehicles ignored.
 - [x] Add undo/remove for a mistakenly-added entry (surfaced by the same bug).
-  - **Done (2026-07-28):** PD vehicle cards have **Edit** + **Remove** (soft-delete `pd_claim` + `vehicle`). Duplicate-entry validation still open.
+  - **Done (2026-07-28):** PD vehicle cards have **Edit** + **Remove** (soft-delete `pd_claim` + `vehicle`).
 - [x] Lock demand/counter directionality as a validation rule: demands always originate from the firm (plaintiff); offers/counters always originate from the insurer. Prevent mislinking.
   - **Done (2026-07-28):** UI locks side by event type; `logNegotiationAction` rejects mismatches; SQL `21_upgrade_v2.20_negotiation_directionality.sql` CHECK (apply on Supabase when ready).
-- [ ] Tag uploaded photos to their property damage entry so they're browsable from that section (part of the same data model fix).
+- [x] Tag uploaded photos to their property damage entry so they're browsable from that section (part of the same data model fix).
+  - **Done (2026-07-28):** Upload picker / per-vehicle upload tags `[pd_vehicle:<id>]` in document notes; thumbnails filter per vehicle + lightbox.
 - [x] Clarify the treatment/coverage box labels (N/A vs. Declined/Declared) — low effort, bundle with the above while touching that section.
   - **UI (2026-07-28):** Coverage boxes use **No treatment** / “No treatment in this category” (DB still `coverage_na`). Declined PIP/MedPay remains a separate insurance concept — not this button.
 

@@ -125,17 +125,24 @@ export function PropertyDamageCard({
     setEditStorage(Boolean(r.storage_accruing));
   }
 
+  const vehicleOptions = rows.map((r) => ({
+    id: r.vehicle_id,
+    label:
+      [r.year, r.make, r.model].filter(Boolean).join(" ") || "Vehicle",
+  }));
+
   return (
     <div className="space-y-4 text-sm">
       <SectionDocumentUpload
         matterId={matterId}
         defaultDocType="photos_video"
-        hint="Photos, estimates, repair bills — saved under Case documents."
+        hint="Photos, estimates, repair bills — pick a vehicle so photos stay with that PD track."
+        vehicleOptions={vehicleOptions.length > 0 ? vehicleOptions : undefined}
       />
       <SectionPhotoGallery
         documents={documents}
         docTypeCode="photos_video"
-        heading="PD photos"
+        heading="All PD photos"
       />
       {rows.length === 0 ? (
         <p className="text-muted">
@@ -250,6 +257,20 @@ export function PropertyDamageCard({
                       Demand blocker — PD unresolved at demand stage
                     </p>
                   )}
+                  <div className="mt-3 space-y-2">
+                    <SectionPhotoGallery
+                      documents={documents}
+                      docTypeCode="photos_video"
+                      heading="Photos for this vehicle"
+                      vehicleId={r.vehicle_id}
+                    />
+                    <SectionDocumentUpload
+                      matterId={matterId}
+                      defaultDocType="photos_video"
+                      hint="Upload against this vehicle only."
+                      relatedVehicleId={r.vehicle_id}
+                    />
+                  </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
                       type="button"

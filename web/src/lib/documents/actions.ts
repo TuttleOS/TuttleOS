@@ -8,6 +8,7 @@ import {
   isRestrictedCategory,
   statusForUpload,
 } from "./types";
+import { encodePdVehicleNote } from "@/lib/cases/pdVehicle";
 
 export type ActionResult =
   | { ok: true; message?: string; documentId?: string }
@@ -52,6 +53,8 @@ export async function completeDocumentUploadAction(input: {
   byteSize: number;
   originalFilename: string;
   notes?: string | null;
+  /** When set, tags photos/docs to a property.vehicle (PD section). */
+  relatedVehicleId?: string | null;
   batesStart?: string | null;
   batesEnd?: string | null;
   supersedesDocumentId?: string | null;
@@ -94,7 +97,7 @@ export async function completeDocumentUploadAction(input: {
       uploaded_by: staff.staff_id,
       owner_staff_id: staff.staff_id,
       supersedes_document_id: input.supersedesDocumentId || null,
-      notes: input.notes?.trim() || null,
+      notes: encodePdVehicleNote(input.relatedVehicleId, input.notes),
     };
 
     if (status === "executed") {

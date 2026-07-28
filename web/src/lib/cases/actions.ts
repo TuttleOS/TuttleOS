@@ -6,6 +6,10 @@ import { getCurrentStaff } from "@/lib/staff-server";
 import { isMatterReadOnlyRole } from "@/lib/staff";
 import type { StaffProfile } from "@/lib/staff";
 import { validateNegotiationDirectionality } from "@/lib/cases/negotiation";
+import {
+  encodePdVehicleNote,
+  normalizeVehicleKey,
+} from "@/lib/cases/pdVehicle";
 
 export type ActionResult =
   | { ok: true; message?: string }
@@ -470,14 +474,42 @@ export async function startPdClaimAction(input: {
       return { ok: false, error: "Current location required (storage clock)" };
     }
     const supabase = createClient();
+    const year = input.year || null;
+    const make = input.make.trim();
+    const model = input.model.trim();
+    const key = normalizeVehicleKey(year, make, model);
+
+    const { data: existingVehicles, error: listErr } = await supabase
+      .schema("property")
+      .from("vehicle")
+      .select("vehicle_id, year, make, model")
+      .eq("incident_group_id", input.incident_group_id)
+      .is("deleted_at", null);
+    if (listErr) return { ok: false, error: listErr.message };
+
+    const dup = (existingVehicles ?? []).find(
+      (v) =>
+        normalizeVehicleKey(
+          (v.year as number | null) ?? null,
+          (v.make as string) ?? "",
+          (v.model as string) ?? "",
+        ) === key,
+    );
+    if (dup) {
+      return {
+        ok: false,
+        error: `A PD track already exists for ${[year, make, model].filter(Boolean).join(" ")}. Edit or remove that vehicle instead of creating a duplicate.`,
+      };
+    }
+
     const { data: vehicle, error: vErr } = await supabase
       .schema("property")
       .from("vehicle")
       .insert({
         incident_group_id: input.incident_group_id,
-        year: input.year || null,
-        make: input.make.trim(),
-        model: input.model.trim(),
+        year,
+        make,
+        model,
         current_location: input.current_location.trim(),
         drivable: input.drivable ?? null,
         storage_accruing: Boolean(input.storage_accruing),
@@ -501,7 +533,7 @@ export async function startPdClaimAction(input: {
       entity_id: input.client_matter_id,
       author_staff_id: staff.staff_id,
       note_type: "pd",
-      body: `PD track started: ${input.year ?? ""} ${input.make} ${input.model} at ${input.current_location}${input.storage_accruing ? " — STORAGE CLOCK RUNNING" : ""}.`,
+      body: `PD track started: ${year ?? ""} ${make} ${model} at ${input.current_location}${input.storage_accruing ? " — STORAGE CLOCK RUNNING" : ""}.`,
     });
 
     revalidateMatter(input.client_matter_id);
@@ -572,6 +604,59 @@ export async function updatePdClaimAction(input: {
       if (input.current_location !== undefined && !input.current_location.trim()) {
         return { ok: false, error: "Current location is required" };
       }
+
+      if (
+        input.year !== undefined ||
+        input.make !== undefined ||
+        input.model !== undefined
+      ) {
+        const { data: self, error: selfErr } = await supabase
+          .schema("property")
+          .from("vehicle")
+          .select("incident_group_id, year, make, model")
+          .eq("vehicle_id", input.vehicle_id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (selfErr) return { ok: false, error: selfErr.message };
+        if (!self) return { ok: false, error: "Vehicle not found" };
+
+        const nextYear =
+          input.year !== undefined
+            ? input.year
+            : ((self.year as number | null) ?? null);
+        const nextMake =
+          input.make !== undefined ? input.make.trim() : String(self.make ?? "");
+        const nextModel =
+          input.model !== undefined
+            ? input.model.trim()
+            : String(self.model ?? "");
+        const key = normalizeVehicleKey(nextYear, nextMake, nextModel);
+
+        const { data: siblings, error: sibErr } = await supabase
+          .schema("property")
+          .from("vehicle")
+          .select("vehicle_id, year, make, model")
+          .eq("incident_group_id", self.incident_group_id as string)
+          .is("deleted_at", null)
+          .neq("vehicle_id", input.vehicle_id);
+        if (sibErr) return { ok: false, error: sibErr.message };
+
+        const dup = (siblings ?? []).find(
+          (v) =>
+            normalizeVehicleKey(
+              (v.year as number | null) ?? null,
+              (v.make as string) ?? "",
+              (v.model as string) ?? "",
+            ) === key,
+        );
+        if (dup) {
+          return {
+            ok: false,
+            error: `Another PD track already uses ${[nextYear, nextMake, nextModel].filter(Boolean).join(" ")}.`,
+          };
+        }
+      }
+
       const { error: vErr } = await supabase
         .schema("property")
         .from("vehicle")

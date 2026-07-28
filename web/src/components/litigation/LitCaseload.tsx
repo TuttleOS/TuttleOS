@@ -3,19 +3,12 @@ import { formatDate } from "@/lib/dates";
 import { caseTypeLabel } from "@/lib/intake/case-types";
 import { STAGE_LABEL } from "@/lib/cases/types";
 import type { LitCaseloadRow } from "@/lib/litigation/types";
+import { RoleAttentionNotices } from "@/components/workspace/RoleAttentionNotices";
+import { litAttentionCards } from "@/lib/workspace/attentionNotices";
 
 export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
   const today = new Date().toISOString().slice(0, 10);
-  const hot = rows
-    .filter(
-      (r) =>
-        !r.cause_number ||
-        !r.pl_name ||
-        (r.next_deadline_jx &&
-          r.next_deadline_date &&
-          r.next_deadline_date <= today),
-    )
-    .slice(0, 12);
+  const cards = litAttentionCards(rows);
 
   return (
     <div className="space-y-5">
@@ -29,64 +22,13 @@ export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
         </p>
       </div>
 
-      <section className="rounded-panel border border-grid bg-surface shadow-soft">
-        <div className="border-b border-grid px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-accent-dk">
-            Needs attention
-          </h2>
-          <p className="mt-0.5 text-xs text-muted">
-            Jurisdictional deadlines due, missing cause number, or unassigned
-            PL — open the file.
-          </p>
-        </div>
-        {hot.length === 0 ? (
-          <p className="px-4 py-8 text-sm text-muted">
-            Nothing flagged on your assigned litigation caseload.
-          </p>
-        ) : (
-          <ul className="divide-y divide-grid">
-            {hot.map((r) => (
-              <li key={r.client_matter_id}>
-                <Link
-                  href={`/litigation/${r.client_matter_id}`}
-                  className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 no-underline hover:bg-surface-2/60"
-                >
-                  <div>
-                    <div className="font-semibold text-accent-dk">
-                      {r.display_name}
-                    </div>
-                    <div className="text-xs text-muted">
-                      {r.cause_number ?? "No cause number"}
-                      {r.next_deadline_date
-                        ? ` · Next ${formatDate(r.next_deadline_date)}`
-                        : ""}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.next_deadline_jx &&
-                      r.next_deadline_date &&
-                      r.next_deadline_date <= today && (
-                        <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-danger">
-                          JX due
-                        </span>
-                      )}
-                    {!r.cause_number && (
-                      <span className="rounded bg-warning-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                        No cause
-                      </span>
-                    )}
-                    {!r.pl_name && (
-                      <span className="rounded bg-warning-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                        PL unassigned
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <RoleAttentionNotices
+        title="Needs attention"
+        subtitle="Your assigned lit matters — JX deadlines, cause number, PL assignment"
+        cards={cards}
+        emptyHint="Nothing flagged on your assigned litigation caseload."
+        primaryCta={{ href: "/litigation/deadlines", label: "Deadline horizon" }}
+      />
 
       <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
         <div className="border-b border-grid px-4 py-3">
@@ -128,11 +70,13 @@ export function LitCaseload({ rows }: { rows: LitCaseloadRow[] }) {
                       {caseTypeLabel(r.case_type_code)}
                       {r.preferred_language === "es" ? " · Spanish" : ""}
                       {" · "}
-                      CM: {r.cm_name ?? (
+                      CM:{" "}
+                      {r.cm_name ?? (
                         <span className="text-danger">UNASSIGNED</span>
                       )}
                       {" · "}
-                      PL: {r.pl_name ?? (
+                      PL:{" "}
+                      {r.pl_name ?? (
                         <span className="text-warning">UNASSIGNED</span>
                       )}
                     </div>

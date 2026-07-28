@@ -2,6 +2,8 @@ import Link from "next/link";
 import { formatDate } from "@/lib/dates";
 import { STAGE_LABEL } from "@/lib/cases/types";
 import type { LienWorklistRow } from "@/lib/phase7/queries";
+import { RoleAttentionNotices } from "@/components/workspace/RoleAttentionNotices";
+import { lienAttentionCards } from "@/lib/workspace/attentionNotices";
 
 function money(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -13,6 +15,8 @@ function money(n: number | null | undefined): string {
 }
 
 export function LienWorklistSkeleton({ rows }: { rows: LienWorklistRow[] }) {
+  const cards = lienAttentionCards(rows);
+
   return (
     <div className="space-y-5">
       <div>
@@ -27,6 +31,14 @@ export function LienWorklistSkeleton({ rows }: { rows: LienWorklistRow[] }) {
           negotiate actions until owner sign-off.
         </p>
       </div>
+
+      <RoleAttentionNotices
+        title="Needs attention"
+        subtitle="Emily’s queue — settled-open liens, flagged resolution, verify (finance UI still blocked)"
+        cards={cards}
+        emptyHint="No lien notices yet. Empty until lien rows exist for demo or production matters."
+        primaryCta={{ href: "/updates#project-map", label: "Project map" }}
+      />
 
       <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
         <table className="w-full text-left text-sm">

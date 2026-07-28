@@ -10,6 +10,8 @@ import {
 import { leadDisplayName } from "@/lib/intake/display";
 import { gateFromLead } from "@/lib/intake/gate";
 import { LeadTemperatureBadge } from "./LeadTemperatureBadge";
+import { RoleAttentionNotices } from "@/components/workspace/RoleAttentionNotices";
+import { intakeAttentionCards } from "@/lib/workspace/attentionNotices";
 
 const FILTERS: { key: LeadStatus | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -42,6 +44,8 @@ export function LeadQueue({
   const rows =
     filter === "all" ? leads : leads.filter((l) => l.status === filter);
 
+  const noticeCards = intakeAttentionCards(leads);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -58,6 +62,18 @@ export function LeadQueue({
           + New Lead
         </Link>
       </div>
+
+      <RoleAttentionNotices
+        title="Needs attention"
+        subtitle="Intake desk — NEL due, contracts out, incomplete six-minimums"
+        cards={noticeCards}
+        emptyHint="No urgent intake notices. Keep the holding pen at zero EOD."
+        primaryCta={
+          counts.nel > 0
+            ? { href: "/intake?status=rejected", label: "NEL due" }
+            : { href: "/intake/new", label: "New lead" }
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Tile

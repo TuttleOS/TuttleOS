@@ -1,7 +1,11 @@
 import Link from "next/link";
 import type { DemandReadinessRow } from "@/lib/phase7/queries";
+import { RoleAttentionNotices } from "@/components/workspace/RoleAttentionNotices";
+import { demandAttentionCards } from "@/lib/workspace/attentionNotices";
 
 export function DemandQueueSkeleton({ rows }: { rows: DemandReadinessRow[] }) {
+  const cards = demandAttentionCards(rows);
+
   return (
     <div className="space-y-5">
       <div>
@@ -17,6 +21,14 @@ export function DemandQueueSkeleton({ rows }: { rows: DemandReadinessRow[] }) {
           <code className="text-xs">docs/PHASE7_SCREEN_PROPOSALS.md</code>.
         </p>
       </div>
+
+      <RoleAttentionNotices
+        title="Needs attention"
+        subtitle="Kate’s queue — blockers, attorney approval, drafts awaiting review (matter is read-only)"
+        cards={cards}
+        emptyHint="No demand-stage notices yet. Empty is expected until packages hit records/demand."
+        primaryCta={{ href: "/updates#project-map", label: "Project map" }}
+      />
 
       <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
         <table className="w-full text-left text-sm">

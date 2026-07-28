@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { DocumentPreviewModal } from "@/components/cases/DocumentPreviewModal";
 import type { DocumentRow } from "@/lib/documents/types";
+import { parsePdVehicleId } from "@/lib/cases/pdVehicle";
 
 function isImage(mime: string | null, filename: string | null): boolean {
   if (mime?.startsWith("image/")) return true;
@@ -17,28 +18,35 @@ function isVideo(mime: string | null, filename: string | null): boolean {
 /**
  * Thumbnail strip for section uploads (e.g. PD photos).
  * Click opens the shared document lightbox.
+ * Optional vehicleId filters to photos tagged to that vehicle.
  */
 export function SectionPhotoGallery({
   documents,
   docTypeCode = "photos_video",
   heading = "Uploaded photos",
+  vehicleId,
+  includeUntagged = false,
 }: {
   documents: DocumentRow[];
   docTypeCode?: string;
   heading?: string;
+  /** When set, only docs tagged to this vehicle (plus untagged if includeUntagged). */
+  vehicleId?: string | null;
+  includeUntagged?: boolean;
 }) {
   const [preview, setPreview] = useState<DocumentRow | null>(null);
 
-  const items = useMemo(
-    () =>
-      documents.filter(
-        (d) =>
-          d.doc_type_code === docTypeCode &&
-          Boolean(d.storage_path) &&
-          !d.is_superseded,
-      ),
-    [documents, docTypeCode],
-  );
+  const items = useMemo(() => {
+    return documents.filter((d) => {
+      if (d.doc_type_code !== docTypeCode) return false;
+      if (!d.storage_path || d.is_superseded) return false;
+      if (!vehicleId) return true;
+      const tagged = parsePdVehicleId(d.notes);
+      if (tagged === vehicleId) return true;
+      if (includeUntagged && !tagged) return true;
+      return false;
+    });
+  }, [documents, docTypeCode, vehicleId, includeUntagged]);
 
   if (items.length === 0) return null;
 

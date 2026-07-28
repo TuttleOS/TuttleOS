@@ -26,15 +26,22 @@ function titleFromFilename(name: string): string {
  * Compact uploader for matter cards (Records / PD / Demand).
  * Files still land in the shared case-documents vault with a pre-filled type.
  * Supports click + drag-and-drop onto the dashed zone.
+ * Optional vehicle tag for PD photos.
  */
 export function SectionDocumentUpload({
   matterId,
   defaultDocType,
   hint,
+  relatedVehicleId,
+  vehicleOptions,
 }: {
   matterId: string;
   defaultDocType: string;
   hint?: string;
+  /** Lock uploads to this vehicle (per-vehicle PD card). */
+  relatedVehicleId?: string | null;
+  /** Optional picker when tagging at section level. */
+  vehicleOptions?: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -46,6 +53,9 @@ export function SectionDocumentUpload({
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [eventDate, setEventDate] = useState(todayIso());
+  const [vehicleId, setVehicleId] = useState(
+    relatedVehicleId ?? vehicleOptions?.[0]?.id ?? "",
+  );
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const dragDepth = useRef(0);
@@ -56,6 +66,7 @@ export function SectionDocumentUpload({
     setNotes("");
     setEventDate(todayIso());
     setDocType(defaultDocType);
+    setVehicleId(relatedVehicleId ?? vehicleOptions?.[0]?.id ?? "");
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -121,6 +132,17 @@ export function SectionDocumentUpload({
       return;
     }
 
+    const taggedVehicleId = relatedVehicleId || vehicleId || null;
+    if (
+      vehicleOptions &&
+      vehicleOptions.length > 0 &&
+      !relatedVehicleId &&
+      !taggedVehicleId
+    ) {
+      setErr("Select which vehicle this photo belongs to");
+      return;
+    }
+
     start(async () => {
       try {
         const res = await fetch("/api/documents/upload-url", {
@@ -166,6 +188,7 @@ export function SectionDocumentUpload({
           byteSize: file.size,
           originalFilename: file.name,
           notes: notes.trim() || null,
+          relatedVehicleId: taggedVehicleId,
         });
         if (!done.ok) {
           setErr(done.error);
@@ -180,6 +203,9 @@ export function SectionDocumentUpload({
       }
     });
   }
+
+  const showVehiclePicker =
+    !relatedVehicleId && Boolean(vehicleOptions && vehicleOptions.length > 0);
 
   return (
     <div
@@ -219,12 +245,8 @@ export function SectionDocumentUpload({
         </button>
       </div>
 
-      {msg ? (
-        <p className="mt-2 text-xs text-success">{msg}</p>
-      ) : null}
-      {err ? (
-        <p className="mt-2 text-xs text-danger">{err}</p>
-      ) : null}
+      {msg ? <p className="mt-2 text-xs text-success">{msg}</p> : null}
+      {err ? <p className="mt-2 text-xs text-danger">{err}</p> : null}
 
       {open ? (
         <div className="mt-3 space-y-2 border-t border-grid/80 pt-3">
@@ -250,6 +272,29 @@ export function SectionDocumentUpload({
               acceptFile(e.target.files?.[0] ?? null);
             }}
           />
+          {showVehiclePicker ? (
+            <label className="block text-xs">
+              <span className="font-semibold text-muted">Vehicle *</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-grid bg-surface px-2 py-1.5"
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                disabled={pending}
+              >
+                <option value="">Select vehicle…</option>
+                {vehicleOptions!.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {relatedVehicleId ? (
+            <p className="text-[11px] text-muted">
+              Tagged to this vehicle on save.
+            </p>
+          ) : null}
           <label className="block text-xs">
             <span className="font-semibold text-muted">Type</span>
             <select
