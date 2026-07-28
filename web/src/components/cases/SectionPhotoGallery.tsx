@@ -15,20 +15,29 @@ function isVideo(mime: string | null, filename: string | null): boolean {
   return /\.(mp4|mov|webm|m4v)$/i.test(filename ?? "");
 }
 
+function isPdf(mime: string | null, filename: string | null): boolean {
+  if (mime === "application/pdf") return true;
+  return /\.pdf$/i.test(filename ?? "");
+}
+
 /**
- * Thumbnail strip for section uploads (e.g. PD photos).
- * Click opens the shared document lightbox.
+ * Thumbnail strip for section uploads (e.g. PD photos, records/bills).
+ * Click opens the shared document lightbox (images + PDFs).
  * Optional vehicleId filters to photos tagged to that vehicle.
  */
 export function SectionPhotoGallery({
   documents,
   docTypeCode = "photos_video",
+  docTypeCodes,
   heading = "Uploaded photos",
   vehicleId,
   includeUntagged = false,
 }: {
   documents: DocumentRow[];
+  /** Single type (default). Ignored when docTypeCodes is set. */
   docTypeCode?: string;
+  /** Multiple types (e.g. medical_records + medical_bills). */
+  docTypeCodes?: string[];
   heading?: string;
   /** When set, only docs tagged to this vehicle (plus untagged if includeUntagged). */
   vehicleId?: string | null;
@@ -36,9 +45,14 @@ export function SectionPhotoGallery({
 }) {
   const [preview, setPreview] = useState<DocumentRow | null>(null);
 
+  const typeSet = useMemo(() => {
+    const list = docTypeCodes?.length ? docTypeCodes : [docTypeCode];
+    return new Set(list);
+  }, [docTypeCode, docTypeCodes]);
+
   const items = useMemo(() => {
     return documents.filter((d) => {
-      if (d.doc_type_code !== docTypeCode) return false;
+      if (!typeSet.has(d.doc_type_code)) return false;
       if (!d.storage_path || d.is_superseded) return false;
       if (!vehicleId) return true;
       const tagged = parsePdVehicleId(d.notes);
@@ -46,7 +60,7 @@ export function SectionPhotoGallery({
       if (includeUntagged && !tagged) return true;
       return false;
     });
-  }, [documents, docTypeCode, vehicleId, includeUntagged]);
+  }, [documents, typeSet, vehicleId, includeUntagged]);
 
   if (items.length === 0) return null;
 
@@ -59,6 +73,7 @@ export function SectionPhotoGallery({
         {items.map((d) => {
           const image = isImage(d.mime_type, d.original_filename);
           const video = isVideo(d.mime_type, d.original_filename);
+          const pdf = isPdf(d.mime_type, d.original_filename);
           const fileUrl = `/api/documents/${d.document_id}/file`;
           return (
             <li key={d.document_id}>
@@ -79,7 +94,7 @@ export function SectionPhotoGallery({
                     />
                   ) : (
                     <span className="flex h-full w-full flex-col items-center justify-center gap-1 px-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
-                      {video ? "Video" : "File"}
+                      {pdf ? "PDF" : video ? "Video" : "File"}
                       <span className="max-w-full truncate normal-case tracking-normal text-muted/80">
                         {d.original_filename ?? d.title}
                       </span>

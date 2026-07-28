@@ -679,12 +679,14 @@ export function RecordsTrackingCard({
   matterId,
   episodes,
   rows,
+  documents = [],
   pending,
   run,
 }: {
   matterId: string;
   episodes: TreatmentEpisodeRow[];
   rows: RecordRequestRow[];
+  documents?: DocumentRow[];
   pending: boolean;
   run: RunFn;
 }) {
@@ -700,6 +702,11 @@ export function RecordsTrackingCard({
         matterId={matterId}
         defaultDocType="medical_records"
         hint="Medical records / bills PDF — also appears in Case documents."
+      />
+      <SectionPhotoGallery
+        documents={documents}
+        docTypeCodes={["medical_records", "medical_bills"]}
+        heading="Records & bills files"
       />
       {rows.length === 0 ? (
         <p className="text-muted">No records / bills requests yet.</p>

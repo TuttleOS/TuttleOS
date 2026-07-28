@@ -94,7 +94,10 @@ export function RolePreviewMenu({
             Role roster
           </p>
           <p className="mt-1 text-xs text-muted">
-            Preview nav and caseload shape for a role. You stay{" "}
+            Preview nav and caseload for a role. Click a{" "}
+            <strong className="font-semibold text-ink">person</strong> under
+            Case Manager / Litigation to see their assigned matters (e.g. Camila
+            Manager). You stay{" "}
             <strong className="font-semibold text-ink">{name}</strong> — writes
             and audit still use your attorney account.
           </p>
@@ -121,9 +124,22 @@ export function RolePreviewMenu({
                   <button
                     type="button"
                     disabled={pending}
-                    onClick={() => apply(group.role)}
+                    title={
+                      group.people[0]
+                        ? `Preview as ${group.people[0].name} (first holder — pick another below to change)`
+                        : `Preview ${group.label} workspace`
+                    }
+                    onClick={() =>
+                      apply(
+                        group.role,
+                        // Assigned-only roles need a person or queues stay empty
+                        group.people[0]?.staff_id,
+                      )
+                    }
                     className={`text-left text-sm font-semibold hover:underline ${
-                      preview?.role === group.role && !preview.asStaffId
+                      preview?.role === group.role &&
+                      (preview.asStaffId === group.people[0]?.staff_id ||
+                        (!preview.asStaffId && !group.people[0]))
                         ? "text-accent-dk"
                         : "text-ink"
                     }`}

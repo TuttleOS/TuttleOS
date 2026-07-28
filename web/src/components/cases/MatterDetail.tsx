@@ -734,6 +734,7 @@ export function MatterDetailView({
               matterId={matter.client_matter_id}
               episodes={episodes}
               rows={recordRequests}
+              documents={documents}
               pending={pending}
               run={run}
             />

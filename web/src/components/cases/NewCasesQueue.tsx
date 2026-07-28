@@ -32,8 +32,15 @@ export function NewCasesQueue({ rows }: { rows: NewCaseQueueRow[] }) {
 
       {rows.length === 0 ? (
         <p className="rounded-panel border border-grid bg-surface px-4 py-10 text-sm text-muted shadow-soft">
-          No new cases waiting. When a matter is assigned and sign-up has not started,
-          it appears here.
+          No new cases waiting. When a matter is assigned and sign-up has not
+          started, it appears here.
+          <span className="mt-2 block text-xs">
+            Previewing as attorney? Open the header roster and click{" "}
+            <span className="font-semibold text-ink">Camila Manager</span> under
+            Case Manager — demo matters are assigned to her.{" "}
+            <span className="font-semibold text-ink">My Caseload</span> shows all
+            her assigned files; this queue only shows untouched sign-up.
+          </span>
         </p>
       ) : (
         <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">
