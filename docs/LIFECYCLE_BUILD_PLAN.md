@@ -12,7 +12,7 @@
 
 **This plan is not** a rebuild brief, a reason to delay the case-manager beta, or a licence to rewrite working screens. Nothing here re-scores the audit; every status is copied from the scored inventory.
 
-> **The read.** Stages 0–2 — roles, property-damage integrity and the dashboards — are the green spine. Almost no blocking gate is fully built. Stage 3 CM beta ships with known amber and red gaps. This is lifecycle truth and sequencing, not a stop order.
+> **The read.** Stages 0–2 — roles, property-damage integrity and the dashboards — are the green spine. GATE-02 (non-engagement letter) is now server-enforced; most other blocking gates are still PARTIAL or MISSING. Stage 3 CM beta ships with known amber and red gaps. This is lifecycle truth and sequencing, not a stop order.
 
 **Legend, used throughout**
 
@@ -52,8 +52,8 @@ The full 83-row inventory lives in the companion scoreboard / `CLAUDE_PROMPT_LIF
 
 | Status | Count | Share |
 |---|---|---|
-| BUILT | 8 | 10% |
-| PARTIAL | 49 | 59% |
+| BUILT | 11 | 13% |
+| PARTIAL | 46 | 55% |
 | MISSING | 17 | 20% |
 | DEFERRED | 9 | 11% |
 
@@ -81,7 +81,7 @@ Each lane's principal nodes with their scored status. Read left to right as the 
 
 | Lane | Nodes and status |
 |---|---|
-| **Intake** | Lead queue BUILT · Six minimums PARTIAL · contract_signed event PARTIAL · Non-engagement letter PARTIAL |
+| **Intake** | Lead queue BUILT · Six minimums PARTIAL · contract_signed event PARTIAL · Non-engagement letter BUILT |
 | **Case manager** | 9-task sign-up PARTIAL · Treating cadence PARTIAL · Records & bills PARTIAL · Futures MISSING · Demand blockers PARTIAL · Package to Kate PARTIAL · Standing duties PARTIAL · Coverage boxes PARTIAL · 3-day counters MISSING · Dual-track banner PARTIAL (banner live; calendaring open) |
 | **Demand writer** | Package quality gate DEFERRED · 14-day clock MISSING · Level 3 hold PARTIAL · Transmission proof PARTIAL · Negotiation ledger BUILT |
 | **Litigation** | Defendant workup MISSING · FILED stamp MISSING · Service chains PARTIAL · Answer clocks PARTIAL · Discovery and trial PARTIAL · SOL watchlist PARTIAL · Depo READY DEFERRED |
@@ -121,7 +121,7 @@ Ordered lowest overwrite risk to highest, and CM-adjacent before litigation or s
 
 | # | Item | Note |
 |---|---|---|
-| 1 | GATE-02 — confirm the non-engagement letter hard-blocks close | Add a server refusal only if one is genuinely missing |
+| 1 | GATE-02 — confirm the non-engagement letter hard-blocks close | **Done 2026-08-15** — server refuse on status-skip, convert, and soft-delete until NEL is recorded |
 | 2 | GATE-11 — coverage boxes | A louder warning is fine; **consult** before blocking stage advance |
 | 3 | N-CM-08 — CLIENT STILL TREATING banner | **Done 2026-08-15** — additive banner on CM + Lit matter |
 | 4 | Apply `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase | Additive CHECK; the application already validates |
@@ -182,7 +182,7 @@ Run every ticket through this. One box per ticket, no exceptions.
 | ID | Gate | Status | Gap |
 |---|---|---|---|
 | GATE-01 | Six minimums block contract send | PARTIAL | Full ES / WD / minor variant matrix |
-| GATE-02 | Rejection incomplete until NEL sent | PARTIAL | Confirm hard close on all paths |
+| GATE-02 | Rejection incomplete until NEL sent | BUILT | Server refuse until NEL recorded (status-skip / convert / delete) |
 | GATE-03 | Futures before records clear | MISSING | No futures gate |
 | GATE-04 | Demand-ready while blockers open | PARTIAL | No package-level refusal |
 | GATE-05 | Demand sent needs channel proof | PARTIAL | No artefact-required gate |
@@ -198,7 +198,7 @@ Run every ticket through this. One box per ticket, no exceptions.
 | ID | Transition | Status | Gap |
 |---|---|---|---|
 | H-01 | Intake → CM on contract_signed | PARTIAL | Welcome · packet · rotation · 9-task auto |
-| H-02 | Intake → closed (reject + NEL) | PARTIAL | GATE-02 hard close |
+| H-02 | Intake → closed (reject + NEL) | BUILT | GATE-02 server refuse |
 | H-03 | WD / minor / L3 / conflict → Attorney | PARTIAL | No disposition queue |
 | H-04 | CM → Demand Writer | PARTIAL | GATE-04 plus the 14-day clock |
 | H-05 | Demand → Attorney, Level 3 | PARTIAL | GATE-06 hold on send |

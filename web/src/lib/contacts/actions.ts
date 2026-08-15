@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { digitsOnly, phoneForStorage } from "@/lib/intake/phone";
+import { isNelOutstanding, NEL_BLOCKS_DELETE_MESSAGE } from "@/lib/intake/nel";
 
 export type ActionResult =
   | { ok: true; message?: string }
@@ -297,13 +298,16 @@ export async function softDeleteLeadAction(input: {
       .schema("core")
       .from("intake_lead")
       .select(
-        "intake_lead_id, raw_name, person:person_id(last_name)",
+        "intake_lead_id, raw_name, status, non_engagement_letter_sent_date, person:person_id(last_name)",
       )
       .eq("intake_lead_id", input.leadId)
       .is("deleted_at", null)
       .maybeSingle();
     if (error) return { ok: false, error: error.message };
     if (!lead) return { ok: false, error: "Lead not found" };
+    if (isNelOutstanding(lead)) {
+      return { ok: false, error: NEL_BLOCKS_DELETE_MESSAGE };
+    }
 
     const personRel = lead.person as
       | { last_name: string }

@@ -14,6 +14,7 @@ import { caseTypeLabel } from "@/lib/intake/case-types";
 import { gateFromLead } from "@/lib/intake/gate";
 import { leadDisplayName } from "@/lib/intake/display";
 import { estimateSolPreview } from "@/lib/intake/sol";
+import { isNelOutstanding } from "@/lib/intake/nel";
 import { LEAD_STATUS_META, type LeadRow } from "@/lib/intake/types";
 import { CopyContact } from "@/components/ui/CopyContact";
 import { LeadTemperatureSelect } from "./LeadTemperatureSelect";
@@ -94,8 +95,7 @@ export function LeadDetail({
   const gate = gateFromLead(lead, { phone, email, inPerson });
   const meta = LEAD_STATUS_META[lead.status];
   const sol = estimateSolPreview(lead.incident_date);
-  const nelDue =
-    lead.status === "rejected" && !lead.non_engagement_letter_sent_date;
+  const nelDue = isNelOutstanding(lead);
 
   function run(
     fn: () => Promise<{
@@ -451,7 +451,12 @@ export function LeadDetail({
                   Record non-engagement letter sent
                 </button>
               )}
-              {canSoftDelete ? (
+              {nelDue && canSoftDelete ? (
+                <p className="text-xs text-muted">
+                  Record the non-engagement letter before this lead can be
+                  deleted.
+                </p>
+              ) : canSoftDelete ? (
                 <ConfirmDeleteDialog
                   title="Soft-delete this lead?"
                   entityLabel="lead"

@@ -8,6 +8,7 @@ import {
   type LeadStatus,
 } from "@/lib/intake/types";
 import { leadDisplayName } from "@/lib/intake/display";
+import { isNelOutstanding } from "@/lib/intake/nel";
 import { gateFromLead } from "@/lib/intake/gate";
 import { LeadTemperatureBadge } from "./LeadTemperatureBadge";
 import { RoleAttentionNotices } from "@/components/workspace/RoleAttentionNotices";
@@ -36,9 +37,7 @@ export function LeadQueue({
     open: leads.filter((l) => l.status === "open").length,
     out: leads.filter((l) => l.status === "contract_sent").length,
     signed: leads.filter((l) => l.status === "signed").length,
-    nel: leads.filter(
-      (l) => l.status === "rejected" && !l.non_engagement_letter_sent_date,
-    ).length,
+    nel: leads.filter(isNelOutstanding).length,
   };
 
   const rows =

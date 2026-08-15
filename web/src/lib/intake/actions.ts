@@ -10,6 +10,12 @@ import { digitsOnly, phoneForStorage, type PhoneCountry } from "./phone";
 import { estimateSolIso } from "./sol";
 import { isDateAfterToday } from "@/lib/dates";
 import type { LeadFormInput, LeadStatus, LeadTemperature } from "./types";
+import {
+  isNelOutstanding,
+  nelBlocksStatusChange,
+  NEL_BLOCKS_MATTER_MESSAGE,
+  NEL_ONLY_ON_REJECTED_MESSAGE,
+} from "./nel";
 
 async function requireStaff() {
   const staff = await getCurrentStaff();
@@ -593,6 +599,20 @@ export async function updateLeadStatusAction(
   try {
     const staff = await requireStaff();
     const supabase = createClient();
+
+    const { data: current, error: readErr } = await supabase
+      .schema("core")
+      .from("intake_lead")
+      .select("status, non_engagement_letter_sent_date")
+      .eq("intake_lead_id", leadId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readErr) return { ok: false, error: readErr.message };
+    if (!current) return { ok: false, error: "Lead not found" };
+
+    const blocked = nelBlocksStatusChange(current, status);
+    if (blocked) return { ok: false, error: blocked };
+
     const patch: Record<string, unknown> = { status };
     if (status === "rejected") {
       patch.rejected_reason = extras?.rejected_reason ?? "Rejected at intake";
@@ -671,6 +691,23 @@ export async function sendNelAction(leadId: string): Promise<ActionResult> {
   try {
     const staff = await requireStaff();
     const supabase = createClient();
+
+    const { data: lead, error: readErr } = await supabase
+      .schema("core")
+      .from("intake_lead")
+      .select("status, non_engagement_letter_sent_date")
+      .eq("intake_lead_id", leadId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readErr) return { ok: false, error: readErr.message };
+    if (!lead) return { ok: false, error: "Lead not found" };
+    if (lead.status !== "rejected") {
+      return { ok: false, error: NEL_ONLY_ON_REJECTED_MESSAGE };
+    }
+    if (lead.non_engagement_letter_sent_date) {
+      return { ok: true, message: "Non-engagement letter already recorded" };
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const { error } = await supabase
       .schema("core")
@@ -743,7 +780,7 @@ export async function convertLeadToMatterAction(
       .schema("core")
       .from("intake_lead")
       .select(
-        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email, incident_group_id, is_minor, next_friend_person_id",
+        "intake_lead_id, person_id, incident_date, case_type_code, description, status, resulting_matter_id, raw_phone, raw_email, incident_group_id, is_minor, next_friend_person_id, non_engagement_letter_sent_date",
       )
       .eq("intake_lead_id", leadId)
       .single();
@@ -751,6 +788,9 @@ export async function convertLeadToMatterAction(
     if (lErr || !lead) return { ok: false, error: lErr?.message ?? "Lead not found" };
     if (lead.resulting_matter_id) {
       return { ok: true, id: lead.resulting_matter_id, message: "Matter already opened" };
+    }
+    if (isNelOutstanding(lead)) {
+      return { ok: false, error: NEL_BLOCKS_MATTER_MESSAGE };
     }
     if (lead.status !== "signed") {
       return { ok: false, error: "Lead must be marked signed before opening a matter" };

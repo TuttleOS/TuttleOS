@@ -74,16 +74,18 @@ Also give a **1-paragraph blurb** Brett can paste into email when attaching the 
 
 ### One-sentence project read
 
-Stages 0–2 (roles, PD integrity, dashboards) are the green spine; almost no GATE is fully BUILT; Stage 3 CM beta ships with known amber/red gaps. This plan is lifecycle truth and sequencing — **not** a reason to delay CM beta or rewrite working screens.
+Stages 0–2 (roles, PD integrity, dashboards) are the green spine; GATE-02 (NEL) is server-enforced; most other GATEs remain PARTIAL or MISSING. Stage 3 CM beta ships with known amber/red gaps. This plan is lifecycle truth and sequencing — **not** a reason to delay CM beta or rewrite working screens.
 
 ### Scoreboard (83 assertions)
 
 | Status | Count | ~% |
 |---|---|---|
-| BUILT | 8 | 10% |
-| PARTIAL | 48 | 58% |
-| MISSING | 18 | 22% |
+| BUILT | 11 | 13% |
+| PARTIAL | 46 | 55% |
+| MISSING | 17 | 20% |
 | DEFERRED | 9 | 11% |
+
+**Rescore (2026-08-15, GATE-02 family only):** GATE-02 / N-INT-04 / H-02 PARTIAL→BUILT — server refuse until NEL is recorded. Reject + Record NEL buttons unchanged.
 
 ### Build stages
 
@@ -148,7 +150,7 @@ Order: **low overwrite risk → high**; **CM-adjacent before lit/settlement**.
 
 #### Track A — Harden what exists (lowest risk)
 
-1. GATE-02 — confirm NEL hard-blocks close; add server refuse only if missing  
+1. GATE-02 — **Done 2026-08-15** — NEL hard-blocks close (server refuse on status-skip / convert / delete)  
 2. GATE-11 — louder warn OK; **consult** before blocking stage advance  
 3. N-CM-08 — additive “CLIENT STILL TREATING” banner  
 4. Apply SQL `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase when ready (additive CHECK; app already validates)  
@@ -187,7 +189,7 @@ Order: **low overwrite risk → high**; **CM-adjacent before lit/settlement**.
 | ID | Gate | Status | Gap |
 |---|---|---|---|
 | GATE-01 | Six minimums block contract send | PARTIAL | Full ES/WD/minor variant matrix |
-| GATE-02 | Rejection incomplete until NEL sent | PARTIAL | Confirm hard close all paths |
+| GATE-02 | Rejection incomplete until NEL sent | BUILT | Server refuse until NEL recorded |
 | GATE-03 | Futures before records clear | MISSING | No futures gate |
 | GATE-04 | Demand-ready while blockers open | PARTIAL | No package-level refuse |
 | GATE-05 | Demand sent needs channel proof | PARTIAL | No artifact-required gate |
@@ -203,7 +205,7 @@ Order: **low overwrite risk → high**; **CM-adjacent before lit/settlement**.
 | ID | Transition | Status | Gap |
 |---|---|---|---|
 | H-01 | Intake → CM on contract_signed | PARTIAL | Welcome · packet · rotation · 9-task auto |
-| H-02 | Intake → closed (reject + NEL) | PARTIAL | GATE-02 hard close |
+| H-02 | Intake → closed (reject + NEL) | BUILT | GATE-02 server refuse |
 | H-03 | WD/minor/L3/conflict → Attorney | PARTIAL | No disposition queue |
 | H-04 | CM → Demand Writer | PARTIAL | GATE-04 + 14-day clock |
 | H-05 | Demand → Attorney Level 3 | PARTIAL | GATE-06 hold send |

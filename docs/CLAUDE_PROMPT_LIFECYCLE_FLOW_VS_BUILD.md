@@ -41,6 +41,7 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 **Branch / preview:** `role-partition` · https://tuttle-os-git-role-partition-tuttle-os.vercel.app  
 **Scored:** 2026-08-09 against kit + FINDINGS_CHECKLIST / BUILD_PRIORITY  
 **Rescore (2026-08-15, this ID only):** N-CM-08 MISSING→PARTIAL (CLIENT STILL TREATING banner on CM + Lit matter). H-12 gap narrowed to calendaring tie-breaker. Do not re-score other rows.  
+**Rescore (2026-08-15, GATE-02 family only):** GATE-02 / N-INT-04 / H-02 PARTIAL→BUILT — server refuse on status-skip, convert-to-matter, and soft-delete until NEL is recorded. Reject + Record NEL buttons unchanged.  
 **Scoring rule:** UI-only enforcement of a GATE = `PARTIAL`, never `BUILT`.  
 **Stage 3 lock (2026-08-15):** Mark Garza (1 CM) · stagger lit · preview only · preview + `cm.demo`. Do **not** claim production/`main`.
 
@@ -50,14 +51,14 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 
 | Status | Count | % of 83 |
 |---|---|---|
-| BUILT | 8 | ~10% |
-| PARTIAL | 49 | ~59% |
+| BUILT | 11 | ~13% |
+| PARTIAL | 46 | ~55% |
 | MISSING | 17 | ~20% |
 | DEFERRED | 9 | ~11% |
 | **Total scored** | **83** | |
 
 **Project read (one sentence for the diagram caption):**  
-Stages 0–2 (roles, PD integrity, dashboards) are the green spine; almost no GATE is fully BUILT; Stage 3 CM beta is **in pilot** (Mark, preview, demo) with known amber/red gaps — dual-track **banner is live**, calendaring still open. This chart is lifecycle truth, not a merge-to-prod go/no-go.
+Stages 0–2 (roles, PD integrity, dashboards) are the green spine; GATE-02 (NEL) is server-enforced; most other GATEs remain PARTIAL or MISSING. Stage 3 CM beta is **in pilot** (Mark, preview, demo) with known amber/red gaps — dual-track **banner is live**, calendaring still open. This chart is lifecycle truth, not a merge-to-prod go/no-go.
 
 ---
 
@@ -155,7 +156,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | ID | Gate | Status | What we have | Gap | Finding |
 |---|---|---|---|---|---|
 | GATE-01 | Six minimums block contract send | PARTIAL | Server gate; email waive + SOL preview | Full ES/WD/minor variant matrix | F-05 · F-06 |
-| GATE-02 | Rejection incomplete until NEL sent | PARTIAL | NEL queue + record-sent | Confirm hard close all paths | — |
+| GATE-02 | Rejection incomplete until NEL sent | BUILT | NEL queue + record-sent + server refuse | — | — |
 | GATE-03 | Futures before records clear | MISSING | — | No futures gate | F-25 |
 | GATE-04 | Demand-ready while blockers open | PARTIAL | PD demand_blocker flag | No package-level refuse | F-33 cluster |
 | GATE-05 | Demand sent needs channel proof | PARTIAL | Method/confirm fields | No artifact-required gate | F-34 |
@@ -173,7 +174,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | N-INT-01 | Lead call / queue | BUILT | /intake queue + detail | — |
 | N-INT-02 | Six minimums | PARTIAL | = GATE-01 | Variant depth |
 | N-INT-03 | contract_signed event | PARTIAL | Matter + signed date | No auto fires (welcome/rotation/packet) |
-| N-INT-04 | Rejected → NEL | PARTIAL | = GATE-02 | Hard close proof |
+| N-INT-04 | Rejected → NEL | BUILT | = GATE-02 | — |
 
 ### Nodes — Case Manager
 
@@ -234,7 +235,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | ID | From → To | Status | What we have | Gap | Finding |
 |---|---|---|---|---|---|
 | H-01 | Intake → CM on contract_signed | PARTIAL | Matter created; assignable | Welcome · packet · rotation · 9-task auto | F-14–18 |
-| H-02 | Intake → closed (reject + NEL) | PARTIAL | Reject + NEL path | GATE-02 hard close | — |
+| H-02 | Intake → closed (reject + NEL) | BUILT | Reject + NEL + server refuse | — | — |
 | H-03 | WD/minor/L3/conflict → Attorney | PARTIAL | Badges / chips | No disposition queue | F-08 · F-04 |
 | H-04 | CM → Demand Writer demand-ready | PARTIAL | Skeleton /demands | GATE-04 + 14-day | — |
 | H-05 | Demand → Attorney Level 3 | PARTIAL | Attention notice | GATE-06 hold send | — |

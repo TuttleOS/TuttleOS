@@ -8,6 +8,7 @@ import {
 } from "@/lib/cases/types";
 import type { LeadRow } from "@/lib/intake/types";
 import { leadDisplayName } from "@/lib/intake/display";
+import { isNelOutstanding } from "@/lib/intake/nel";
 import { gateFromLead } from "@/lib/intake/gate";
 import type { LitCaseloadRow } from "@/lib/litigation/types";
 import type {
@@ -192,9 +193,7 @@ export function litAttentionCards(
 export function intakeAttentionCards(leads: LeadRow[]): AttentionNoticeCard[] {
   const cards: AttentionNoticeCard[] = [];
 
-  const nel = leads.filter(
-    (l) => l.status === "rejected" && !l.non_engagement_letter_sent_date,
-  );
+  const nel = leads.filter(isNelOutstanding);
   for (const l of nel) {
     if (cards.length >= 3) break;
     cards.push({
