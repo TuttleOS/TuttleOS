@@ -12,7 +12,9 @@ import {
   validateContractFees,
 } from "@/lib/contracts/fees";
 import { getPgPool } from "@/lib/db/pg";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { PoolClient } from "pg";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildContractPdfBase64 } from "./pdf";
 import { buildContractBody, buildMergeFields } from "./template";
 import { publicAppUrl } from "./urls";
@@ -626,6 +628,19 @@ function mapPublicPackage(
   };
 }
 
+function createPublicAnonClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !key) return null;
+  return createSupabaseJsClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function isMissingRpc(message: string) {
+  return /could not find the function|PGRST202|schema cache/i.test(message);
+}
+
 /**
  * Public load over HTTPS (anon RPC). Vercel often cannot open Postgres TCP
  * to db.*.supabase.co (IPv6); this is the path that works on preview.
@@ -633,14 +648,10 @@ function mapPublicPackage(
 async function getPublicContractByTokenRpc(
   token: string,
 ): Promise<PublicContractOk | PublicContractErr | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !key) return null;
+  const supabase = createPublicAnonClient();
+  if (!supabase) return null;
 
   try {
-    const supabase = createSupabaseJsClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const { data, error } = await supabase.rpc("get_contract_package_public", {
       p_token: token,
     });
@@ -750,8 +761,6 @@ export async function signContractAsPartyAction(input: {
       return { ok: false, error: "Please draw your signature before signing" };
     }
 
-    if (!getPgPool()) return { ok: false, error: "Signing unavailable" };
-
     const loaded = await getPublicContractByToken(input.token);
     if (!loaded.ok) return { ok: false, error: loaded.error };
     if (loaded.package.status === "executed" && loaded.package.artifact_pdf_base64) {
@@ -771,30 +780,71 @@ export async function signContractAsPartyAction(input: {
       PORTAL_AUDIT_STAFF_ID;
     const packageId = String(loaded.package.contract_package_id);
 
-    // Recovery: prior attempt may have stored the signature but failed filing PDF.
+    // Already signed by this party: allow retry only to file the PDF if
+    // every party is done. Otherwise they must pick another name.
     if (signer.status === "signed") {
       const pending = loaded.signers.filter(
         (s: { status: string }) => s.status !== "signed",
       );
-      if (pending.length === 0 && !loaded.package.artifact_pdf_base64) {
-        await withPortalAuditTx(actorId, (client) =>
-          finalizeExecutedPackagePg(client, packageId),
-        );
+      if (pending.length > 0) {
+        const name = signer.full_name?.trim() || "This party";
         return {
-          ok: true,
-          message: "Signed — all parties complete. Contract filed.",
+          ok: false,
+          error: `${name} already signed — pick another name from the list`,
         };
       }
-      const name = signer.full_name?.trim() || "This party";
-      return {
-        ok: false,
-        error: `${name} already signed — pick another name from the list`,
-      };
     }
 
     const h = headers();
     const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
     const ua = h.get("user-agent")?.slice(0, 500) ?? null;
+
+    const viaRpc = await signViaPublicRpc({
+      token: input.token,
+      signerId: input.signerId,
+      typedName: input.typedName,
+      signatureData: input.signatureData,
+      ip,
+      ua,
+    });
+    if (viaRpc && !viaRpc.missing) {
+      if (!viaRpc.ok) return { ok: false, error: viaRpc.error };
+      if (viaRpc.complete) {
+        await finalizePublicIfComplete(input.token, viaRpc.package, viaRpc.signers);
+        return {
+          ok: true,
+          message: "Signed — all parties complete. Contract filed.",
+        };
+      }
+      return {
+        ok: true,
+        message: "Signed. Waiting on other parties.",
+      };
+    }
+
+    const svc = createServiceClient();
+    if (svc) {
+      const result = await signViaHttps(svc, {
+        input,
+        loaded,
+        actorId,
+        packageId,
+        ip,
+        ua,
+      });
+      if (result === "complete") {
+        return {
+          ok: true,
+          message: "Signed — all parties complete. Contract filed.",
+        };
+      }
+      return {
+        ok: true,
+        message: "Signed. Waiting on other parties.",
+      };
+    }
+
+    if (!getPgPool()) return { ok: false, error: "Signing unavailable" };
 
     const result = await withPortalAuditTx(actorId, async (client) => {
       await client.query(
@@ -863,8 +913,388 @@ export async function signContractAsPartyAction(input: {
       message: "Signed. Waiting on other parties.",
     };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+    console.error(
+      "[contracts] public sign failed",
+      e instanceof Error ? e.message : e,
+    );
+    return { ok: false, error: publicSignError(e) };
   }
+}
+
+function publicSignError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : "Unknown error";
+  if (
+    /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|getaddrinfo|SSL|self-signed/i.test(
+      msg,
+    )
+  ) {
+    return "Signing unavailable — could not reach the database from this server.";
+  }
+  return msg;
+}
+
+function throwIf(
+  error: { message: string } | null,
+  fallback: string,
+): void {
+  if (error) throw new Error(error.message || fallback);
+}
+
+type PublicSignRpcOk = {
+  ok: true;
+  missing?: false;
+  complete: boolean;
+  package: Record<string, unknown>;
+  signers: Array<Record<string, unknown>>;
+};
+type PublicSignRpcErr = { ok: false; error: string; missing?: boolean };
+
+async function signViaPublicRpc(input: {
+  token: string;
+  signerId: string;
+  typedName: string;
+  signatureData?: string | null;
+  ip: string | null;
+  ua: string | null;
+}): Promise<PublicSignRpcOk | PublicSignRpcErr | null> {
+  const supabase = createPublicAnonClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc("sign_contract_as_party_public", {
+      p_token: input.token,
+      p_signer_id: input.signerId,
+      p_typed_name: input.typedName.trim(),
+      p_signature_data: input.signatureData,
+      p_ip: input.ip,
+      p_ua: input.ua,
+    });
+    if (error) {
+      console.error("[contracts] public sign RPC failed", error.message);
+      if (isMissingRpc(error.message)) {
+        return { ok: false, error: error.message, missing: true };
+      }
+      throw new Error(error.message);
+    }
+    const payload = data as {
+      ok?: boolean;
+      error?: string;
+      complete?: boolean;
+      package?: Record<string, unknown>;
+      signers?: Array<Record<string, unknown>>;
+    } | null;
+    if (!payload || typeof payload !== "object") return null;
+    if (payload.ok === false) {
+      return { ok: false, error: payload.error ?? "Could not record signature" };
+    }
+    if (!payload.ok || !payload.package) return null;
+    return {
+      ok: true,
+      complete: Boolean(payload.complete),
+      package: payload.package,
+      signers: payload.signers ?? [],
+    };
+  } catch (e) {
+    if (e instanceof Error && isMissingRpc(e.message)) {
+      return { ok: false, error: e.message, missing: true };
+    }
+    throw e;
+  }
+}
+
+async function finalizePublicIfComplete(
+  token: string,
+  pkg: Record<string, unknown>,
+  signers: Array<Record<string, unknown>>,
+) {
+  const body = String(pkg.rendered_body ?? "");
+  const pdf = await buildContractPdfBase64({
+    body,
+    signers: signers.map((s) => ({
+      full_name: String(s.full_name ?? ""),
+      signed_at: s.signed_at ? String(s.signed_at) : null,
+      signature_typed_name: s.signature_typed_name
+        ? String(s.signature_typed_name)
+        : null,
+      signature_data: s.signature_data ? String(s.signature_data) : null,
+    })),
+    firm: {
+      signature_data: (pkg.firm_signature_data as string | null) ?? null,
+      signature_typed_name:
+        (pkg.firm_signature_typed_name as string | null) ?? null,
+      signed_at: pkg.firm_signed_at ? String(pkg.firm_signed_at) : null,
+    },
+  });
+  const html = `<pre style="white-space:pre-wrap;font-family:Times,serif">${body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")}</pre>`;
+
+  const supabase = createPublicAnonClient();
+  if (!supabase) throw new Error("Signing unavailable");
+  const { data, error } = await supabase.rpc(
+    "finalize_executed_contract_public",
+    {
+      p_token: token,
+      p_artifact_html: html,
+      p_artifact_pdf_base64: pdf,
+      p_pdf_hash: bodyHash(pdf),
+    },
+  );
+  if (error) throw new Error(error.message);
+  const payload = data as { ok?: boolean; error?: string } | null;
+  if (payload && payload.ok === false) {
+    throw new Error(payload.error || "Could not file executed contract");
+  }
+}
+
+async function signViaHttps(
+  svc: SupabaseClient,
+  opts: {
+    input: {
+      signerId: string;
+      typedName: string;
+      signatureData?: string | null;
+    };
+    loaded: {
+      package: Record<string, unknown>;
+    };
+    actorId: string;
+    packageId: string;
+    ip: string | null;
+    ua: string | null;
+  },
+): Promise<"complete" | "partial"> {
+  const { input, loaded, actorId, packageId, ip, ua } = opts;
+  const { error: uErr } = await svc
+    .schema("workflow")
+    .from("contract_signer")
+    .update({
+      status: "signed",
+      signed_at: new Date().toISOString(),
+      signature_typed_name: input.typedName.trim(),
+      signature_data: input.signatureData?.slice(0, 200_000) || null,
+      agree_attestation: true,
+      ip_address: ip,
+      user_agent: ua,
+    })
+    .eq("contract_signer_id", input.signerId)
+    .neq("status", "signed");
+  throwIf(uErr, "Could not record signature");
+
+  const { data: all, error: sErr } = await svc
+    .schema("workflow")
+    .from("contract_signer")
+    .select(
+      "contract_signer_id, full_name, status, signed_at, signature_typed_name, intake_lead_id",
+    )
+    .eq("contract_package_id", packageId)
+    .is("deleted_at", null);
+  throwIf(sErr, "Could not load signers");
+  const pending = (all ?? []).filter(
+    (s: { status: string }) => s.status !== "signed",
+  );
+
+  const { error: pErr } = await svc
+    .schema("workflow")
+    .from("contract_package")
+    .update({ status: "partially_signed" })
+    .eq("contract_package_id", packageId)
+    .neq("status", "executed");
+  throwIf(pErr, "Could not update package");
+
+  const { error: lErr } = await svc
+    .schema("workflow")
+    .from("communication_log")
+    .insert({
+      intake_lead_id: loaded.package.primary_intake_lead_id,
+      staff_id: actorId,
+      channel: "portal",
+      direction: "inbound",
+      summary: `Contract signed by ${input.typedName.trim()} (${pending.length} remaining)`,
+    });
+  throwIf(lErr, "Could not log signature");
+
+  if (pending.length === 0) {
+    await finalizeExecutedPackageHttps(svc, packageId);
+    return "complete";
+  }
+  return "partial";
+}
+
+async function finalizeExecutedPackageHttps(
+  svc: SupabaseClient,
+  packageId: string,
+) {
+  const { data: pkg, error: pkgErr } = await svc
+    .schema("workflow")
+    .from("contract_package")
+    .select("*")
+    .eq("contract_package_id", packageId)
+    .maybeSingle();
+  throwIf(pkgErr, "Package not found");
+  if (!pkg) return;
+
+  const { data: signers, error: sErr } = await svc
+    .schema("workflow")
+    .from("contract_signer")
+    .select("*")
+    .eq("contract_package_id", packageId)
+    .is("deleted_at", null)
+    .order("sort_order");
+  throwIf(sErr, "Could not load signers");
+  const signerRows = signers ?? [];
+
+  const body = (pkg.rendered_body as string) ?? "";
+  const pdf = await buildContractPdfBase64({
+    body,
+    signers: signerRows.map(
+      (s: {
+        full_name: string;
+        signed_at: string | null;
+        signature_typed_name: string | null;
+        signature_data?: string | null;
+      }) => ({
+        full_name: s.full_name,
+        signed_at: s.signed_at,
+        signature_typed_name: s.signature_typed_name,
+        signature_data: s.signature_data ?? null,
+      }),
+    ),
+    firm: {
+      signature_data: (pkg.firm_signature_data as string | null) ?? null,
+      signature_typed_name:
+        (pkg.firm_signature_typed_name as string | null) ?? null,
+      signed_at: pkg.firm_signed_at ? String(pkg.firm_signed_at) : null,
+    },
+  });
+
+  const html = `<pre style="white-space:pre-wrap;font-family:Times,serif">${body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")}</pre>`;
+
+  const leadIds = Array.from(
+    new Set<string>([
+      pkg.primary_intake_lead_id as string,
+      ...signerRows
+        .map((s: { intake_lead_id?: string | null }) => s.intake_lead_id)
+        .filter((id): id is string => Boolean(id)),
+    ]),
+  );
+
+  let primaryDocId: string | null =
+    (pkg.primary_document_id as string | null) ?? null;
+  const today = new Date().toISOString().slice(0, 10);
+  const noteTag = `contract_package_id=${packageId}`;
+
+  for (const leadId of leadIds) {
+    const { data: lead, error: leadErr } = await svc
+      .schema("core")
+      .from("intake_lead")
+      .select("intake_lead_id, resulting_matter_id")
+      .eq("intake_lead_id", leadId)
+      .maybeSingle();
+    throwIf(leadErr, "Lead not found");
+    const matterId = (lead?.resulting_matter_id as string | null) ?? null;
+
+    const { error: entErr } = await svc.schema("core").from("entity").upsert(
+      { entity_id: leadId, entity_type: "intake_lead" },
+      { onConflict: "entity_id" },
+    );
+    throwIf(entErr, "Could not register lead entity");
+
+    const { data: existingDocs, error: exErr } = await svc
+      .schema("workflow")
+      .from("document")
+      .select("document_id")
+      .eq("entity_id", leadId)
+      .is("deleted_at", null)
+      .like("notes", `${noteTag}%`)
+      .limit(1);
+    throwIf(exErr, "Could not look up contract document");
+
+    let docId =
+      (existingDocs?.[0]?.document_id as string | undefined) ?? null;
+    if (!docId) {
+      const { data: docs, error: dErr } = await svc
+        .schema("workflow")
+        .from("document")
+        .insert({
+          entity_id: leadId,
+          client_matter_id: matterId,
+          doc_type_code: "contract",
+          title: "Contingent Fee Contract (executed)",
+          direction: "outbound",
+          status: "executed",
+          executed_date: today,
+          sent_date: today,
+          notes: `${noteTag}; pdf_sha_prefix=${bodyHash(pdf).slice(0, 16)}`,
+          hash_sha256: bodyHash(pdf),
+        })
+        .select("document_id")
+        .single();
+      throwIf(dErr, "Could not file contract document");
+      docId = docs?.document_id as string;
+    }
+    if (docId && !primaryDocId) primaryDocId = docId;
+
+    const { error: stErr } = await svc
+      .schema("core")
+      .from("intake_lead")
+      .update({ status: "signed" })
+      .eq("intake_lead_id", leadId);
+    throwIf(stErr, "Could not mark lead signed");
+
+    if (matterId && docId) {
+      const { data: existingFee, error: feeLookErr } = await svc
+        .schema("finance")
+        .from("fee_agreement")
+        .select("fee_agreement_id")
+        .eq("client_matter_id", matterId)
+        .like("notes", `From contract package ${packageId}%`)
+        .limit(1);
+      throwIf(feeLookErr, "Could not look up fee agreement");
+      if (!existingFee?.[0]) {
+        const { error: feeErr } = await svc
+          .schema("finance")
+          .from("fee_agreement")
+          .insert({
+            client_matter_id: matterId,
+            agreement_type: "contingency",
+            pct_pre_suit: pkg.fee_pre_suit,
+            pct_post_filing: pkg.fee_post_filing,
+            pct_appeal: pkg.fee_appeal,
+            executed_date: today,
+            document_id: docId,
+            notes: `From contract package ${packageId}`,
+          });
+        throwIf(feeErr, "Could not write fee agreement");
+      }
+    }
+  }
+
+  const { error: execErr } = await svc
+    .schema("workflow")
+    .from("contract_package")
+    .update({
+      status: "executed",
+      executed_at: new Date().toISOString(),
+      artifact_html: html,
+      artifact_pdf_base64: pdf,
+      primary_document_id: primaryDocId,
+    })
+    .eq("contract_package_id", packageId);
+  throwIf(execErr, "Could not mark package executed");
+
+  const { error: doneLogErr } = await svc
+    .schema("workflow")
+    .from("communication_log")
+    .insert({
+      intake_lead_id: pkg.primary_intake_lead_id,
+      channel: "portal",
+      direction: "outbound",
+      summary:
+        "Contract fully executed by all parties — PDF filed to lead/matter profile(s)",
+    });
+  throwIf(doneLogErr, "Could not log execution");
 }
 
 async function finalizeExecutedPackagePg(
