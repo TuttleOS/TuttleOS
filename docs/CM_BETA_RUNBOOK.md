@@ -1,22 +1,24 @@
 # Case Manager beta — runbook (Stage 3)
 
-**Status:** In progress — prep on `role-partition` · **not** live on production until merge + Michael sign-off  
-**Audience:** Brett (eng) · Michael (owner) · Mark / Christina / Emily (CMs)  
+**Status:** Decisions locked 2026-08-15 — **preview-only pilot, Mark (1 CM), demo data.** Do **not** merge to `main`.  
+**Audience:** Brett (eng) · Michael (owner) · **Mark Garza** (pilot CM)  
 **Preview:** https://tuttle-os-git-role-partition-tuttle-os.vercel.app  
-**Related:** `docs/FINDINGS_CHECKLIST.md` (P1 consolidation 2026-07-28) · `docs/BUILD_PRIORITY_REVIEW_TODOS.md` Stage 3 · `docs/ROLE_TEST_ACCOUNTS.md`
+**Related:** `docs/LIFECYCLE_BUILD_PLAN.md` (canonical sequencing) · `docs/FINDINGS_CHECKLIST.md` (P1 consolidation 2026-07-28) · `docs/BUILD_PRIORITY_REVIEW_TODOS.md` Stage 3 · `docs/ROLE_TEST_ACCOUNTS.md`
 
 ---
 
-## 1. Decision locks (do these first)
+## 1. Decision locks (locked 2026-08-15)
 
-| Decision | Recommendation | Owner | Status |
+| Decision | Locked answer | Owner | Status |
 |---|---|---|---|
-| **Lit with CM or after?** | **Stagger** — CM beta first; lit stays Stage 5 | Michael / Brett | **Proposed** — confirm |
-| **Where do CMs work?** | Merge `role-partition` → `main` (prod) after Michael Day-4, **or** keep pilot on preview URL for week 1 | Michael | Open |
-| **Pilot size** | Start with **1–2 CMs** (not all three) for 2 weeks | Michael | Open |
-| **Data** | Assigned live matters only after Auth linked; until then use preview + `cm.demo` | Eng | Open |
+| **Pilot size** | **1 CM: Mark Garza.** Christina / Emily can be added or swapped later without a rebuild. | Michael | **Locked** |
+| **Lit with CM or after?** | **Stagger** — CM beta first; lit stays Stage 5 | Michael | **Locked** |
+| **Where do CMs work?** | **Preview only** — do not merge `role-partition` → `main` for this pilot | Michael | **Locked** |
+| **Data** | **Preview + demo** (`cm.demo`) until a later Auth / live-matter decision | Michael | **Locked** |
 
-Until Michael signs the table above, keep treating preview as the CM surface — do not surprise production users.
+Production stays untouched. Pilot lives on the preview URL. Merge is a **later** decision after this preview week, not part of week 1.
+
+**Changing CMs later:** yes. This lock is “one person on preview,” not “Mark forever.” To swap or add: send §2 known gaps to the next CM, they use the same preview + `cm.demo` (or their own Auth when provisioned). No merge, no schema change.
 
 ---
 
@@ -91,18 +93,20 @@ Checklist per person:
 role-partition (preview)  →  PR → main  →  Vercel production
 ```
 
-**Before merge:**
+**This pilot does not merge.** PR #1 stays open. Revisit merge only after the preview week if Michael says CMs may use prod.
 
-- [ ] Michael Day-4 / beta sign-off (written or chat: “CMs may use prod”)  
-- [ ] Lit stagger confirmed (recommended: **yes, stagger**)  
-- [ ] §2 known gaps sent to pilot CMs  
-- [ ] At least one real CM provisioned **or** explicit “preview-only pilot for week 1”  
-- [ ] Apply pending SQL if needed: `sql/21_upgrade_v2.20_negotiation_directionality.sql` (app validation works without it)  
-- [ ] Smoke §3 on **production** after deploy with `cm.demo` or real CM  
+**Before a future merge (not this week):**
 
-**Do not** merge solely to “get queues on prod” without the sign-off row above.
+- [x] Lit stagger confirmed (**yes, stagger**)  
+- [x] Explicit **preview-only** pilot (week 1)  
+- [x] Named 1 CM (**Mark Garza**)  
+- [ ] §2 known gaps sent to Mark  
+- [ ] Michael Day-4 / later sign-off: “CMs may use prod”  
+- [ ] Real CM Auth provisioned (not required for preview+demo week)  
+- [ ] Apply pending SQL if needed: `sql/21_upgrade_v2.20_negotiation_directionality.sql`  
+- [ ] Smoke §3 on **production** after a future deploy  
 
-Open PR when ready: `gh pr create` from `role-partition` → `main` (or ask Brett).
+**Do not** merge solely to “get queues on prod.”
 
 ---
 

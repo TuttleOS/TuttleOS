@@ -115,6 +115,18 @@ export function PropertyDamageCard({
   const [editModel, setEditModel] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editStorage, setEditStorage] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  function runPd(
+    fn: () => Promise<{ ok: boolean; error?: string; message?: string }>,
+  ) {
+    setSaveError(null);
+    run(async () => {
+      const res = await fn();
+      if (!res.ok) setSaveError(res.error ?? "Could not save");
+      return res;
+    });
+  }
 
   function beginEdit(r: PdClaimRow) {
     setEditingId(r.pd_claim_id);
@@ -211,7 +223,7 @@ export function PropertyDamageCard({
                       }
                       className="rounded-lg bg-accent-dk px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
                       onClick={() =>
-                        run(async () => {
+                        runPd(async () => {
                           const res = await updatePdClaimAction({
                             client_matter_id: matterId,
                             pd_claim_id: r.pd_claim_id,
@@ -238,6 +250,11 @@ export function PropertyDamageCard({
                       Cancel
                     </button>
                   </div>
+                  {saveError && editingId === r.pd_claim_id && (
+                    <p className="text-xs font-semibold text-danger" role="alert">
+                      {saveError}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -405,7 +422,7 @@ export function PropertyDamageCard({
           disabled={pending || !make.trim() || !model.trim() || !location.trim()}
           className="mt-2 rounded-lg bg-accent-dk px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
           onClick={() =>
-            run(() =>
+            runPd(() =>
               startPdClaimAction({
                 client_matter_id: matterId,
                 incident_group_id: incidentGroupId,
@@ -420,6 +437,11 @@ export function PropertyDamageCard({
         >
           Save vehicle + PD claim
         </button>
+        {saveError && !editingId && (
+          <p className="mt-2 text-xs font-semibold text-danger" role="alert">
+            {saveError}
+          </p>
+        )}
       </div>
     </div>
   );

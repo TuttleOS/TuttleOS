@@ -269,7 +269,14 @@ export async function listCaseload(opts?: {
   });
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getMatter(id: string): Promise<MatterDetail | null> {
+  // Reserved paths like /cases/financials used to hit this as [id] and throw
+  // "invalid input syntax for type uuid" — treat non-UUIDs as not found.
+  if (!UUID_RE.test(id)) return null;
+
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("core")

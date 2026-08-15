@@ -34,16 +34,18 @@ The piece Brett specifically wants ready before wider access — drives adoption
 
 ## Stage 3 — Case Manager Beta Rollout
 - [ ] Ship the CM workspace to real case managers once Stages 0–2 are stable.
-  - **In progress (2026-07-28):** Runbook + known gaps → `docs/CM_BETA_RUNBOOK.md`. Preview: `role-partition`. **Production merge gated on Michael sign-off** (Day-4) + CM Auth provisioning. PR `role-partition` → `main` when ready — do not merge early.
-- [x] Decide whether litigation rollout should be staggered after CM or launched together — Brett is open to delaying litigation if it simplifies things.
-  - **Proposed default (2026-07-28):** **Stagger** — CM beta now; lit remains Stage 5. Confirm with Michael in runbook §1.
+  - **Locked 2026-08-15:** **Mark Garza (1 CM)** · **stagger** lit · **preview only** · **preview + demo**. Do **not** merge to `main`. Swap/add CMs later without a rebuild. Runbook: `docs/CM_BETA_RUNBOOK.md`.
+- [x] Decide whether litigation rollout should be staggered after CM or launched together.
+  - **Locked 2026-08-15:** **Stagger** — CM beta now; lit remains Stage 5.
 
 ### Stage 3 checklist
-- [ ] Michael confirms lit stagger + pilot size (1–2 CMs recommended)
-- [ ] Known gaps (§2 of runbook) sent to pilot CMs
-- [ ] Real CM Auth + `staff.auth_user_id` + assignments (or week-1 preview-only pilot)
-- [ ] PR opened / merged `role-partition` → `main` after sign-off
-- [ ] Post-deploy smoke on production (`/cases` queues + Needs attention)
+- [x] Michael confirms lit stagger + pilot size (**1 CM**, stagger)
+- [x] Week-1 is **preview-only** + **demo** (no prod merge, no live-matter requirement)
+- [x] Named the 1 CM (**Mark Garza**). Christina / Emily can be added or swapped later.
+- [ ] Known gaps (§2 of runbook) sent to Mark
+- [ ] Preview smoke with `cm.demo` (`/cases` queues + Needs attention)
+- [ ] PR merged `role-partition` → `main` — **later**, only if Michael says CMs may use prod
+- [ ] Post-deploy smoke on production — **not this week**
 
 ## Stage 4 — New Workflow: Settlements Pending / Disbursement
 Needs to exist before any case actually reaches settlement in the new system, but isn't needed for the initial CM beta.
@@ -69,9 +71,11 @@ Last, and only once the schema above is stable — migrating into a build that's
 ---
 
 ## Related kit docs
+- `docs/LIFECYCLE_BUILD_PLAN.md` — **canonical** case-lifecycle sequencing (protect rules, Tracks A–F, top 10 gaps)
 - `docs/ROLE_TEST_ACCOUNTS.md` — demo logins
 - `docs/ROLES_AND_PERMISSIONS.md` — partition SoT + §8 build status
 - `docs/PROJECT_SECTIONS_BY_ROLE.md` — section × role map
 - `docs/FINDINGS_CHECKLIST.md` — Jul 19 findings + P1 consolidation
 - `docs/CM_BETA_RUNBOOK.md` — **Stage 3** CM beta known gaps + ship path
+- `docs/CLAUDE_PROMPT_LIFECYCLE_FLOW_VS_BUILD.md` — full scored inventory for Claude diagrams
 - Preview: https://tuttle-os-git-role-partition-tuttle-os.vercel.app
