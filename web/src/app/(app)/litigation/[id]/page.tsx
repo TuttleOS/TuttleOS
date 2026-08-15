@@ -9,7 +9,11 @@ import {
   listMatterTasks,
   listPinnedNotes,
 } from "@/lib/litigation/queries";
-import { listAssignableCaseManagers, listCompanionMatters } from "@/lib/cases/queries";
+import {
+  listAssignableCaseManagers,
+  listCompanionMatters,
+  listTreatmentEpisodes,
+} from "@/lib/cases/queries";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { litMilestonesOnly } from "@/lib/workspace";
 
@@ -24,7 +28,7 @@ export default async function LitigationMatterPage({
   const matter = await getMatter(params.id);
   if (!matter) notFound();
 
-  const [team, contacts, court, deadlines, tasks, notes, cmCandidates, companions] =
+  const [team, contacts, court, deadlines, tasks, notes, cmCandidates, companions, episodes] =
     await Promise.all([
       getMatterTeam(matter.client_matter_id),
       getPersonContacts(matter.client_person_id),
@@ -34,6 +38,7 @@ export default async function LitigationMatterPage({
       listPinnedNotes(matter.client_matter_id),
       listAssignableCaseManagers(),
       listCompanionMatters(matter.incident_group_id, matter.client_matter_id),
+      listTreatmentEpisodes(matter.client_matter_id),
     ]);
 
   return (
@@ -59,6 +64,7 @@ export default async function LitigationMatterPage({
         }[]
       }
       milestonesOnly={litMilestonesOnly(staff.role_code)}
+      episodeStatuses={episodes.map((e) => ({ status: e.status }))}
     />
   );
 }

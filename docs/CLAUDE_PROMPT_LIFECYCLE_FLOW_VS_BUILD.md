@@ -184,7 +184,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | N-CM-05 | Package to Kate | PARTIAL | Blocker flags; /demands skeleton | GATE-04 + clock | — |
 | N-CM-06 | Standing: PD · PIP · CMS · ≤30d | PARTIAL | PD strong; contact attention; liens list | Day-one CMS; PIP thin | F-21 |
 | N-CM-07 | 3-day counters CM+Kate | MISSING | — | No dual task | F-36 |
-| N-CM-08 | CLIENT STILL TREATING banner | MISSING | Switcher only | No banner | F-43 |
+| N-CM-08 | CLIENT STILL TREATING banner | PARTIAL | Banner on CM + Lit matter | Calendaring / tie-breaker open | F-43 |
 
 ### Nodes — Demand Writer
 
@@ -242,7 +242,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | H-09 | suit_authorized → four effects | DEFERRED | — | ATT-03 / F-40 | F-40 |
 | H-10 | Paralegal concern → Attorney | MISSING | — | ATT-07 | F-42 |
 | H-11 | Petition filed → service chains arm | PARTIAL | Service chain design | GATE-07/08 | — |
-| H-12 | CM ↔ Lit dual-track | PARTIAL | Switcher | Banner + tie-breaker open | F-43 |
+| H-12 | CM ↔ Lit dual-track | PARTIAL | Switcher + banner | Tie-breaker open | F-43 |
 | H-13 | Settle → Liens | DEFERRED | Liens banner | Stage 4 · GATE-10 | — |
 | H-14 | Liens → closed | DEFERRED | — | UM/UIM owner open | — |
 

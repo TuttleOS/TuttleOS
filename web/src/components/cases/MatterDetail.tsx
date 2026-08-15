@@ -50,6 +50,8 @@ import type {
 import type { AccessLogRow, DocumentRow } from "@/lib/documents/types";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
 import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
+import { DualTrackBanner } from "@/components/cases/DualTrackBanner";
+import { isDualTrackStillTreating } from "@/lib/cases/dualTrack";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
 import type { AssignableStaff } from "@/lib/cases/queries";
@@ -184,6 +186,13 @@ export function MatterDetailView({
       t.assignment_role === "litigation_paralegal" ||
       t.assignment_role === "senior_paralegal",
   );
+  const dualTrack = isDualTrackStillTreating({
+    stage: matter.current_stage_code,
+    hasLitigationParalegal: team.some(
+      (t) => t.assignment_role === "litigation_paralegal",
+    ),
+    episodes,
+  });
   const atty = team.find((t) => t.assignment_role === "attorney");
   const flags = stalled ? flagList(stalled) : [];
   const openTasks = tasks.filter((t) =>
@@ -251,6 +260,7 @@ export function MatterDetailView({
       >
         ← Back to caseload
       </Link>
+      {dualTrack ? <DualTrackBanner lane="cm" /> : null}
 
       {/* Header */}
       <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">

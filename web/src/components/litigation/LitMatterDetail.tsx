@@ -18,6 +18,8 @@ import {
 } from "@/lib/litigation/actions";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
 import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
+import { DualTrackBanner } from "@/components/cases/DualTrackBanner";
+import { isDualTrackStillTreating } from "@/lib/cases/dualTrack";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
 import type { AssignableStaff } from "@/lib/cases/queries";
@@ -46,6 +48,7 @@ export function LitMatterDetail({
   cmCandidates = [],
   milestonesOnly = false,
   companions = [],
+  episodeStatuses = [],
 }: {
   matter: MatterDetail;
   team: TeamMember[];
@@ -74,6 +77,7 @@ export function LitMatterDetail({
     person: { first_name: string; last_name: string } | null;
     copy_sharing_allowed?: boolean;
   }[];
+  episodeStatuses?: { status: string }[];
 }) {
   const router = useRouter();
   const [focus, setFocus] = useState(true);
@@ -88,6 +92,12 @@ export function LitMatterDetail({
 
   const cm = team.find((t) => t.assignment_role === "case_manager");
   const pl = team.find((t) => t.assignment_role === "litigation_paralegal");
+  const dualTrack = isDualTrackStillTreating({
+    stage: matter.current_stage_code,
+    hasCourtCase: Boolean(court),
+    hasLitigationParalegal: Boolean(pl),
+    episodes: episodeStatuses,
+  });
   const openTasks = tasks.filter((t) =>
     ["open", "in_progress"].includes(t.status),
   );
@@ -127,6 +137,8 @@ export function LitMatterDetail({
           />
         )}
       </div>
+
+      {dualTrack ? <DualTrackBanner lane="litigation" /> : null}
 
       {milestonesOnly && (
         <div className="rounded-panel border border-warning/40 bg-warning-bg px-4 py-3 text-sm">

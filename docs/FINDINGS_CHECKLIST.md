@@ -193,7 +193,7 @@ No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core int
 | F-40 | P1 | NOT STARTED | Suit authorization atomic event | — |
 | F-41 | P2 | NOT STARTED | Client filing confirmation | — |
 | F-42 | P1 | NOT STARTED | Paralegal challenge / filing concern | — |
-| F-43 | P1 | PARTIAL | Dual-track (lit while treating) | Switcher exists; no STILL TREATING banner |
+| F-43 | P1 | PARTIAL | Dual-track (lit while treating) | Banner on CM + Lit matter when stage/court/PL and episode still treating. Tie-breaker still open. |
 
 ---
 

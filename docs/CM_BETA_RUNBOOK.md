@@ -24,7 +24,7 @@ Production stays untouched. Pilot lives on the preview URL. Merge is a **later**
 
 ## 2. Known gaps (give this to CMs)
 
-**Use Tuttle OS CM beta for:** My caseload, Needs attention, work queues (New / LOR / Liability / PD / Records), provider calls, matter cards (checklist, coverage, PD, records, demand/negotiation logging, documents).
+**Use Tuttle OS CM beta for:** My caseload, Needs attention, work queues (New / LOR / Liability / PD / Records), provider calls, matter cards (checklist, coverage, PD, records, demand/negotiation logging, documents), dual-track **CLIENT STILL TREATING** banner on litigating files that are still in treatment.
 
 **Do not expect yet:**
 

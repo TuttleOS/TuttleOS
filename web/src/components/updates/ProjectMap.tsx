@@ -213,7 +213,7 @@ const HANDOFFS: { from: string; to: string; when: string; build: string }[] = [
     from: "Case Manager",
     to: "Litigation PL",
     when: "File-suit / dual-track — medical track stays with CM",
-    build: "Switcher live",
+    build: "Switcher + CLIENT STILL TREATING banner",
   },
   {
     from: "Litigation PL",

@@ -96,6 +96,26 @@ export function releaseReviewStorageKey(releaseId: string): string {
 /** Newest first — used by What’s New modal (current) and /updates history. */
 export const VERSION_UPDATES: VersionUpdate[] = [
   {
+    id: "2026-08-15-dual-track-banner",
+    dateLabel: "08/15/2026",
+    title: "CLIENT STILL TREATING banner (dual-track)",
+    summary:
+      "When a file is in litigation and treatment is still active, CM and Lit matter views show a banner: coordinate §18.001, discovery, and the plaintiff deposition. Does not auto-calendar those dates.",
+    howToTest: [
+      "Sign in as cm.demo → open Delgado (or Okafor) → confirm the amber CLIENT STILL TREATING banner under Back to caseload.",
+      "Switcher → Litigation view → same banner, lit wording.",
+      "Banner is a warning only — it does not block saves or change deadlines.",
+    ],
+    items: [
+      {
+        title: "Preview (role-partition)",
+        body: "Banner on dual-track demo files (Delgado / Okafor are litigation + still treating).",
+        href: ROLE_PARTITION_PREVIEW_BASE,
+        hrefLabel: "Open preview",
+      },
+    ],
+  },
+  {
     id: "2026-07-28-role-partition-preview",
     dateLabel: "07/28/2026",
     title: "Role partition & attorney role preview",

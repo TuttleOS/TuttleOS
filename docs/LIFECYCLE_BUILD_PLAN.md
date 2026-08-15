@@ -123,7 +123,7 @@ Ordered lowest overwrite risk to highest, and CM-adjacent before litigation or s
 |---|---|---|
 | 1 | GATE-02 — confirm the non-engagement letter hard-blocks close | Add a server refusal only if one is genuinely missing |
 | 2 | GATE-11 — coverage boxes | A louder warning is fine; **consult** before blocking stage advance |
-| 3 | N-CM-08 — CLIENT STILL TREATING banner | Purely additive |
+| 3 | N-CM-08 — CLIENT STILL TREATING banner | **Done 2026-08-15** — additive banner on CM + Lit matter |
 | 4 | Apply `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase | Additive CHECK; the application already validates |
 
 #### Track B — Case-manager package spine
@@ -208,7 +208,7 @@ Run every ticket through this. One box per ticket, no exceptions.
 | H-09 | suit_authorized → four effects | DEFERRED | F-40 |
 | H-10 | Paralegal concern → Attorney | MISSING | No concern queue |
 | H-11 | Petition filed → service chains | PARTIAL | GATE-07 / GATE-08 |
-| H-12 | CM ↔ Litigation dual-track | PARTIAL | Banner and tie-breaker |
+| H-12 | CM ↔ Litigation dual-track | PARTIAL | Banner live; tie-breaker open |
 | H-13 | Settle → Liens | DEFERRED | Stage 4 |
 | H-14 | Liens → closed | DEFERRED | UM/UIM owner open |
 
@@ -226,7 +226,7 @@ Ranked by malpractice, money, and wrong-entity risk — not by effort.
 | 4 | GATE-08 | FILED stamp | A case can read as filed when the clerk never accepted it. |
 | 5 | H-01 | Intake → CM automation | The matter is created, but welcome text, referral packet, rotation and the checklist do not fire. Every one is a manual step someone can forget. |
 | 6 | H-07 | 3-day counters | Negotiation tempo currently depends on someone remembering. |
-| 7 | N-CM-08 | Dual-track banner | Without it, dual-track cases look ordinary — and the banner is what changes how 18.001, discovery and the plaintiff deposition get calendared. |
+| 7 | N-CM-08 | Dual-track banner | Banner is live on CM + Lit matter. Calendaring of 18.001 / discovery / plaintiff depo still does not change automatically (tie-breaker open). |
 | 8 | ATT-03 | Suit authorization | The four atomic effects do not fire, so the handoff into litigation is entirely manual. |
 | 9 | GATE-05 / 06 | Proof and Level 3 hold | A demand can show as sent without proof, and a Level 3 demand can go out on an on-screen notice alone. |
 | 10 | Stage 4 | H-13 / H-14 / GATE-10 | Settlement to disbursement does not exist yet. Nothing prevents a nonsuit before funding confirms, and that has no undo. |
