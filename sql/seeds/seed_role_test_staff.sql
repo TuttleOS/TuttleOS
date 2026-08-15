@@ -133,7 +133,8 @@ SET staff_id = EXCLUDED.staff_id,
     assigned_by = EXCLUDED.assigned_by,
     ended_at = NULL;
 
--- Point open checklist / sample tasks at CM demo owner where owned by Michael
+-- Point open CM sample tasks at CM demo owner where owned by Michael.
+-- Leave litigation-lane tasks for the lit PL (Leo).
 UPDATE workflow.task
 SET owner_staff_id = '00000000-0000-0000-0000-00000000e031'
 WHERE owner_staff_id = '00000000-0000-0000-0000-00000000e012'
@@ -142,6 +143,21 @@ WHERE owner_staff_id = '00000000-0000-0000-0000-00000000e012'
     '00000000-0000-0000-0000-00000000d002'
   )
   AND status IN ('open', 'in_progress')
+  AND deleted_at IS NULL
+  AND coalesce(task_type, '') <> 'litigation'
+  AND title NOT ILIKE '%citation%'
+  AND title NOT ILIKE '%TRCP 194%'
+  AND title NOT ILIKE '%interrogator%'
+  AND title NOT ILIKE '%written discovery%';
+
+UPDATE workflow.task
+SET owner_staff_id = '00000000-0000-0000-0000-00000000e033',
+    task_type = 'litigation'
+WHERE task_id IN (
+    '00000000-0000-0000-0000-00000000a721',
+    '00000000-0000-0000-0000-00000000a722',
+    '00000000-0000-0000-0000-00000000a723'
+  )
   AND deleted_at IS NULL;
 
 -- Primary role grants for demo staff (requires sql/20_upgrade_v2.19)

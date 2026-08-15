@@ -76,7 +76,9 @@ export default async function MatterPage({
     listContactHistory(matter.client_person_id, "phone"),
     listContactHistory(matter.client_person_id, "email"),
     listContactHistory(matter.client_person_id, "address"),
-    listMatterTasks(matter.client_matter_id),
+    listMatterTasks(matter.client_matter_id, {
+      hideLitigation: viewStaff.role_code === "case_manager",
+    }),
     listPinnedNotes(matter.client_matter_id),
     listTreatmentEpisodes(matter.client_matter_id),
     listClaims(matter.client_matter_id),

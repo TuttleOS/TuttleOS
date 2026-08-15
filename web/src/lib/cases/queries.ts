@@ -16,6 +16,7 @@ import type {
   TreatmentEpisodeRow,
 } from "./types";
 import { STAGE_LABEL } from "./types";
+import { excludeLitigationLaneTasks } from "@/lib/tasks/lane";
 
 export { STAGE_LABEL };
 
@@ -431,7 +432,10 @@ export async function listContactHistory(
   return data ?? [];
 }
 
-export async function listMatterTasks(matterId: string): Promise<TaskRow[]> {
+export async function listMatterTasks(
+  matterId: string,
+  opts?: { hideLitigation?: boolean },
+): Promise<TaskRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("workflow")
@@ -443,10 +447,14 @@ export async function listMatterTasks(matterId: string): Promise<TaskRow[]> {
     .is("deleted_at", null)
     .order("due_date", { ascending: true, nullsFirst: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as TaskRow[];
+  const rows = (data ?? []) as TaskRow[];
+  return opts?.hideLitigation ? excludeLitigationLaneTasks(rows) : rows;
 }
 
-export async function listMyTasks(staffId: string): Promise<TaskRow[]> {
+export async function listMyTasks(
+  staffId: string,
+  opts?: { hideLitigation?: boolean },
+): Promise<TaskRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .schema("workflow")
@@ -490,7 +498,7 @@ export async function listMyTasks(staffId: string): Promise<TaskRow[]> {
     }
   }
 
-  return rows;
+  return opts?.hideLitigation ? excludeLitigationLaneTasks(rows) : rows;
 }
 
 export async function listCompanionMatters(

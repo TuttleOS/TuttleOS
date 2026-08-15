@@ -32,8 +32,8 @@ export function MyTasks({ tasks }: { tasks: TaskRow[] }) {
         </p>
         <h1 className="text-xl font-bold">My Tasks</h1>
         <p className="text-sm text-muted">
-          Same records as the case checklist — complete here or on the matter
-          page.
+          Same records as the case checklist — CM work only. Litigation tasks
+          stay with the paralegal.
         </p>
       </div>
       {err && (
