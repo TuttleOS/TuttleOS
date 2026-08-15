@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getPublicContractByToken } from "@/lib/contracts/actions";
 import { PublicSignForm } from "@/components/contracts/PublicSignForm";
 import {
@@ -23,6 +24,14 @@ export default async function PublicSignPage({
   }
 
   const pkg = loaded.package;
+  const signers = loaded.signers as { status?: string }[];
+  const allSigned =
+    String(pkg.status) === "executed" ||
+    (signers.length > 0 && signers.every((s) => s.status === "signed"));
+  if (allSigned) {
+    redirect(`/sign/${params.token}/thanks`);
+  }
+
   const merge = buildMergeFields({
     clientNames: String(pkg.client_display_names),
     location: String(pkg.incident_location),

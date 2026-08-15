@@ -37,7 +37,6 @@ export function PublicSignForm({
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [padKey, setPadKey] = useState(0);
   const [agree, setAgree] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -172,7 +171,6 @@ export function PublicSignForm({
             disabled={pending || !canSubmit}
             onClick={() => {
               setErr(null);
-              setMsg(null);
               start(async () => {
                 const res = await signContractAsPartyAction({
                   token,
@@ -183,12 +181,7 @@ export function PublicSignForm({
                 });
                 if (!res.ok) setErr(res.error);
                 else {
-                  setMsg(res.message ?? "Signed");
-                  setTypedName("");
-                  setSignatureData(null);
-                  setPadKey((k) => k + 1);
-                  setAgree(false);
-                  router.refresh();
+                  router.push(`/sign/${token}/thanks`);
                 }
               });
             }}
@@ -199,9 +192,6 @@ export function PublicSignForm({
 
           {err ? (
             <p className="mt-2 text-sm font-semibold text-red-700">{err}</p>
-          ) : null}
-          {msg ? (
-            <p className="mt-2 text-sm font-semibold text-green-800">{msg}</p>
           ) : null}
         </section>
       )}
