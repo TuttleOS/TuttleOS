@@ -3,6 +3,7 @@
 import { createHash, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/staff-server";
 import { formatDate, isDateAfterToday } from "@/lib/dates";
@@ -600,8 +601,83 @@ export async function firmCountersignContractAction(input: {
   }
 }
 
-/** Public package load via DATABASE_URL (bypasses RLS; token is the auth). */
+type PublicContractOk = {
+  ok: true;
+  package: Record<string, unknown> & {
+    fee_pre_suit: number;
+    fee_post_filing: number;
+    fee_appeal: number;
+    body_hash: string;
+  };
+  signers: unknown[];
+};
+
+type PublicContractErr = { ok: false; error: string };
+
+function mapPublicPackage(
+  pkg: Record<string, unknown>,
+): PublicContractOk["package"] {
+  return {
+    ...pkg,
+    fee_pre_suit: Number(pkg.fee_pre_suit),
+    fee_post_filing: Number(pkg.fee_post_filing),
+    fee_appeal: Number(pkg.fee_appeal),
+    body_hash: bodyHash(String(pkg.rendered_body ?? "")),
+  };
+}
+
+/**
+ * Public load over HTTPS (anon RPC). Vercel often cannot open Postgres TCP
+ * to db.*.supabase.co (IPv6); this is the path that works on preview.
+ */
+async function getPublicContractByTokenRpc(
+  token: string,
+): Promise<PublicContractOk | PublicContractErr | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !key) return null;
+
+  try {
+    const supabase = createSupabaseJsClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase.rpc("get_contract_package_public", {
+      p_token: token,
+    });
+    if (error) {
+      console.error("[contracts] public RPC failed", error.message);
+      return null;
+    }
+    const payload = data as {
+      ok?: boolean;
+      error?: string;
+      package?: Record<string, unknown>;
+      signers?: unknown[];
+    } | null;
+    if (!payload || typeof payload !== "object") return null;
+    if (payload.ok === false) {
+      return { ok: false, error: payload.error ?? "Link not found" };
+    }
+    if (!payload.ok || !payload.package) return null;
+    return {
+      ok: true,
+      package: mapPublicPackage(payload.package),
+      signers: payload.signers ?? [],
+    };
+  } catch (e) {
+    console.error(
+      "[contracts] public RPC threw",
+      e instanceof Error ? e.message : e,
+    );
+    return null;
+  }
+}
+
+/** Public package load. Token is the auth. Prefer HTTPS RPC; pg is fallback. */
 export async function getPublicContractByToken(token: string) {
+  const viaRpc = await getPublicContractByTokenRpc(token);
+  if (viaRpc) return viaRpc;
+
   const pool = getPgPool();
   if (!pool) {
     return {
@@ -637,13 +713,7 @@ export async function getPublicContractByToken(token: string) {
 
     return {
       ok: true as const,
-      package: {
-        ...pkg,
-        fee_pre_suit: Number(pkg.fee_pre_suit),
-        fee_post_filing: Number(pkg.fee_post_filing),
-        fee_appeal: Number(pkg.fee_appeal),
-        body_hash: bodyHash(pkg.rendered_body ?? ""),
-      },
+      package: mapPublicPackage(pkg as Record<string, unknown>),
       signers: signers.rows,
     };
   } catch (e) {
