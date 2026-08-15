@@ -16,8 +16,9 @@ export function NewCasesQueue({ rows }: { rows: NewCaseQueueRow[] }) {
         <h1 className="text-2xl font-bold">New cases</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">
           Cases assigned to you whose sign-up processing has not started — checklist
-          untouched (or welcome call not done). Process immediately; rows leave this
-          queue when checklist work begins.
+          untouched (or welcome call not done). Rows leave when checklist work
+          begins. Demand, negotiation, litigation, settlement, and closed files
+          never appear here.
         </p>
       </div>
 

@@ -957,12 +957,14 @@ export function DemandNegotiationCard({
             disabled={pending}
             className="rounded-lg bg-accent-dk px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
             onClick={() =>
-              run(() =>
-                createDemandAction({
+              run(async () => {
+                const res = await createDemandAction({
                   client_matter_id: matterId,
                   amount: amount ? Number(amount) : null,
-                }),
-              )
+                });
+                if (res.ok) setAmount("");
+                return res;
+              })
             }
           >
             Create draft demand
@@ -1034,15 +1036,21 @@ export function DemandNegotiationCard({
             onClick={() => {
               const side =
                 requiredSideForEventType(negType) ?? bySide;
-              run(() =>
-                logNegotiationAction({
+              run(async () => {
+                const res = await logNegotiationAction({
                   client_matter_id: matterId,
                   demand_id: demands[0]?.demand_id,
                   event_type: negType,
                   by_side: side,
                   amount: negAmount ? Number(negAmount) : null,
-                }),
-              );
+                });
+                if (res.ok) {
+                  setNegAmount("");
+                  setNegType("offer");
+                  setBySide(defaultSideForEventType("offer"));
+                }
+                return res;
+              });
             }}
           >
             Log event

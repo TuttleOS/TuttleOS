@@ -714,9 +714,24 @@ export async function listClaims(matterId: string): Promise<ClaimRow[]> {
   return (data ?? []) as ClaimRow[];
 }
 
+/** Stages that mean sign-up is over — never belong on New cases. */
+const NEW_CASES_EXCLUDED_STAGES = new Set([
+  "demand",
+  "negotiation",
+  "litigation",
+  "settlement",
+  "closed",
+]);
+
+function isSignupChecklistTask(taskType: string | null | undefined): boolean {
+  return taskType === "signup_checklist" || taskType === "checklist";
+}
+
 /**
- * New cases for a CM: active assignment + sign-up checklist untouched
- * (no signup_checklist task done) and no completed welcome-call task.
+ * New cases for a CM: assigned + still in sign-up + checklist untouched
+ * (no checklist item done, no completed welcome-call). Seed tasks use
+ * task_type `checklist`; looking only for `signup_checklist` made live
+ * checklists look "not generated" and left litigation files on the board.
  */
 export async function listNewCasesQueue(opts: {
   staffId: string;
@@ -746,11 +761,30 @@ export async function listNewCasesQueue(opts: {
     ]),
   );
 
+  const { data: stageRows, error: sErr } = await supabase
+    .schema("core")
+    .from("client_matter")
+    .select("client_matter_id, current_stage_code, representation_status")
+    .in("client_matter_id", matterIds)
+    .is("deleted_at", null)
+    .neq("representation_status", "declined");
+  if (sErr) throw new Error(sErr.message);
+
+  const eligibleIds = (stageRows ?? [])
+    .filter(
+      (m) =>
+        !NEW_CASES_EXCLUDED_STAGES.has(
+          (m.current_stage_code as string) ?? "",
+        ),
+    )
+    .map((m) => m.client_matter_id as string);
+  if (eligibleIds.length === 0) return [];
+
   const { data: tasks, error: tErr } = await supabase
     .schema("workflow")
     .from("task")
     .select("client_matter_id, title, status, task_type")
-    .in("client_matter_id", matterIds)
+    .in("client_matter_id", eligibleIds)
     .is("deleted_at", null);
   if (tErr) throw new Error(tErr.message);
 
@@ -758,7 +792,7 @@ export async function listNewCasesQueue(opts: {
     string,
     { checklist: { title: string; status: string }[]; welcomeDone: boolean }
   >();
-  for (const id of matterIds) {
+  for (const id of eligibleIds) {
     byMatter.set(id, { checklist: [], welcomeDone: false });
   }
   for (const t of tasks ?? []) {
@@ -770,12 +804,12 @@ export async function listNewCasesQueue(opts: {
     if (/welcome/i.test(title) && t.status === "done") {
       slot.welcomeDone = true;
     }
-    if (t.task_type === "signup_checklist") {
+    if (isSignupChecklistTask(t.task_type as string | null)) {
       slot.checklist.push({ title, status: t.status as string });
     }
   }
 
-  const newIds = matterIds.filter((id) => {
+  const newIds = eligibleIds.filter((id) => {
     const slot = byMatter.get(id)!;
     if (slot.welcomeDone) return false;
     const anyDone = slot.checklist.some((c) => c.status === "done");
