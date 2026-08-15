@@ -96,6 +96,7 @@ export function PropertyDamageCard({
   documents = [],
   pending,
   run,
+  canDelete = true,
 }: {
   matterId: string;
   incidentGroupId: string;
@@ -103,6 +104,7 @@ export function PropertyDamageCard({
   documents?: DocumentRow[];
   pending: boolean;
   run: RunFn;
+  canDelete?: boolean;
 }) {
   const [year, setYear] = useState("");
   const [make, setMake] = useState("");
@@ -155,6 +157,8 @@ export function PropertyDamageCard({
         documents={documents}
         docTypeCode="photos_video"
         heading="All PD photos"
+        matterId={matterId}
+        canDelete={canDelete}
       />
       {rows.length === 0 ? (
         <p className="text-muted">
@@ -280,6 +284,8 @@ export function PropertyDamageCard({
                       docTypeCode="photos_video"
                       heading="Photos for this vehicle"
                       vehicleId={r.vehicle_id}
+                      matterId={matterId}
+                      canDelete={canDelete}
                     />
                     <SectionDocumentUpload
                       matterId={matterId}
@@ -704,6 +710,7 @@ export function RecordsTrackingCard({
   documents = [],
   pending,
   run,
+  canDelete = true,
 }: {
   matterId: string;
   episodes: TreatmentEpisodeRow[];
@@ -711,6 +718,7 @@ export function RecordsTrackingCard({
   documents?: DocumentRow[];
   pending: boolean;
   run: RunFn;
+  canDelete?: boolean;
 }) {
   const [episodeId, setEpisodeId] = useState(
     episodes[0]?.treatment_episode_id ?? "",
@@ -729,6 +737,8 @@ export function RecordsTrackingCard({
         documents={documents}
         docTypeCodes={["medical_records", "medical_bills"]}
         heading="Records & bills files"
+        matterId={matterId}
+        canDelete={canDelete}
       />
       {rows.length === 0 ? (
         <p className="text-muted">No records / bills requests yet.</p>

@@ -715,6 +715,7 @@ export function MatterDetailView({
               documents={documents}
               pending={pending}
               run={run}
+              canDelete={!readOnly}
             />
           </Card>
 
@@ -737,6 +738,8 @@ export function MatterDetailView({
               documents={documents}
               pending={pending}
               run={run}
+              canDelete={!readOnly}
+            />
             />
           </Card>
 

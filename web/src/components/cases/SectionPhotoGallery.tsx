@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { DocumentPreviewModal } from "@/components/cases/DocumentPreviewModal";
+import { softDeleteDocumentAction } from "@/lib/documents/actions";
 import type { DocumentRow } from "@/lib/documents/types";
 import { parsePdVehicleId } from "@/lib/cases/pdVehicle";
 
@@ -32,6 +34,8 @@ export function SectionPhotoGallery({
   heading = "Uploaded photos",
   vehicleId,
   includeUntagged = false,
+  matterId,
+  canDelete = false,
 }: {
   documents: DocumentRow[];
   /** Single type (default). Ignored when docTypeCodes is set. */
@@ -42,8 +46,13 @@ export function SectionPhotoGallery({
   /** When set, only docs tagged to this vehicle (plus untagged if includeUntagged). */
   vehicleId?: string | null;
   includeUntagged?: boolean;
+  /** Required for Remove (soft-delete). */
+  matterId?: string;
+  canDelete?: boolean;
 }) {
+  const router = useRouter();
   const [preview, setPreview] = useState<DocumentRow | null>(null);
+  const [pending, start] = useTransition();
 
   const typeSet = useMemo(() => {
     const list = docTypeCodes?.length ? docTypeCodes : [docTypeCode];
@@ -117,6 +126,31 @@ export function SectionPhotoGallery({
           mimeType={preview.mime_type}
           filename={preview.original_filename}
           onClose={() => setPreview(null)}
+          deletePending={pending}
+          onDelete={
+            canDelete && matterId
+              ? () => {
+                  if (
+                    !confirm(
+                      "Remove this file from the case? It is hidden, not permanently wiped.",
+                    )
+                  ) {
+                    return;
+                  }
+                  const id = preview.document_id;
+                  start(async () => {
+                    const res = await softDeleteDocumentAction({
+                      documentId: id,
+                      matterId,
+                    });
+                    if (res.ok) {
+                      setPreview(null);
+                      router.refresh();
+                    }
+                  });
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>

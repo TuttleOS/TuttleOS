@@ -43,12 +43,17 @@ export function DocumentPreviewModal({
   mimeType,
   filename,
   onClose,
+  onDelete,
+  deletePending = false,
 }: {
   documentId: string;
   fallbackTitle: string;
   mimeType?: string | null;
   filename?: string | null;
   onClose: () => void;
+  /** Soft-delete this file (hides it; does not wipe storage). */
+  onDelete?: () => void;
+  deletePending?: boolean;
 }) {
   const fileUrl = `/api/documents/${documentId}/file`;
   const image = isImage(mimeType ?? null, filename ?? null);
@@ -90,6 +95,16 @@ export function DocumentPreviewModal({
             >
               Open in new tab
             </a>
+            {onDelete ? (
+              <button
+                type="button"
+                disabled={deletePending}
+                onClick={onDelete}
+                className="rounded-lg border border-danger/40 px-2.5 py-1 text-xs font-semibold text-danger disabled:opacity-50"
+              >
+                {deletePending ? "Removing…" : "Remove"}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
