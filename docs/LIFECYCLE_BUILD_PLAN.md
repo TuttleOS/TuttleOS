@@ -53,8 +53,8 @@ The full 83-row inventory lives in the companion scoreboard / `CLAUDE_PROMPT_LIF
 | Status | Count | Share |
 |---|---|---|
 | BUILT | 8 | 10% |
-| PARTIAL | 48 | 58% |
-| MISSING | 18 | 22% |
+| PARTIAL | 49 | 59% |
+| MISSING | 17 | 20% |
 | DEFERRED | 9 | 11% |
 
 Read it this way: more than half the lifecycle exists in some form but is not yet enforced. That is a different problem from missing features, and it is cheaper to fix — most PARTIAL rows need a server-side check added to something already on screen, not new screens.
@@ -82,7 +82,7 @@ Each lane's principal nodes with their scored status. Read left to right as the 
 | Lane | Nodes and status |
 |---|---|
 | **Intake** | Lead queue BUILT · Six minimums PARTIAL · contract_signed event PARTIAL · Non-engagement letter PARTIAL |
-| **Case manager** | 9-task sign-up PARTIAL · Treating cadence PARTIAL · Records & bills PARTIAL · Futures MISSING · Demand blockers PARTIAL · Package to Kate PARTIAL · Standing duties PARTIAL · Coverage boxes PARTIAL · 3-day counters MISSING · Dual-track banner MISSING |
+| **Case manager** | 9-task sign-up PARTIAL · Treating cadence PARTIAL · Records & bills PARTIAL · Futures MISSING · Demand blockers PARTIAL · Package to Kate PARTIAL · Standing duties PARTIAL · Coverage boxes PARTIAL · 3-day counters MISSING · Dual-track banner PARTIAL (banner live; calendaring open) |
 | **Demand writer** | Package quality gate DEFERRED · 14-day clock MISSING · Level 3 hold PARTIAL · Transmission proof PARTIAL · Negotiation ledger BUILT |
 | **Litigation** | Defendant workup MISSING · FILED stamp MISSING · Service chains PARTIAL · Answer clocks PARTIAL · Discovery and trial PARTIAL · SOL watchlist PARTIAL · Depo READY DEFERRED |
 | **Liens & disbursement** | Liens day one PARTIAL · Medicare clock MISSING · Release to trust DEFERRED · Dismissal gate DEFERRED · Disburse and close DEFERRED |
@@ -103,7 +103,7 @@ The shape to notice: intake through negotiation is a continuous amber band — d
 | 0.3 | Keep the flowchart and scoreboard as planning maps, not a rebuild brief |
 | 0.4 | Michael confirms Stage 3 — **done 2026-08-15:** Mark (1 CM), stagger, preview only, preview+demo |
 
-**Exit condition:** met. Remaining: send Mark the known-gaps sheet and run preview smoke.
+**Exit condition:** met. Known-gaps sheet sent; Mark morning-list smoke passed 2026-08-15.
 
 ### Phase 1 — Decision gate before high-risk build
 
@@ -244,7 +244,7 @@ These are deliberate scope decisions or downstream of the pilot. Document them a
 - One-click records packet and the full respawn engine — consult before building; this may wait
 - Clearing all 83 audit rows
 
-**What the pilot still needs honesty about:** incomplete GATE-01 variants, no futures gate, incomplete package refusal, and no dual-track banner yet. Case managers in the pilot should be told these are known, not discover them.
+**What the pilot still needs honesty about:** incomplete GATE-01 variants, no futures gate, incomplete package refusal, and dual-track calendaring (banner is live; dates do not auto-change). Case managers in the pilot should be told these are known, not discover them.
 
 ---
 
@@ -271,7 +271,7 @@ Stage 3 shape is **locked** (preview-only, 1 CM, demo). Merge to `main` is **off
 
 | Now | Meaning |
 |---|---|
-| **Run the preview pilot** | Mark uses preview + `cm.demo` · send known-gaps (§2 runbook) |
+| **Run the preview pilot** | Mark uses preview + `cm.demo` · known-gaps sent · morning list passed 2026-08-15 |
 | **Optional Track A** | Safe harden on `role-partition` during the preview week (does not touch production) |
 
 Do not start Tracks B–F without a consult. Do not merge PR #1.

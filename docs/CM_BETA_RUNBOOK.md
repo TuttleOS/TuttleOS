@@ -100,7 +100,7 @@ role-partition (preview)  →  PR → main  →  Vercel production
 - [x] Lit stagger confirmed (**yes, stagger**)  
 - [x] Explicit **preview-only** pilot (week 1)  
 - [x] Named 1 CM (**Mark Garza**)  
-- [ ] §2 known gaps sent to Mark  
+- [x] §2 known gaps sent to Mark  
 - [ ] Michael Day-4 / later sign-off: “CMs may use prod”  
 - [ ] Real CM Auth provisioned (not required for preview+demo week)  
 - [ ] Apply pending SQL if needed: `sql/21_upgrade_v2.20_negotiation_directionality.sql`  

@@ -40,7 +40,9 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 
 **Branch / preview:** `role-partition` · https://tuttle-os-git-role-partition-tuttle-os.vercel.app  
 **Scored:** 2026-08-09 against kit + FINDINGS_CHECKLIST / BUILD_PRIORITY  
-**Scoring rule:** UI-only enforcement of a GATE = `PARTIAL`, never `BUILT`.
+**Rescore (2026-08-15, this ID only):** N-CM-08 MISSING→PARTIAL (CLIENT STILL TREATING banner on CM + Lit matter). H-12 gap narrowed to calendaring tie-breaker. Do not re-score other rows.  
+**Scoring rule:** UI-only enforcement of a GATE = `PARTIAL`, never `BUILT`.  
+**Stage 3 lock (2026-08-15):** Mark Garza (1 CM) · stagger lit · preview only · preview + `cm.demo`. Do **not** claim production/`main`.
 
 ---
 
@@ -49,13 +51,13 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 | Status | Count | % of 83 |
 |---|---|---|
 | BUILT | 8 | ~10% |
-| PARTIAL | 48 | ~58% |
-| MISSING | 18 | ~22% |
+| PARTIAL | 49 | ~59% |
+| MISSING | 17 | ~20% |
 | DEFERRED | 9 | ~11% |
 | **Total scored** | **83** | |
 
 **Project read (one sentence for the diagram caption):**  
-Stages 0–2 (roles, PD integrity, dashboards) are the green spine; almost no GATE is fully BUILT; Stage 3 CM beta ships with known amber/red gaps — this chart is lifecycle truth, not a CM-beta go/no-go.
+Stages 0–2 (roles, PD integrity, dashboards) are the green spine; almost no GATE is fully BUILT; Stage 3 CM beta is **in pilot** (Mark, preview, demo) with known amber/red gaps — dual-track **banner is live**, calendaring still open. This chart is lifecycle truth, not a merge-to-prod go/no-go.
 
 ---
 
@@ -142,10 +144,10 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | ID | Assertion | Status | What we have | Gap |
 |---|---|---|---|---|
 | LANE-01 | Six working roles + home routes | BUILT | Six homes + demo logins | admin unassigned; senior_paralegal † open |
-| LANE-02 | CM + lit assigned-only lists | BUILT | staff_assignment scoping | Preview needs person scope |
+| LANE-02 | CM + lit assigned-only lists | BUILT | staff_assignment scoping; Mark confirmed assigned-only on preview | — |
 | LANE-03 | Attorney firm-wide | BUILT | Owner board | — |
 | LANE-04 | One person, two roles | PARTIAL | staff_role_grant | Emily dual not prod-proven |
-| LANE-05 | Lit → full CM; CM → lit milestone-only | PARTIAL | Switcher | CM milestone-only not fully enforced |
+| LANE-05 | Lit → full CM; CM → lit milestone-only | PARTIAL | Switcher; CM sees milestones-only banner | Full lit tools still hidden from CM (by design for beta) |
 | LANE-06 | Borrowed workspace audits real person | PARTIAL | staff_id on many writes | Preview actor edge cases |
 
 ### Blocking gates (highest value)
@@ -182,7 +184,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | N-CM-03 | Records & bills · packet · 7d respawn | PARTIAL | Docs + gallery | One-click packet + respawn | F-27–29 |
 | N-CM-04 | Futures | MISSING | — | GATE-03 | F-25 |
 | N-CM-05 | Package to Kate | PARTIAL | Blocker flags; /demands skeleton | GATE-04 + clock | — |
-| N-CM-06 | Standing: PD · PIP · CMS · ≤30d | PARTIAL | PD strong; contact attention; liens list | Day-one CMS; PIP thin | F-21 |
+| N-CM-06 | Standing: PD · PIP · CMS · ≤30d | PARTIAL | PD strong (queue matches file; near-miss duplicate block; photo↔vehicle); contact attention; liens list | Day-one CMS; PIP thin | F-21 |
 | N-CM-07 | 3-day counters CM+Kate | MISSING | — | No dual task | F-36 |
 | N-CM-08 | CLIENT STILL TREATING banner | PARTIAL | Banner on CM + Lit matter | Calendaring / tie-breaker open | F-43 |
 
@@ -279,12 +281,16 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 
 ## Open questions (do not invent answers — list as OPEN on the chart)
 
+Stage 3 shape is **locked** (not OPEN): Mark Garza, stagger lit, preview only, preview+demo.
+
+Still OPEN:
+
 1. Daniel’s authority — which ATT-* he may issue alone  
 2. Administrator role holder  
 3. UM/UIM sequencing owner (H-14)  
 4. Friendly-suit logistics owner (ATT-05)  
 5. Photo-reminder stop condition (INV-07)  
-6. Dual-track tie-breaker (H-12)  
+6. Dual-track tie-breaker (H-12) — banner exists; calendaring rule does not  
 7. Unassigned media pen default owner  
 
 ---
@@ -307,10 +313,11 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 Where the firm is on the lifecycle machine vs the PDF/flowchart intent.
 
 ### B. Top 10 gaps (ranked)
-Prefer: GATE-03, GATE-04, GATE-07, GATE-08, H-01, H-07, N-CM-08, ATT-03, GATE-05/06, Stage 4 (H-13/14). Adjust only if the tables clearly say otherwise.
+Prefer: GATE-03, GATE-04, GATE-07, GATE-08, H-01, H-07, N-CM-08 (calendaring / tie-breaker — banner is already live), ATT-03, GATE-05/06, Stage 4 (H-13/14). Adjust only if the tables clearly say otherwise.
 
 ### C. What Stage 3 CM beta can ignore
-List DEFERRED + lit/suit/settlement reds that are OK to ship past for CM pilot (point to BUILD_PRIORITY Stage 3).
+List DEFERRED + lit/suit/settlement reds that are OK to ship past for CM pilot (point to BUILD_PRIORITY Stage 3 / `docs/CM_BETA_RUNBOOK.md`).  
+**Do not** list the dual-track banner as missing — it is live on preview (N-CM-08 PARTIAL). Still ignore auto-calendaring of 18.001 / discovery / plaintiff depo (tie-breaker OPEN).
 
 ### D. Optional ASCII one-pager
 If Mermaid won’t render in the chat UI, also give a compact ASCII swimlane with `[G]` green / `[A]` amber / `[R]` red / `[D]` gray abbreviations.
@@ -322,11 +329,11 @@ If Mermaid won’t render in the chat UI, also give a compact ASCII swimlane wit
 | Stage | Status | Maps roughly to |
 |---|---|---|
 | 0 Foundation | Done on preview | Lanes, demo logins, P1 consolidation (0 P1 DONE) |
-| 1 Data integrity | Done on preview | PD, INV-05, coverage labels |
-| 2 Role dashboards | Done on preview | Needs attention / queues |
-| 3 CM beta | In progress — Michael sign-off | Ship with known gaps; not “audit green” |
+| 1 Data integrity | Done on preview | PD (incl. near-miss duplicate + queue vs file), INV-05, coverage labels |
+| 2 Role dashboards | Done on preview | Needs attention / queues — Mark morning list passed 2026-08-15 |
+| 3 CM beta | **Locked / in pilot** — Mark (1 CM), stagger, preview+demo | Known gaps sent; do **not** merge to main |
 | 4 Settlements / disburse | Not started | N-LD-03/04 · H-13/14 · GATE-10 |
-| 5 Lit rollout | Stagger after CM (proposed) | GATE-07/08 · N-LIT-* · ATT-03 |
+| 5 Lit rollout | Stagger after CM (**locked**) | GATE-07/08 · N-LIT-* · ATT-03 |
 | 6 Migration | Last | — |
 
 ---
