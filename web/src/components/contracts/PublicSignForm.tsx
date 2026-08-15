@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { formatDate } from "@/lib/dates";
 import { signContractAsPartyAction } from "@/lib/contracts/actions";
 import { SignaturePad } from "@/components/contracts/SignaturePad";
+import { visiblePartyLines } from "@/lib/contracts/capacity";
 
 type Signer = {
   contract_signer_id: string;
@@ -93,13 +94,19 @@ export function PublicSignForm({
         <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-600">
           Parties
         </h2>
-        <ul className="mt-2 space-y-1 text-sm">
-          {signers.map((s) => (
-            <li key={s.contract_signer_id}>
-              {s.status === "signed" ? "✔" : "○"}{" "}
-              <strong>{s.full_name}</strong>
-              {s.status === "signed"
-                ? ` — signed ${s.signed_at ? formatDate(s.signed_at) : ""}`
+        <ul className="mt-2 space-y-2 text-sm">
+          {visiblePartyLines({
+            clientDisplayNames: meta.names,
+            signers,
+          }).map((p) => (
+            <li key={p.key}>
+              {p.status === "signed" ? "✔" : "○"}{" "}
+              <strong>{p.title}</strong>
+              {p.subtitle ? (
+                <span className="text-neutral-600"> — {p.subtitle}</span>
+              ) : null}
+              {p.status === "signed"
+                ? ` — signed ${p.signed_at ? formatDate(p.signed_at) : ""}`
                 : " — awaiting signature"}
             </li>
           ))}

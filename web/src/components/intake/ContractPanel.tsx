@@ -24,6 +24,7 @@ import {
 import { contractPublicUrl } from "@/lib/contracts/urls";
 import { buildContractBodyHtml, buildMergeFields } from "@/lib/contracts/template";
 import type { LeadContractPlan } from "@/lib/contracts/capacity";
+import { visiblePartyLines } from "@/lib/contracts/capacity";
 import type {
   ContractPackage,
   ContractSigner,
@@ -367,8 +368,8 @@ export function ContractPanel({
             ))}
           </ul>
           <p className="mt-2 text-[11px] text-muted">
-            Only you (the adult client) sign. Minors do not get a separate
-            contract.
+            One contract. You sign once, individually and as next friend — both
+            names appear on the signature page. The minor does not draw.
           </p>
         </div>
       ) : null}
@@ -386,13 +387,19 @@ export function ContractPanel({
           ) : null}
           {activePackage.signers?.length ? (
             <ul className="mt-2 space-y-1 text-xs">
-              {activePackage.signers.map((s) => (
-                <li key={s.contract_signer_id}>
-                  {s.status === "signed" ? "✔" : "○"} {s.full_name}
-                  {s.signer_capacity && s.signer_capacity !== "client"
-                    ? ` (${s.signer_capacity.replaceAll("_", " ")})`
-                    : ""}
-                  {s.signed_at ? ` · ${formatDate(s.signed_at)}` : " · awaiting"}
+              {visiblePartyLines({
+                clientDisplayNames:
+                  activePackage.client_display_names || "",
+                signers: activePackage.signers,
+              }).map((p) => (
+                <li key={p.key}>
+                  {p.status === "signed" ? "✔" : "○"} {p.title}
+                  {p.subtitle ? ` (${p.subtitle})` : ""}
+                  {p.status === "signed"
+                    ? p.signed_at
+                      ? ` · ${formatDate(p.signed_at)}`
+                      : " · signed"
+                    : " · awaiting"}
                 </li>
               ))}
             </ul>

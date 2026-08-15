@@ -16,12 +16,9 @@ export default async function PublicSignThanksPage({
     );
   }
 
-  const pkg = loaded.package;
-  const pdf = pkg.artifact_pdf_base64;
-  const hasPdf =
-    String(pkg.status) === "executed" &&
-    typeof pdf === "string" &&
-    pdf.length > 100;
+  const signers = (loaded.signers ?? []) as { status?: string }[];
+  const allSigned =
+    signers.length > 0 && signers.every((s) => s.status === "signed");
 
   return (
     <main className="min-h-screen bg-neutral-100 px-4 py-16 text-neutral-900">
@@ -33,7 +30,7 @@ export default async function PublicSignThanksPage({
         <p className="mt-3 text-base text-neutral-700">
           Thank you for submitting your contract. We will be in touch soon.
         </p>
-        {hasPdf ? (
+        {allSigned ? (
           <a
             href={`/sign/${params.token}/pdf`}
             className="mt-6 inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-3 text-sm font-bold text-white hover:bg-neutral-800"

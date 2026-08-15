@@ -20,7 +20,10 @@ import { buildContractBody, buildMergeFields } from "./template";
 import { publicAppUrl } from "./urls";
 import type { SignerInput } from "./types";
 import { resolveLeadContractPlan } from "./plan";
-import { formatIndividuallyAndOnBehalfOf } from "./capacity";
+import {
+  expandNextFriendSignatureBlocks,
+  formatIndividuallyAndOnBehalfOf,
+} from "./capacity";
 
 export type ActionResult =
   | { ok: true; message?: string; token?: string; packageId?: string }
@@ -1009,14 +1012,17 @@ async function finalizePublicIfComplete(
   const body = String(pkg.rendered_body ?? "");
   const pdf = await buildContractPdfBase64({
     body,
-    signers: signers.map((s) => ({
-      full_name: String(s.full_name ?? ""),
-      signed_at: s.signed_at ? String(s.signed_at) : null,
-      signature_typed_name: s.signature_typed_name
-        ? String(s.signature_typed_name)
-        : null,
-      signature_data: s.signature_data ? String(s.signature_data) : null,
-    })),
+    signers: expandNextFriendSignatureBlocks(
+      String(pkg.client_display_names ?? ""),
+      signers.map((s) => ({
+        full_name: String(s.full_name ?? ""),
+        signed_at: s.signed_at ? String(s.signed_at) : null,
+        signature_typed_name: s.signature_typed_name
+          ? String(s.signature_typed_name)
+          : null,
+        signature_data: s.signature_data ? String(s.signature_data) : null,
+      })),
+    ),
     firm: {
       signature_data: (pkg.firm_signature_data as string | null) ?? null,
       signature_typed_name:
@@ -1146,18 +1152,21 @@ async function finalizeExecutedPackageHttps(
   const body = (pkg.rendered_body as string) ?? "";
   const pdf = await buildContractPdfBase64({
     body,
-    signers: signerRows.map(
-      (s: {
-        full_name: string;
-        signed_at: string | null;
-        signature_typed_name: string | null;
-        signature_data?: string | null;
-      }) => ({
-        full_name: s.full_name,
-        signed_at: s.signed_at,
-        signature_typed_name: s.signature_typed_name,
-        signature_data: s.signature_data ?? null,
-      }),
+    signers: expandNextFriendSignatureBlocks(
+      String(pkg.client_display_names ?? ""),
+      signerRows.map(
+        (s: {
+          full_name: string;
+          signed_at: string | null;
+          signature_typed_name: string | null;
+          signature_data?: string | null;
+        }) => ({
+          full_name: s.full_name,
+          signed_at: s.signed_at,
+          signature_typed_name: s.signature_typed_name,
+          signature_data: s.signature_data ?? null,
+        }),
+      ),
     ),
     firm: {
       signature_data: (pkg.firm_signature_data as string | null) ?? null,
@@ -1318,18 +1327,21 @@ async function finalizeExecutedPackagePg(
   const body = (pkg.rendered_body as string) ?? "";
   const pdf = await buildContractPdfBase64({
     body,
-    signers: signers.map(
-      (s: {
-        full_name: string;
-        signed_at: string | null;
-        signature_typed_name: string | null;
-        signature_data?: string | null;
-      }) => ({
-        full_name: s.full_name,
-        signed_at: s.signed_at,
-        signature_typed_name: s.signature_typed_name,
-        signature_data: s.signature_data ?? null,
-      }),
+    signers: expandNextFriendSignatureBlocks(
+      String(pkg.client_display_names ?? ""),
+      signers.map(
+        (s: {
+          full_name: string;
+          signed_at: string | null;
+          signature_typed_name: string | null;
+          signature_data?: string | null;
+        }) => ({
+          full_name: s.full_name,
+          signed_at: s.signed_at,
+          signature_typed_name: s.signature_typed_name,
+          signature_data: s.signature_data ?? null,
+        }),
+      ),
     ),
     firm: {
       signature_data: (pkg.firm_signature_data as string | null) ?? null,
