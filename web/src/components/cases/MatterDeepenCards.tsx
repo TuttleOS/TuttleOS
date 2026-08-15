@@ -363,7 +363,7 @@ export function PropertyDamageCard({
                           "this vehicle";
                         if (
                           !window.confirm(
-                            `Remove ${label} from this matter? This soft-deletes the PD track (can be recovered in the database).`,
+                            `Remove ${label} from this matter? Photos tagged to this vehicle are hidden with it (recoverable in the database).`,
                           )
                         ) {
                           return;

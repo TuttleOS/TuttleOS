@@ -9,6 +9,7 @@ import { validateNegotiationDirectionality } from "@/lib/cases/negotiation";
 import {
   encodePdVehicleNote,
   normalizeVehicleKey,
+  parsePdVehicleId,
 } from "@/lib/cases/pdVehicle";
 
 export type ActionResult =
@@ -700,15 +701,46 @@ export async function softDeletePdClaimAction(input: {
       .is("deleted_at", null);
     if (vErr) return { ok: false, error: vErr.message };
 
+    const { data: docs, error: dErr } = await supabase
+      .schema("workflow")
+      .from("document")
+      .select("document_id, notes")
+      .eq("client_matter_id", input.client_matter_id)
+      .is("deleted_at", null);
+    if (dErr) return { ok: false, error: dErr.message };
+
+    const taggedIds = (docs ?? [])
+      .filter((d) => parsePdVehicleId(d.notes as string | null) === input.vehicle_id)
+      .map((d) => d.document_id as string);
+    if (taggedIds.length > 0) {
+      const { error: hideErr } = await supabase
+        .schema("workflow")
+        .from("document")
+        .update({ deleted_at: now })
+        .in("document_id", taggedIds)
+        .eq("client_matter_id", input.client_matter_id)
+        .is("deleted_at", null);
+      if (hideErr) return { ok: false, error: hideErr.message };
+    }
+
     await supabase.schema("workflow").from("note").insert({
       entity_id: input.client_matter_id,
       author_staff_id: staff.staff_id,
       note_type: "pd",
-      body: `PD vehicle track removed (soft-delete). Claim ${input.pd_claim_id}.`,
+      body: `PD vehicle track removed (soft-delete). Claim ${input.pd_claim_id}.${
+        taggedIds.length
+          ? ` ${taggedIds.length} tagged photo(s) hidden with it.`
+          : ""
+      }`,
     });
 
     revalidateMatter(input.client_matter_id);
-    return { ok: true, message: "Vehicle / PD track removed" };
+    return {
+      ok: true,
+      message: taggedIds.length
+        ? `Vehicle / PD track removed · ${taggedIds.length} tagged photo(s) hidden`
+        : "Vehicle / PD track removed",
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
