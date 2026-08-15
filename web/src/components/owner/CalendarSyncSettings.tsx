@@ -209,7 +209,7 @@ function ConnectionCard({
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as CalendarMode)}
-            className="h-10 w-full rounded-lg border border-grid bg-page px-3"
+            className="h-10 w-full rounded-lg border border-grid bg-surface px-3"
           >
             <option value="dry_run">dry_run</option>
             <option value="live">live</option>
@@ -220,7 +220,7 @@ function ConnectionCard({
           <input
             value={calendarId}
             onChange={(e) => setCalendarId(e.target.value)}
-            className="h-10 w-full rounded-lg border border-grid bg-page px-3"
+            className="h-10 w-full rounded-lg border border-grid bg-surface px-3"
             placeholder="optional until live"
           />
         </label>
@@ -229,7 +229,7 @@ function ConnectionCard({
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="h-10 w-full rounded-lg border border-grid bg-page px-3"
+            className="h-10 w-full rounded-lg border border-grid bg-surface px-3"
           />
         </label>
       </div>

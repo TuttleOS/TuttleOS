@@ -97,7 +97,7 @@ export function EditableContact({
             type={kind === "email" ? "email" : "tel"}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="rounded-lg border border-grid bg-page px-2 py-1 text-sm"
+            className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm"
             placeholder={kind === "phone" ? "(210) 555-0100" : "name@email.com"}
             disabled={pending}
           />

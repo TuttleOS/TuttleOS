@@ -6,8 +6,8 @@
 :root,
 [data-theme="parchment"] {
   color-scheme: light;
-  --page: #f3f2ef;
-  --surface: #ffffff;
+  --page: #f3f2ef; /* page / card-inset / disabled-looking fills */
+  --surface: #ffffff; /* cards + editable fields (white reads as typeable) */
   --surface-2: #faf9f7;
   --ink: #1c2430;
   --muted: #6b7380;

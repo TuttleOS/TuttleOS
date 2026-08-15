@@ -375,7 +375,7 @@ export function LeadDetail({
                 value={attemptText}
                 onChange={(e) => setAttemptText(e.target.value)}
                 placeholder="What happened on this call…"
-                className="h-10 flex-1 rounded-lg border border-grid bg-page px-3 text-sm"
+                className="h-10 flex-1 rounded-lg border border-grid bg-surface px-3 text-sm"
               />
               <button
                 type="button"

@@ -130,7 +130,7 @@ function StepRow({
               ? "What went wrong? (page name + what you clicked)"
               : "Optional note"
           }
-          className="mt-3 w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
+          className="mt-3 w-full rounded-lg border border-grid bg-surface px-3 py-2 text-sm"
         />
       )}
     </li>
@@ -352,7 +352,7 @@ export function OwnerTestNotes() {
               }))
             }
             placeholder="Example: 07/18/2026"
-            className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
           />
         </label>
         <fieldset>
@@ -406,7 +406,7 @@ export function OwnerTestNotes() {
             }
             rows={2}
             placeholder="What is missing that would block real use?"
-            className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
           />
         </label>
         <fieldset>
@@ -457,7 +457,7 @@ export function OwnerTestNotes() {
                 }))
               }
               placeholder="What should come next?"
-              className="mt-2 w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
+              className="mt-2 w-full rounded-lg border border-grid bg-surface px-3 py-2 text-sm"
             />
           )}
         </fieldset>
@@ -475,7 +475,7 @@ export function OwnerTestNotes() {
             placeholder={
               "Write freely. Helpful format:\n- Which screen\n- What you clicked\n- What happened (or what you expected)"
             }
-            className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
           />
         </label>
         <p className="text-xs text-muted">

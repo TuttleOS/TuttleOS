@@ -473,7 +473,7 @@ export function ContractPanel({
           <label className="block">
             <span className="text-xs font-semibold text-muted">Location (Texas)</span>
             <input
-              className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
@@ -483,7 +483,7 @@ export function ContractPanel({
             <input
               type="date"
               max={todayIsoLocal()}
-              className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
               value={incidentDate}
               onChange={(e) => setIncidentDate(e.target.value)}
             />
@@ -491,7 +491,7 @@ export function ContractPanel({
           <label className="block">
             <span className="text-xs font-semibold text-muted">Cause phrase</span>
             <input
-              className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
               value={causePhrase}
               onChange={(e) => setCausePhrase(e.target.value)}
             />
@@ -505,7 +505,7 @@ export function ContractPanel({
                 min={FEE_PRE_SUIT_MIN}
                 max={FEE_PRE_SUIT_MAX}
                 step={0.001}
-                className="mt-1 w-full rounded-lg border border-grid bg-page px-2 py-2"
+                className="mt-1 w-full rounded-lg border border-grid bg-surface px-2 py-2"
                 value={feePre}
                 onChange={(e) => setFeePre(Number(e.target.value))}
                 onBlur={() => setFeePre((v) => clampFeePreSuit(v))}
@@ -518,7 +518,7 @@ export function ContractPanel({
                 min={FEE_FILED_MIN}
                 max={FEE_FILED_MAX}
                 step={0.001}
-                className="mt-1 w-full rounded-lg border border-grid bg-page px-2 py-2"
+                className="mt-1 w-full rounded-lg border border-grid bg-surface px-2 py-2"
                 value={feePost}
                 onChange={(e) => setFeePost(Number(e.target.value))}
                 onBlur={() => setFeePost((v) => clampFeeFiled(v))}
@@ -569,7 +569,7 @@ export function ContractPanel({
                     </div>
                   )}
                   <input
-                    className="w-full bg-transparent text-sm font-semibold"
+                    className="w-full rounded border border-grid bg-surface px-2 py-1 text-sm font-semibold"
                     value={s.full_name}
                     onChange={(e) =>
                       setSigners((prev) =>
@@ -628,7 +628,7 @@ export function ContractPanel({
                 </div>
                 <div className="mt-1 flex gap-2">
                   <input
-                    className="h-9 flex-1 rounded-lg border border-grid bg-page px-2 text-xs"
+                    className="h-9 flex-1 rounded-lg border border-grid bg-surface px-2 text-xs"
                     placeholder="Search leads by name, email, or phone…"
                     value={companionQuery}
                     onChange={(e) => {

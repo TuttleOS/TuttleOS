@@ -507,12 +507,12 @@ export function MatterDetailView({
                 value={followTitle}
                 onChange={(e) => setFollowTitle(e.target.value)}
                 placeholder="What to do…"
-                className="h-10 min-w-[200px] flex-1 rounded-lg border border-grid bg-page px-3 text-sm"
+                className="h-10 min-w-[200px] flex-1 rounded-lg border border-grid bg-surface px-3 text-sm"
               />
               <DateField
                 value={followDue}
                 onChange={setFollowDue}
-                className="h-10 w-[9.5rem] rounded-lg border border-grid bg-page px-3 text-sm"
+                className="h-10 w-[9.5rem] rounded-lg border border-grid bg-surface px-3 text-sm"
               />
               <button
                 type="button"
@@ -812,7 +812,7 @@ export function MatterDetailView({
                           Liability / status
                         </span>
                         <select
-                          className="mt-1 block h-9 rounded-lg border border-grid bg-page px-2 text-sm"
+                          className="mt-1 block h-9 rounded-lg border border-grid bg-surface px-2 text-sm"
                           value={c.status ?? "open"}
                           disabled={pending}
                           onChange={(e) => {
@@ -916,7 +916,7 @@ export function MatterDetailView({
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder="Add a note…"
-              className="w-full rounded-lg border border-grid bg-page px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-grid bg-surface px-3 py-2 text-sm"
             />
             {companions.length > 0 ? (
               <label className="mt-2 flex items-start gap-2 text-sm">

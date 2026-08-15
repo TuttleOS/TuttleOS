@@ -77,7 +77,7 @@ export function ConfirmDeleteDialog({
               autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="mt-3 w-full rounded-lg border border-danger/40 bg-page px-3 py-2 text-sm"
+              className="mt-3 w-full rounded-lg border border-danger/40 bg-surface px-3 py-2 text-sm"
               placeholder={confirmHint}
               disabled={pending}
             />

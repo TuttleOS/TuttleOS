@@ -134,7 +134,7 @@ export function EditableAddress({
             value={line1}
             onChange={(e) => setLine1(e.target.value)}
             placeholder="Street address *"
-            className="rounded-lg border border-grid bg-page px-2 py-1 text-sm"
+            className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm"
             disabled={pending}
           />
           <input
@@ -142,7 +142,7 @@ export function EditableAddress({
             value={line2}
             onChange={(e) => setLine2(e.target.value)}
             placeholder="Apt / suite (optional)"
-            className="rounded-lg border border-grid bg-page px-2 py-1 text-sm"
+            className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm"
             disabled={pending}
           />
           <div className="grid grid-cols-[1fr_70px_90px] gap-2">
@@ -151,7 +151,7 @@ export function EditableAddress({
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="City"
-              className="rounded-lg border border-grid bg-page px-2 py-1 text-sm"
+              className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm"
               disabled={pending}
             />
             <input
@@ -159,7 +159,7 @@ export function EditableAddress({
               value={state}
               onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
               placeholder="ST"
-              className="rounded-lg border border-grid bg-page px-2 py-1 text-sm uppercase"
+              className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm uppercase"
               disabled={pending}
               maxLength={2}
             />
@@ -168,7 +168,7 @@ export function EditableAddress({
               value={zip}
               onChange={(e) => setZip(e.target.value)}
               placeholder="ZIP"
-              className="rounded-lg border border-grid bg-page px-2 py-1 text-sm"
+              className="rounded-lg border border-grid bg-surface px-2 py-1 text-sm"
               disabled={pending}
             />
           </div>

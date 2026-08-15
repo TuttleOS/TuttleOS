@@ -394,25 +394,25 @@ export function PropertyDamageCard({
             placeholder="Year"
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2"
           />
           <input
             placeholder="Make *"
             value={make}
             onChange={(e) => setMake(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2"
           />
           <input
             placeholder="Model *"
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2"
           />
           <input
             placeholder="Current location *"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2 sm:col-span-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2 sm:col-span-2"
           />
         </div>
         <label className="mt-2 flex items-center gap-2 text-xs">
@@ -819,7 +819,7 @@ export function RecordsTrackingCard({
           <select
             value={episodeId}
             onChange={(e) => setEpisodeId(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-grid bg-page px-2"
+            className="mt-2 h-9 w-full rounded-lg border border-grid bg-surface px-2"
           >
             {episodes.map((e) => (
               <option
@@ -833,7 +833,7 @@ export function RecordsTrackingCard({
           <select
             value={rtype}
             onChange={(e) => setRtype(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-grid bg-page px-2"
+            className="mt-2 h-9 w-full rounded-lg border border-grid bg-surface px-2"
           >
             <option value="records">Records</option>
             <option value="bills">Bills</option>
@@ -960,7 +960,7 @@ export function DemandNegotiationCard({
             placeholder="Demand amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-9 w-36 rounded-lg border border-grid bg-page px-2"
+            className="h-9 w-36 rounded-lg border border-grid bg-surface px-2"
           />
           <button
             type="button"
@@ -1007,7 +1007,7 @@ export function DemandNegotiationCard({
           <select
             value={negType}
             onChange={(e) => onNegTypeChange(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2"
           >
             <option value="offer">Offer</option>
             <option value="counter_offer">Counter-offer</option>
@@ -1025,7 +1025,7 @@ export function DemandNegotiationCard({
                 ? "Side is fixed for this event type"
                 : "Who originated this event"
             }
-            className="h-9 rounded-lg border border-grid bg-page px-2 disabled:cursor-not-allowed disabled:opacity-70"
+            className="h-9 rounded-lg border border-grid bg-surface px-2 disabled:cursor-not-allowed disabled:bg-page disabled:opacity-70"
           >
             <option value="defense">Defense (insurer)</option>
             <option value="plaintiff">Plaintiff (firm)</option>
@@ -1037,7 +1037,7 @@ export function DemandNegotiationCard({
             placeholder="Amount"
             value={negAmount}
             onChange={(e) => setNegAmount(e.target.value)}
-            className="h-9 rounded-lg border border-grid bg-page px-2"
+            className="h-9 rounded-lg border border-grid bg-surface px-2"
           />
           <button
             type="button"

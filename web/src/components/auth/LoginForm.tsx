@@ -51,7 +51,7 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-10 w-full rounded-lg border border-grid bg-page px-3 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 w-full rounded-lg border border-grid bg-surface px-3 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </label>
       <label className="mb-4 block text-sm">
@@ -61,7 +61,7 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="h-10 w-full rounded-lg border border-grid bg-page px-3 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 w-full rounded-lg border border-grid bg-surface px-3 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </label>
       {error && (

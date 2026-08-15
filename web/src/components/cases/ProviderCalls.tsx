@@ -215,7 +215,7 @@ function LogCallForm({
             step="0.01"
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
-            className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3"
+            className="mt-1 h-10 w-full rounded-lg border border-grid bg-surface px-3"
           />
         </div>
         <div>
@@ -225,7 +225,7 @@ function LogCallForm({
           <DateField
             value={nextAppt}
             onChange={setNextAppt}
-            className="mt-1 h-10 w-full rounded-lg border border-grid bg-page px-3"
+            className="mt-1 h-10 w-full rounded-lg border border-grid bg-surface px-3"
           />
         </div>
         <div>
@@ -234,7 +234,7 @@ function LogCallForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            className="mt-1 w-full rounded-lg border border-grid bg-page px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-grid bg-surface px-3 py-2"
             placeholder="What they said…"
           />
         </div>
