@@ -740,7 +740,6 @@ export function MatterDetailView({
               run={run}
               canDelete={!readOnly}
             />
-            />
           </Card>
 
           {showDocuments ? (
