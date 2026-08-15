@@ -500,9 +500,10 @@ export function NewLeadForm() {
                         Who is going to be the adult on the case?
                       </p>
                       <p className="mt-1 text-xs text-muted">
-                        Choose the primary adult (Case A — minor rides on their
-                        contract) or add a parent/guardian who is not a client
-                        (Case B — they sign this minor&apos;s contract).
+                        Choose the primary adult as next friend (they sign this
+                        child&apos;s contract; if they are also injured, that is
+                        a separate lead) or add a parent/guardian who is not a
+                        client (they still sign this minor&apos;s contract).
                       </p>
                       <div className="mt-2 flex flex-wrap gap-3 text-sm">
                         <label className="flex items-center gap-1">

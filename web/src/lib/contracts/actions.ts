@@ -20,10 +20,7 @@ import { buildContractBody, buildMergeFields } from "./template";
 import { publicAppUrl } from "./urls";
 import type { SignerInput } from "./types";
 import { resolveLeadContractPlan } from "./plan";
-import {
-  expandNextFriendSignatureBlocks,
-  formatIndividuallyAndOnBehalfOf,
-} from "./capacity";
+import { expandNextFriendSignatureBlocks } from "./capacity";
 
 export type ActionResult =
   | { ok: true; message?: string; token?: string; packageId?: string }
@@ -137,17 +134,11 @@ export async function createOrUpdateContractDraftAction(input: {
       nextFriendName,
     );
 
-    if (plan.kind === "minor_case_a") {
-      return {
-        ok: false,
-        error: `Case A: this minor rides on ${plan.guardianName}'s contract. Open that lead to draft / send.`,
-      };
-    }
     if (plan.kind === "minor_incomplete") {
       return { ok: false, error: plan.message };
     }
 
-    if (plan.kind === "minor_case_b") {
+    if (plan.kind === "minor_case_a" || plan.kind === "minor_case_b") {
       const nonGuardian = input.signers.find((s) => {
         const cap = s.signer_capacity;
         return cap !== "next_friend" && cap !== "parent_guardian";
@@ -156,7 +147,7 @@ export async function createOrUpdateContractDraftAction(input: {
         return {
           ok: false,
           error:
-            "Case B: only the parent/guardian signs this minor's contract — remove other signers",
+            "Only the parent/guardian signs this minor's contract — remove other signers",
         };
       }
       if (
@@ -169,13 +160,12 @@ export async function createOrUpdateContractDraftAction(input: {
         return {
           ok: false,
           error:
-            "Case B: the parent/guardian must be the signer on this minor's contract",
+            "The parent/guardian must be the signer on this minor's contract",
         };
       }
     }
 
     if (plan.kind === "adult_with_wards") {
-      // Adult signs; ward minors must not be separate signers on this package
       const wardLeadIds = new Set(plan.wards.map((w) => w.intake_lead_id));
       const wardPersonIds = new Set(
         plan.wards.map((w) => w.person_id).filter(Boolean) as string[],
@@ -189,7 +179,7 @@ export async function createOrUpdateContractDraftAction(input: {
         return {
           ok: false,
           error:
-            "Case A: minors ride on this contract in name only — do not add them as separate signers",
+            "Linked minors have their own contracts — open the child's lead to send theirs",
         };
       }
     }
@@ -198,6 +188,7 @@ export async function createOrUpdateContractDraftAction(input: {
       input.clientDisplayNames?.trim() ||
       (plan.kind === "adult_plain" ||
       plan.kind === "adult_with_wards" ||
+      plan.kind === "minor_case_a" ||
       plan.kind === "minor_case_b"
         ? plan.clientDisplayNames
         : "");
@@ -207,28 +198,10 @@ export async function createOrUpdateContractDraftAction(input: {
       clientNames = names.join(" and ");
     }
 
-    // Prefer capacity language if caller sent plain signer dump on Case A/B
+    // Prefer plan language if caller sent a plain signer dump
     if (
-      plan.kind === "adult_with_wards" &&
-      !input.clientDisplayNames?.includes("on behalf of")
-    ) {
-      const person = leadRow.person as
-        | { first_name: string; last_name: string }
-        | { first_name: string; last_name: string }[]
-        | null;
-      const p = Array.isArray(person) ? person[0] : person;
-      const adult =
-        (p ? `${p.first_name} ${p.last_name}`.trim() : null) ||
-        (leadRow.raw_name as string | null) ||
-        clientNames;
-      clientNames = formatIndividuallyAndOnBehalfOf(
-        adult,
-        plan.wards.map((w) => w.display_name),
-      );
-    }
-    if (
-      plan.kind === "minor_case_b" &&
-      !input.clientDisplayNames?.includes("on behalf of")
+      (plan.kind === "minor_case_a" || plan.kind === "minor_case_b") &&
+      !input.clientDisplayNames?.includes("next friend")
     ) {
       clientNames = plan.clientDisplayNames;
     }
@@ -377,12 +350,6 @@ export async function sendContractPackageAction(
         leadRow as never,
         nf ? `${nf.first_name} ${nf.last_name}`.trim() : null,
       );
-      if (plan.kind === "minor_case_a") {
-        return {
-          ok: false,
-          error: `Case A: send from ${plan.guardianName}'s lead instead — this minor rides on that contract.`,
-        };
-      }
       if (plan.kind === "minor_incomplete") {
         return { ok: false, error: plan.message };
       }

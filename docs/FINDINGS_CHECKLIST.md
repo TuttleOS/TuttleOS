@@ -68,15 +68,15 @@ No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core int
 - CM work queues + Project map on `/updates`
 
 ### Known gaps before CM beta (P1 clusters)
-1. **Intake / contract policy** — F-01, F-04, F-05 still need Michael decisions + build  
+1. **Intake / contract policy** — F-01 locked + aligned (child’s own packet). F-04, F-05 still need Michael + build  
 2. **Sign-up spine** — F-14 rotation, F-16 facility, F-18 welcome = Tier-2 (all NOT STARTED)  
 3. **CM medical / records** — F-25, F-27–F-29, F-31 incomplete  
 4. **Demand P1** — F-33–F-36 thin; F-37 ledger OK minus `time_request`  
 5. **File-suit / lit P1** — F-39–F-45 largely NOT STARTED / DESIGNED (OK to stagger after CM beta)
 
 ### Recommended next (unchanged order, still valid)
-1. Lock Michael decisions: F-01 · F-04 · F-05 (and F-14 rotation policy)  
-2. Intake/contract P1 slice  
+1. Lock remaining Michael decisions: F-04 · F-05 (and F-14 rotation policy)  
+2. Intake/contract P1 slice (F-05 variants · F-11 referral · F-06 Tier-2)  
 3. Sign-up spine (rotation + facility)  
 4. CM medical/records P1  
 5. Demand P1  
@@ -88,7 +88,7 @@ No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core int
 
 | ID | Pri | Status | Finding (short) | Gap / next |
 |---|---|---|---|---|
-| F-01 | P1 | PARTIAL | Minor + parent; parent always a client | Case A/B capacity exists; **align with “parent = full client + own matter”** (Michael call) |
+| F-01 | P1 | DONE | Minor + parent; parent always a client | **Locked 2026-08-15 + code aligned:** parent is **not** automatically a client. They **sign the child’s contract** as next friend and **act for the child**. If the parent is also injured, that is a **separate** client/matter — do not fold the child onto the parent’s own contract. Child packet = next-friend language; adult packet = adult only. |
 | F-02 | P1 | DESIGNED | Wrongful death contract / decedent | Need decedent person + WD template variant |
 | F-03 | AD | DONE | Multi-client crash (`incident_group`) | Keep verifying companion strip edge cases |
 | F-04 | P1 | PARTIAL | Conflict waiver workflow | Links/chips exist; no generate/sign tracking |
@@ -218,8 +218,8 @@ No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core int
 
 ## Suggested incorporation order
 
-1. **Policy lock with Michael:** F-01 (parent always client?), F-04 (waiver timing), F-05 (ES templates), open questions in findings doc  
-2. **Finish intake/contract P1 slice:** F-01 alignment · F-05 variants · F-11 referral · F-06 Tier-2 sketch  
+1. **Policy lock with Michael:** F-04 (waiver timing), F-05 (ES templates), open questions in findings doc  
+2. **Finish intake/contract P1 slice:** F-05 variants · F-11 referral · F-06 Tier-2 sketch  
 3. **Sign-up spine:** F-14 rotation · F-16 facility · automation framework (unblocks F-15/F-17)  
 4. **CM medical/records P1:** F-25 · F-27/F-28/F-29 · F-21 liens inquiry  
 5. **Demand P1:** F-33–F-37  
@@ -229,7 +229,7 @@ No other P1 status moved. Conservatively: prefer PARTIAL over DONE when core int
 
 ## Open Michael decisions (from findings)
 
-- [ ] F-01 — Confirm Case B: parent always gets own matter/contract?  
+- [x] F-01 — **Locked 2026-08-15:** parent signs the child’s contract only (next friend) and may act for the child. Not automatically their own client. Injured parent = separate matter.  
 - [ ] F-04 — Waiver with contract or later? Driver+passenger always?  
 - [ ] F-15 — One SMS or two?  
 - [ ] F-17 — Include preferred language in referral packet?  

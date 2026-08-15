@@ -109,7 +109,7 @@ If Mark or you hit one of these, it is a known gap, not a regression.
 
 Not needed to finish this preview week. Needed before we invent more workflow:
 
-- Minor / parent matter structure (F-01)
+- Minor / parent matter structure (F-01) — **locked 2026-08-15:** parent signs the child’s contract and acts for them; not automatically their own client
 - Conflict-waiver workflow (F-04)
 - Contract variants EN/ES × standard / minor / WD (F-05)
 - Dual-track **calendaring** rule (banner is live; dates do not auto-change)

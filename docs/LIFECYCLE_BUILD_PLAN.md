@@ -109,7 +109,7 @@ The shape to notice: intake through negotiation is a continuous amber band — d
 
 Policy must not be invented in code for any of these. They wait on Michael:
 
-- **F-01 / F-04 / F-05** — minor and parent structure, conflict-waiver workflow, contract variant matrix. These set the depth of GATE-01.
+- **F-01 / F-04 / F-05** — **F-01 locked 2026-08-15** (parent signs the child’s contract as next friend; not automatically a client). F-04 conflict-waiver and F-05 contract variant matrix still wait on Michael. These set the depth of GATE-01.
 - **F-14** — CM rotation and Spanish-language routing.
 - **Audit open questions** — Daniel's authority, administrator holder, UM/UIM owner, friendly-suit owner, dual-track tie-breaker, photo-reminder stop condition, unassigned media owner.
 
@@ -251,7 +251,7 @@ These are deliberate scope decisions or downstream of the pilot. Document them a
 ## 11. Open questions for Michael
 
 - [x] Stage 3 — **Mark Garza (1 CM)**, stagger lit, preview only, preview+demo (2026-08-15). Swap/add CMs later is allowed.
-- [ ] F-01 — minor and parent matter structure
+- [x] F-01 — **Locked 2026-08-15:** parent signs the child’s contract as next friend and may act for the child. Not automatically a client. Injured parent = own matter; do not fold the child onto the parent’s contract.
 - [ ] F-04 — conflict-waiver workflow
 - [ ] F-05 — contract variant matrix, EN/ES × standard / minor / WD
 - [ ] F-14 — CM rotation and Spanish-language routing

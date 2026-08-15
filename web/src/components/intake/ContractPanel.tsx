@@ -68,6 +68,7 @@ function planClientNames(
   if (
     plan.kind === "adult_plain" ||
     plan.kind === "adult_with_wards" ||
+    plan.kind === "minor_case_a" ||
     plan.kind === "minor_case_b"
   ) {
     return plan.clientDisplayNames;
@@ -94,15 +95,12 @@ function defaultSigners(
     }));
   }
 
-  if (
-    plan?.kind === "minor_case_a" ||
-    plan?.kind === "minor_incomplete"
-  ) {
+  if (plan?.kind === "minor_incomplete") {
     return [];
   }
 
-  // Case B: only the guardian signs the minor's contract
-  if (plan?.kind === "minor_case_b") {
+  // Child's packet (Case A or B): only the guardian signs as next friend
+  if (plan?.kind === "minor_case_a" || plan?.kind === "minor_case_b") {
     if (!nextFriend) return [];
     return [
       {
@@ -118,7 +116,7 @@ function defaultSigners(
     ];
   }
 
-  // Adult (plain or with Case A wards): adult signs alone
+  // Adult packet: adult signs for themselves (linked minors have their own contracts)
   return [
     {
       key: "primary",
@@ -162,9 +160,7 @@ export function ContractPanel({
         ? leadDisplayName(lead).split(",").reverse().join(" ").trim()
         : leadDisplayName(lead);
 
-  const draftingBlocked =
-    contractPlan?.kind === "minor_case_a" ||
-    contractPlan?.kind === "minor_incomplete";
+  const draftingBlocked = contractPlan?.kind === "minor_incomplete";
 
   const [location, setLocation] = useState(
     activePackage?.incident_location || locationGuess || "San Antonio",
@@ -277,6 +273,7 @@ export function ContractPanel({
         email: "",
         phone: "",
         signer_capacity:
+          contractPlan?.kind === "minor_case_a" ||
           contractPlan?.kind === "minor_case_b"
             ? "parent_guardian"
             : "client",
@@ -308,13 +305,21 @@ export function ContractPanel({
 
       {contractPlan?.kind === "minor_case_a" ? (
         <div className="mt-3 rounded-lg border border-accent/40 bg-page px-3 py-3 text-sm">
-          <p className="font-semibold text-ink">Case A — rides on guardian contract</p>
-          <p className="mt-1 text-xs text-muted">{contractPlan.message}</p>
+          <p className="font-semibold text-ink">
+            Case A — this is the child&apos;s contract
+          </p>
+          <p className="mt-1 text-xs text-muted">{contractPlan.helperText}</p>
+          <p className="mt-2 text-[11px] text-muted">
+            Contract names:{" "}
+            <span className="font-semibold text-ink">
+              {contractPlan.clientDisplayNames}
+            </span>
+          </p>
           <Link
             href={`/intake/leads/${contractPlan.guardianLeadId}`}
             className="mt-2 inline-block text-xs font-bold text-accent-dk hover:underline"
           >
-            Open {contractPlan.guardianName}&apos;s lead →
+            Open {contractPlan.guardianName}&apos;s own lead →
           </Link>
         </div>
       ) : null}
@@ -342,13 +347,15 @@ export function ContractPanel({
       {contractPlan?.kind === "adult_with_wards" ? (
         <div className="mt-3 rounded-lg border border-grid bg-page px-3 py-3 text-sm">
           <p className="font-semibold text-ink">
-            Case A — includes minor(s) on this contract
+            Linked minors have their own contracts
           </p>
           <p className="mt-1 text-[11px] text-muted">
-            Signature language:{" "}
+            This packet is for{" "}
             <span className="font-semibold text-ink">
               {contractPlan.clientDisplayNames}
-            </span>
+            </span>{" "}
+            only. Open the child&apos;s lead to send theirs — the parent signs
+            that packet as next friend.
           </p>
           <ul className="mt-2 space-y-1 text-xs text-muted">
             {contractPlan.wards.map((w) => (
@@ -362,15 +369,11 @@ export function ContractPanel({
                   href={`/intake/leads/${w.intake_lead_id}`}
                   className="font-semibold text-accent-dk hover:underline"
                 >
-                  open lead
+                  open child&apos;s lead
                 </Link>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-muted">
-            One contract. You sign once, individually and as next friend — both
-            names appear on the signature page. The minor does not draw.
-          </p>
         </div>
       ) : null}
 
@@ -551,12 +554,13 @@ export function ContractPanel({
 
           <div>
             <div className="text-xs font-semibold text-muted">
-              {contractPlan?.kind === "adult_with_wards" ||
+              {contractPlan?.kind === "minor_case_a" ||
               contractPlan?.kind === "minor_case_b"
                 ? "Signer"
                 : "Signers (same link)"}
             </div>
-            {contractPlan?.kind === "minor_case_b" ? (
+            {contractPlan?.kind === "minor_case_a" ||
+            contractPlan?.kind === "minor_case_b" ? (
               <p className="mt-1 text-[11px] text-warning">
                 Only the parent/guardian signs this minor&apos;s contract.
               </p>
@@ -612,7 +616,9 @@ export function ContractPanel({
                       }
                     />
                   </div>
-                  {idx > 0 && contractPlan?.kind !== "minor_case_b" ? (
+                  {idx > 0 &&
+                  contractPlan?.kind !== "minor_case_a" &&
+                  contractPlan?.kind !== "minor_case_b" ? (
                     <button
                       type="button"
                       className="mt-1 text-[11px] text-danger hover:underline"
@@ -627,8 +633,8 @@ export function ContractPanel({
               ))}
             </ul>
 
-            {contractPlan?.kind !== "minor_case_b" &&
-            contractPlan?.kind !== "adult_with_wards" ? (
+            {contractPlan?.kind !== "minor_case_a" &&
+            contractPlan?.kind !== "minor_case_b" ? (
               <div className="relative mt-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Link companion / add signer

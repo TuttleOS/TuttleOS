@@ -21,7 +21,7 @@ function firstLastFromLead(lead: LeadRow): string {
   return dn;
 }
 
-/** Minors who name this person as next friend (Case A wards). */
+/** Minors who name this person as next friend (linked child files, own contracts). */
 export async function listMinorWardsForGuardian(
   guardianPersonId: string,
 ): Promise<MinorWardSummary[]> {
