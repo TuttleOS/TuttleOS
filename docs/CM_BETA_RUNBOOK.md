@@ -103,7 +103,7 @@ role-partition (preview)  →  PR → main  →  Vercel production
 - [x] §2 known gaps sent to Mark  
 - [ ] Michael Day-4 / later sign-off: “CMs may use prod”  
 - [ ] Real CM Auth provisioned (not required for preview+demo week)  
-- [ ] Apply pending SQL if needed: `sql/21_upgrade_v2.20_negotiation_directionality.sql`  
+- [x] Apply pending SQL if needed: `sql/21_upgrade_v2.20_negotiation_directionality.sql` (preview DB 2026-08-15; CHECK already present, 0 violating rows)  
 - [ ] Smoke §3 on **production** after a future deploy  
 
 **Do not** merge solely to “get queues on prod.”

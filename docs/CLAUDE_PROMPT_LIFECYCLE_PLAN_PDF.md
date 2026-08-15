@@ -154,7 +154,7 @@ Order: **low overwrite risk → high**; **CM-adjacent before lit/settlement**.
 1. GATE-02 — **Done 2026-08-15** — NEL hard-blocks close (server refuse on status-skip / convert / delete)  
 2. GATE-11 — **Warning live 2026-08-15**; **consult** before blocking stage/demand  
 3. N-CM-08 — **Done 2026-08-15** — additive “CLIENT STILL TREATING” banner  
-4. Apply SQL `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase when ready (additive CHECK; app already validates)  
+4. Apply SQL `21_upgrade_v2.20_negotiation_directionality.sql` — **Done 2026-08-15** (CHECK already on preview DB; 0 violating rows)  
 
 #### Track B — CM package spine
 

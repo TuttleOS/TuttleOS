@@ -44,6 +44,7 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 **Rescore (2026-08-15, this ID only):** N-CM-08 MISSING→PARTIAL (CLIENT STILL TREATING banner on CM + Lit matter). H-12 gap narrowed to calendaring tie-breaker. Do not re-score other rows.  
 **Rescore (2026-08-15, GATE-02 family only):** GATE-02 / N-INT-04 / H-02 PARTIAL→BUILT — server refuse on status-skip, convert-to-matter, and soft-delete until NEL is recorded. Reject + Record NEL buttons unchanged.  
 **Rescore (2026-08-15, GATE-11 only):** louder coverage warning on CM matter + demand card. Status stays PARTIAL — does not refuse demand/stage.  
+**Rescore (2026-08-15, INV-05 only):** SQL `21` CHECK confirmed on preview DB (`negotiation_event_directionality_chk`); 0 violating rows. Status stays BUILT.  
 **Scoring rule:** UI-only enforcement of a GATE = `PARTIAL`, never `BUILT`.  
 **Stage 3 lock (2026-08-15):** Mark Garza (1 CM) · stagger lit · preview only · preview + `cm.demo`. Do **not** claim production/`main`.
 
@@ -259,7 +260,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | INV-02 | Soft delete only; additive schema | BUILT | deleted_at pattern | Keep enforcing |
 | INV-03 | Deadline precedence resolver | MISSING | Deadline rows | No shared resolver |
 | INV-04 | §18.001 earlier-of | PARTIAL | Clocks/tables | Auto min() unclear |
-| INV-05 | Negotiation directionality server-side | BUILT | UI + action validation; SQL CHECK ready | Apply SQL on Supabase |
+| INV-05 | Negotiation directionality server-side | BUILT | UI + action + DB CHECK on preview | — |
 | INV-06 | No auto-docket from unverified rules | PARTIAL | ATTORNEY-VERIFY culture | Local-rule warn path thin |
 | INV-07 | Respawn ends on data event | PARTIAL | Service chain pattern | Not universal |
 | INV-08 | Overdue pins red; never ages off | PARTIAL | Attention boards | Universal pin unproven |

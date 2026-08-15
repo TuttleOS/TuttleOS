@@ -17,7 +17,7 @@ Fix before more real cases flow through these paths — much harder to clean up 
 - [x] Add undo/remove for a mistakenly-added entry (surfaced by the same bug).
   - **Done (2026-07-28):** PD vehicle cards have **Edit** + **Remove** (soft-delete `pd_claim` + `vehicle`).
 - [x] Lock demand/counter directionality as a validation rule: demands always originate from the firm (plaintiff); offers/counters always originate from the insurer. Prevent mislinking.
-  - **Done (2026-07-28):** UI locks side by event type; `logNegotiationAction` rejects mismatches; SQL `21_upgrade_v2.20_negotiation_directionality.sql` CHECK (apply on Supabase when ready).
+  - **Done (2026-07-28):** UI locks side by event type; `logNegotiationAction` rejects mismatches; SQL `21_upgrade_v2.20_negotiation_directionality.sql` CHECK. **Preview DB (2026-08-15):** constraint `negotiation_event_directionality_chk` present; 0 violating rows.
 - [x] Tag uploaded photos to their property damage entry so they're browsable from that section (part of the same data model fix).
   - **Done (2026-07-28):** Upload picker / per-vehicle upload tags `[pd_vehicle:<id>]` in document notes; thumbnails filter per vehicle + lightbox.
 - [x] Clarify the treatment/coverage box labels (N/A vs. Declined/Declared) — low effort, bundle with the above while touching that section.

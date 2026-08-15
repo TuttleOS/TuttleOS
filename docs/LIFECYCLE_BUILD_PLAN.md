@@ -124,7 +124,7 @@ Ordered lowest overwrite risk to highest, and CM-adjacent before litigation or s
 | 1 | GATE-02 — confirm the non-engagement letter hard-blocks close | **Done 2026-08-15** — server refuse on status-skip, convert, and soft-delete until NEL is recorded |
 | 2 | GATE-11 — coverage boxes | **Warning live 2026-08-15** — louder banner on matter + demand card. **Consult** before blocking stage/demand |
 | 3 | N-CM-08 — CLIENT STILL TREATING banner | **Done 2026-08-15** — additive banner on CM + Lit matter |
-| 4 | Apply `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase | Additive CHECK; the application already validates |
+| 4 | Apply `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase | **Done 2026-08-15** — CHECK already on preview DB (`negotiation_event_directionality_chk`); 0 violating rows |
 
 #### Track B — Case-manager package spine
 
