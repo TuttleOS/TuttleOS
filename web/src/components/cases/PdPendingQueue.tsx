@@ -15,15 +15,16 @@ export function PdPendingQueue({ rows }: { rows: PdPendingQueueRow[] }) {
         </p>
         <h1 className="text-2xl font-bold">PD pending</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Unresolved property-damage claims on the file. Removed or resolved
-          vehicles leave this queue; the row matches the PD card on the matter.
+          One row per unresolved vehicle. A client with two open cars shows as
+          two rows. Removed or resolved vehicles leave this queue; the row
+          matches the PD card on the matter.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-panel border border-grid bg-surface px-4 py-3 shadow-soft">
           <div className="text-[11px] font-bold uppercase tracking-wide text-muted">
-            Unresolved PD
+            Unresolved vehicles
           </div>
           <div className="mt-1 text-2xl font-bold tabular-nums">{rows.length}</div>
         </div>
@@ -43,7 +44,7 @@ export function PdPendingQueue({ rows }: { rows: PdPendingQueueRow[] }) {
 
       {rows.length === 0 ? (
         <p className="rounded-panel border border-grid bg-surface px-4 py-10 text-sm text-muted shadow-soft">
-          No open PD claims. Resolved and N/A PD tracks stay off this queue.
+          No open PD vehicles. Resolved and N/A tracks stay off this queue.
         </p>
       ) : (
         <section className="overflow-hidden rounded-panel border border-grid bg-surface shadow-soft">

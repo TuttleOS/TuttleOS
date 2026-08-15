@@ -43,6 +43,24 @@ WHERE client_matter_id IN (
     OR coalesce(original_filename, '') ILIKE 'LKA08801%'
   );
 
+-- CM-beta test clutter on Delgado (Civik / Camery / F-150 / remove logs)
+UPDATE workflow.note
+SET deleted_at = COALESCE(deleted_at, now()),
+    updated_at = now()
+WHERE entity_id IN (
+    '00000000-0000-0000-0000-00000000d001',
+    '00000000-0000-0000-0000-00000000d002'
+  )
+  AND deleted_at IS NULL
+  AND (
+    body ILIKE '%Honda Civik%'
+    OR body ILIKE '%Toyota Camery%'
+    OR body ILIKE '%Ford F-150%'
+    OR body ILIKE 'PD vehicle track removed%'
+    OR body ILIKE 'Testing the notes portion%'
+    OR body ILIKE 'B4 smoke:%'
+  );
+
 SELECT 'seed_cm_demo_cleanup_okafor OK' AS status,
        (SELECT count(*) FROM workflow.document
         WHERE client_matter_id IN (
