@@ -33,9 +33,14 @@ WHERE client_matter_id IN (
     OR title ILIKE '%Galaxy Image%'
     OR title ILIKE 'TEST IMAGE'
     OR title ILIKE '%Screenshot 2026%'
+    OR title ILIKE '%LKA08860%'
+    OR title ILIKE '%Tetss%'
     OR coalesce(original_filename, '') ILIKE '%YAGEO%'
     OR coalesce(original_filename, '') ILIKE '%Cheesecake%'
     OR coalesce(original_filename, '') ILIKE 'Screenshot 2026%'
+    OR coalesce(original_filename, '') ILIKE '%LKA08860%'
+    OR coalesce(original_filename, '') ILIKE '%Tetss%'
+    OR coalesce(original_filename, '') ILIKE 'LKA08801%'
   );
 
 SELECT 'seed_cm_demo_cleanup_okafor OK' AS status,

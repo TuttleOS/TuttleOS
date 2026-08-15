@@ -1162,24 +1162,38 @@ export async function listPdPendingQueue(opts: {
   }
   const incidentIds = Array.from(byIncident.keys());
 
-  const { data: aging, error } = await supabase
+  const { data: vehicles, error: vErr } = await supabase
     .schema("property")
-    .from("v_pd_aging")
-    .select(
-      `pd_claim_id, incident_group_id, year, make, model, status,
-       last_touch_date, days_since_touch, demand_blocker`,
-    )
-    .in("incident_group_id", incidentIds);
-  if (error) throw new Error(error.message);
-  if (!aging?.length) return [];
+    .from("vehicle")
+    .select("vehicle_id, incident_group_id, year, make, model")
+    .in("incident_group_id", incidentIds)
+    .is("deleted_at", null);
+  if (vErr) throw new Error(vErr.message);
+  if (!vehicles?.length) return [];
 
+  const vehicleIds = vehicles.map((v) => v.vehicle_id as string);
+  const { data: claims, error: cErr } = await supabase
+    .schema("property")
+    .from("pd_claim")
+    .select("pd_claim_id, vehicle_id, status, last_touch_date, demand_blocker")
+    .in("vehicle_id", vehicleIds)
+    .is("deleted_at", null);
+  if (cErr) throw new Error(cErr.message);
+
+  const vMap = new Map(
+    vehicles.map((v) => [v.vehicle_id as string, v] as const),
+  );
   const rows: PdPendingQueueRow[] = [];
-  for (const p of aging) {
-    const ig = p.incident_group_id as string;
+  for (const p of claims ?? []) {
+    const status = p.status as string;
+    if (status === "resolved" || status === "n_a") continue;
+    const v = vMap.get(p.vehicle_id as string);
+    if (!v) continue;
+    const ig = v.incident_group_id as string;
     const matter = byIncident.get(ig)?.[0];
     if (!matter) continue;
     const vehicle_label =
-      [p.year, p.make, p.model].filter(Boolean).join(" ") || "Vehicle";
+      [v.year, v.make, v.model].filter(Boolean).join(" ") || "Vehicle";
     rows.push({
       pd_claim_id: p.pd_claim_id as string,
       client_matter_id: matter.client_matter_id,
@@ -1187,9 +1201,10 @@ export async function listPdPendingQueue(opts: {
       matter_number: matter.matter_number,
       date_of_loss: matter.date_of_loss,
       vehicle_label,
-      status: p.status as string,
-      days_since_touch:
-        p.days_since_touch != null ? Number(p.days_since_touch) : null,
+      status,
+      days_since_touch: p.last_touch_date
+        ? daysBetween(p.last_touch_date as string)
+        : null,
       demand_blocker: Boolean(p.demand_blocker),
     });
   }

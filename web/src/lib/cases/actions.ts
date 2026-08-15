@@ -8,8 +8,9 @@ import type { StaffProfile } from "@/lib/staff";
 import { validateNegotiationDirectionality } from "@/lib/cases/negotiation";
 import {
   encodePdVehicleNote,
-  normalizeVehicleKey,
+  formatVehicleLabel,
   parsePdVehicleId,
+  vehiclesLookLikeSame,
 } from "@/lib/cases/pdVehicle";
 
 export type ActionResult =
@@ -478,7 +479,6 @@ export async function startPdClaimAction(input: {
     const year = input.year || null;
     const make = input.make.trim();
     const model = input.model.trim();
-    const key = normalizeVehicleKey(year, make, model);
 
     const { data: existingVehicles, error: listErr } = await supabase
       .schema("property")
@@ -488,18 +488,29 @@ export async function startPdClaimAction(input: {
       .is("deleted_at", null);
     if (listErr) return { ok: false, error: listErr.message };
 
-    const dup = (existingVehicles ?? []).find(
-      (v) =>
-        normalizeVehicleKey(
-          (v.year as number | null) ?? null,
-          (v.make as string) ?? "",
-          (v.model as string) ?? "",
-        ) === key,
+    const dup = (existingVehicles ?? []).find((v) =>
+      vehiclesLookLikeSame(
+        { year, make, model },
+        {
+          year: (v.year as number | null) ?? null,
+          make: (v.make as string) ?? "",
+          model: (v.model as string) ?? "",
+        },
+      ),
     );
     if (dup) {
+      const existing = formatVehicleLabel(
+        (dup.year as number | null) ?? null,
+        (dup.make as string) ?? "",
+        (dup.model as string) ?? "",
+      );
+      const typed = formatVehicleLabel(year, make, model);
       return {
         ok: false,
-        error: `A PD track already exists for ${[year, make, model].filter(Boolean).join(" ")}. Edit or remove that vehicle instead of creating a duplicate.`,
+        error:
+          existing.toLowerCase() === typed.toLowerCase()
+            ? `A PD track already exists for ${typed}. Edit or remove that vehicle instead of creating a duplicate.`
+            : `A PD track already exists for ${existing}. “${typed}” looks like the same vehicle — edit or remove that one instead.`,
       };
     }
 
@@ -631,8 +642,6 @@ export async function updatePdClaimAction(input: {
           input.model !== undefined
             ? input.model.trim()
             : String(self.model ?? "");
-        const key = normalizeVehicleKey(nextYear, nextMake, nextModel);
-
         const { data: siblings, error: sibErr } = await supabase
           .schema("property")
           .from("vehicle")
@@ -642,18 +651,25 @@ export async function updatePdClaimAction(input: {
           .neq("vehicle_id", input.vehicle_id);
         if (sibErr) return { ok: false, error: sibErr.message };
 
-        const dup = (siblings ?? []).find(
-          (v) =>
-            normalizeVehicleKey(
-              (v.year as number | null) ?? null,
-              (v.make as string) ?? "",
-              (v.model as string) ?? "",
-            ) === key,
+        const dup = (siblings ?? []).find((v) =>
+          vehiclesLookLikeSame(
+            { year: nextYear, make: nextMake, model: nextModel },
+            {
+              year: (v.year as number | null) ?? null,
+              make: (v.make as string) ?? "",
+              model: (v.model as string) ?? "",
+            },
+          ),
         );
         if (dup) {
+          const existing = formatVehicleLabel(
+            (dup.year as number | null) ?? null,
+            (dup.make as string) ?? "",
+            (dup.model as string) ?? "",
+          );
           return {
             ok: false,
-            error: `Another PD track already uses ${[nextYear, nextMake, nextModel].filter(Boolean).join(" ")}.`,
+            error: `Another PD track already uses ${existing}.`,
           };
         }
       }

@@ -15,9 +15,8 @@ export function PdPendingQueue({ rows }: { rows: PdPendingQueueRow[] }) {
         </p>
         <h1 className="text-2xl font-bold">PD pending</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Unresolved property-damage claims (
-          <code className="text-xs">property.v_pd_aging</code>). Mark resolved on
-          the PD card; the row leaves this queue.
+          Unresolved property-damage claims on the file. Removed or resolved
+          vehicles leave this queue; the row matches the PD card on the matter.
         </p>
       </div>
 
