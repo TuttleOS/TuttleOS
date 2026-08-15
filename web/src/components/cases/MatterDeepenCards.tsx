@@ -491,15 +491,27 @@ export function CoverageBoxesCard({
 
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-xs text-muted">
-        Every box must be answered — add a provider or mark{" "}
-        <span className="font-semibold text-ink">No treatment</span>.{" "}
-        {unanswered > 0 && (
-          <span className="font-bold text-danger">
+      {unanswered > 0 ? (
+        <div
+          className="rounded-lg border border-danger/40 bg-danger-bg px-3 py-2"
+          role="status"
+        >
+          <p className="text-xs font-bold uppercase tracking-wide text-danger">
             {unanswered} unanswered
-          </span>
-        )}
-      </p>
+          </p>
+          <p className="mt-1 text-xs text-ink">
+            Every box needs a provider or{" "}
+            <span className="font-semibold">No treatment</span>. Missed
+            ambulance / EMS bills become surprise liens. This does not block a
+            demand draft.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-muted">
+          Every box is answered — provider or{" "}
+          <span className="font-semibold text-ink">No treatment</span>.
+        </p>
+      )}
       <div className="grid gap-2 sm:grid-cols-3">
         {boxes.map((b) => (
           <div
@@ -879,12 +891,14 @@ export function DemandNegotiationCard({
   negotiations,
   pending,
   run,
+  coverageUnanswered = 0,
 }: {
   matterId: string;
   demands: DemandRow[];
   negotiations: NegotiationRow[];
   pending: boolean;
   run: RunFn;
+  coverageUnanswered?: number;
 }) {
   const [amount, setAmount] = useState("");
   const [negAmount, setNegAmount] = useState("");
@@ -954,6 +968,14 @@ export function DemandNegotiationCard({
             ))}
           </ul>
         )}
+        {coverageUnanswered > 0 ? (
+          <p className="mt-2 rounded-lg border border-warning/40 bg-warning-bg px-3 py-2 text-xs text-ink">
+            {coverageUnanswered} coverage box
+            {coverageUnanswered === 1 ? "" : "es"} still unanswered. You can
+            still draft a demand — missed ambulance / EMS bills become surprise
+            liens.
+          </p>
+        ) : null}
         <div className="mt-2 flex flex-wrap gap-2">
           <input
             type="number"

@@ -80,3 +80,10 @@ export function defaultProviderTypeForCategory(
   const cat = COVERAGE_CATEGORIES.find((c) => c.code === code);
   return cat?.providerTypes[0] ?? "other";
 }
+
+/** GATE-11 — a box is complete only with a provider episode or explicit No treatment. */
+export function unansweredCoverageCount(
+  boxes: { status: string }[],
+): number {
+  return boxes.filter((b) => b.status === "unanswered").length;
+}

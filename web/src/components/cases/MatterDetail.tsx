@@ -51,7 +51,9 @@ import type { AccessLogRow, DocumentRow } from "@/lib/documents/types";
 import { MatterViewToggle } from "@/components/shell/MatterViewToggle";
 import { AssignCaseManagerSelect } from "@/components/cases/AssignCaseManagerSelect";
 import { DualTrackBanner } from "@/components/cases/DualTrackBanner";
+import { CoverageIncompleteBanner } from "@/components/cases/CoverageIncompleteBanner";
 import { isDualTrackStillTreating } from "@/lib/cases/dualTrack";
+import { unansweredCoverageCount } from "@/lib/cases/coverage";
 import { canSwitchCmLit } from "@/lib/workspace";
 import type { StaffRoleCode } from "@/lib/staff";
 import type { AssignableStaff } from "@/lib/cases/queries";
@@ -193,6 +195,7 @@ export function MatterDetailView({
     ),
     episodes,
   });
+  const coverageOpen = unansweredCoverageCount(coverageBoxes);
   const atty = team.find((t) => t.assignment_role === "attorney");
   const flags = stalled ? flagList(stalled) : [];
   const openTasks = tasks.filter((t) =>
@@ -261,6 +264,11 @@ export function MatterDetailView({
         ← Back to caseload
       </Link>
       {dualTrack ? <DualTrackBanner lane="cm" /> : null}
+      <CoverageIncompleteBanner
+        unanswered={coverageOpen}
+        total={coverageBoxes.length}
+        onJump={() => jump("coverage")}
+      />
 
       {/* Header */}
       <section className="rounded-panel border border-grid bg-surface p-5 shadow-soft">
@@ -785,6 +793,7 @@ export function MatterDetailView({
               negotiations={negotiations}
               pending={pending}
               run={run}
+              coverageUnanswered={coverageOpen}
             />
           </Card>
 

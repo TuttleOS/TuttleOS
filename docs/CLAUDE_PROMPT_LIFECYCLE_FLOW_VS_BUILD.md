@@ -16,12 +16,13 @@ Produce **one visual artifact** Michael or Brett can skim in under 5 minutes:
 
 1. **A Mermaid flowchart** of the case lifecycle (lanes → nodes → gates → handoffs), with every node/edge labeled by status.
 2. **A short legend** and **scoreboard** (counts).
-3. **Top 10 gaps** that matter most for malpractice / money / wrong-entity risk (prefer GATEs and handoffs over polish).
+3. **Top 10 gaps** in the **exact order** from `docs/LIFECYCLE_BUILD_PLAN.md` §9 (malpractice / money / wrong-entity). Do not re-rank.
 4. Optional second diagram: **attorney decision points** (ATT-*) as a side lane.
 
 **Do not** invent new status. Use only the scored table below.  
 **Do not** treat DEFERRED as failure — gray them.  
-**Do not** claim production/`main` — this is branch **`role-partition`** / preview.
+**Do not** claim production/`main` — this is branch **`role-partition`** / preview.  
+**Do not** re-rank the Top 10 gaps from the status tables. Copy the adopted plan order. Do not substitute INV-* or other invariants.
 
 **Color / shape rules for Mermaid:**
 
@@ -42,6 +43,7 @@ Group subgraphs by lane: Intake · Case Manager · Demand Writer · Litigation �
 **Scored:** 2026-08-09 against kit + FINDINGS_CHECKLIST / BUILD_PRIORITY  
 **Rescore (2026-08-15, this ID only):** N-CM-08 MISSING→PARTIAL (CLIENT STILL TREATING banner on CM + Lit matter). H-12 gap narrowed to calendaring tie-breaker. Do not re-score other rows.  
 **Rescore (2026-08-15, GATE-02 family only):** GATE-02 / N-INT-04 / H-02 PARTIAL→BUILT — server refuse on status-skip, convert-to-matter, and soft-delete until NEL is recorded. Reject + Record NEL buttons unchanged.  
+**Rescore (2026-08-15, GATE-11 only):** louder coverage warning on CM matter + demand card. Status stays PARTIAL — does not refuse demand/stage.  
 **Scoring rule:** UI-only enforcement of a GATE = `PARTIAL`, never `BUILT`.  
 **Stage 3 lock (2026-08-15):** Mark Garza (1 CM) · stagger lit · preview only · preview + `cm.demo`. Do **not** claim production/`main`.
 
@@ -165,7 +167,7 @@ After drawing, apply `class` to every node from the status tables (`class G01 pa
 | GATE-08 | FILED only on file-stamped copy | MISSING | Lit MVP / docs | No stamp completion gate | F-44 |
 | GATE-09 | Plaintiff depo READY = prep+session | DEFERRED | Designed | P2 | F-49 |
 | GATE-10 | Dismissal blocked until funding confirmed | DEFERRED | — | Stage 4 | F-54 |
-| GATE-11 | Coverage = provider or No treatment | PARTIAL | Coverage UI + label | Does not refuse advance | F-24 adj. |
+| GATE-11 | Coverage = provider or No treatment | PARTIAL | Coverage UI + louder warning | Does not refuse demand/stage | F-24 adj. |
 
 ### Nodes — Intake
 
@@ -314,7 +316,21 @@ Still OPEN:
 Where the firm is on the lifecycle machine vs the PDF/flowchart intent.
 
 ### B. Top 10 gaps (ranked)
-Prefer: GATE-03, GATE-04, GATE-07, GATE-08, H-01, H-07, N-CM-08 (calendaring / tie-breaker — banner is already live), ATT-03, GATE-05/06, Stage 4 (H-13/14). Adjust only if the tables clearly say otherwise.
+
+**Use this exact order.** Canonical source: `docs/LIFECYCLE_BUILD_PLAN.md` §9. Do **not** re-rank from MISSING vs PARTIAL, do **not** swap in INV-03 or other invariants, do **not** justify a different order.
+
+1. GATE-03 — Futures  
+2. GATE-04 — Demand-ready blockers  
+3. GATE-07 — Defendant workup  
+4. GATE-08 — FILED stamp  
+5. H-01 — Intake → CM automation  
+6. H-07 — 3-day counters  
+7. N-CM-08 — Dual-track calendaring / tie-breaker (banner is already live)  
+8. ATT-03 — Suit authorization  
+9. GATE-05 / GATE-06 — Proof and Level 3 hold  
+10. Stage 4 — H-13 / H-14 / GATE-10  
+
+Under each rank, one sentence from the plan’s “Why it ranks here.” N-CM-08: banner is live; the remaining gap is auto-calendaring of §18.001 / discovery / plaintiff depo.
 
 ### C. What Stage 3 CM beta can ignore
 List DEFERRED + lit/suit/settlement reds that are OK to ship past for CM pilot (point to BUILD_PRIORITY Stage 3 / `docs/CM_BETA_RUNBOOK.md`).  

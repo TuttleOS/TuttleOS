@@ -122,7 +122,7 @@ Ordered lowest overwrite risk to highest, and CM-adjacent before litigation or s
 | # | Item | Note |
 |---|---|---|
 | 1 | GATE-02 — confirm the non-engagement letter hard-blocks close | **Done 2026-08-15** — server refuse on status-skip, convert, and soft-delete until NEL is recorded |
-| 2 | GATE-11 — coverage boxes | A louder warning is fine; **consult** before blocking stage advance |
+| 2 | GATE-11 — coverage boxes | **Warning live 2026-08-15** — louder banner on matter + demand card. **Consult** before blocking stage/demand |
 | 3 | N-CM-08 — CLIENT STILL TREATING banner | **Done 2026-08-15** — additive banner on CM + Lit matter |
 | 4 | Apply `21_upgrade_v2.20_negotiation_directionality.sql` on Supabase | Additive CHECK; the application already validates |
 
@@ -191,7 +191,7 @@ Run every ticket through this. One box per ticket, no exceptions.
 | GATE-08 | FILED only on file-stamped copy | MISSING | No stamp completion gate |
 | GATE-09 | Plaintiff deposition READY | DEFERRED | P2 |
 | GATE-10 | Dismissal until funding confirmed | DEFERRED | Stage 4 |
-| GATE-11 | Coverage = provider or No treatment | PARTIAL | Does not refuse advance |
+| GATE-11 | Coverage = provider or No treatment | PARTIAL | Louder warning live; does not refuse demand/stage |
 
 ## 8. Handoffs
 
